@@ -65,7 +65,22 @@ class GameScene: SKScene {
         physicsWorld.gravity = CGVector(dx: 0, dy: 0)
         physicsWorld.contactDelegate = self
 
-        backgroundColor = SKColor.systemMint
+        // Set background to grey (this will be the color outside map walls)
+        backgroundColor = SKColor.systemGray4
+
+        // Create a large grey background that extends beyond scene bounds
+        let largeBackgroundSize = CGSize(width: size.width * 2, height: size.height * 2)
+        let largeBackground = SKSpriteNode(color: .systemGray4, size: largeBackgroundSize)
+        largeBackground.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        largeBackground.zPosition = -100
+        addChild(largeBackground)
+
+        // Create playable area background (mint color) inside the walls
+        let playableAreaSize = CGSize(width: size.width - 20, height: size.height - 20) // Account for wall thickness
+        let playableBackground = SKSpriteNode(color: .systemMint, size: playableAreaSize)
+        playableBackground.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        playableBackground.zPosition = -50
+        addChild(playableBackground)
     }
 
     private func createPlayer() {
