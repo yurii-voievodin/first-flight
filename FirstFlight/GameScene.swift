@@ -60,7 +60,10 @@ class GameScene: SKScene {
     }
 
     private func setupScene() {
-        size = CGSize(width: 1000, height: 800)
+        // Використовуємо розмір view замість фіксованого розміру
+        if let view = view {
+            size = view.bounds.size
+        }
         physicsWorld.gravity = CGVector(dx: 0, dy: 0)
         physicsWorld.contactDelegate = self
 
@@ -69,14 +72,14 @@ class GameScene: SKScene {
 
     private func createPlayer() {
         player = Player()
-        player.position = CGPoint(x: 100, y: 400)
+        player.position = CGPoint(x: size.width * 0.1, y: size.height * 0.5)
         addChild(player)
     }
 
     private func createGround() {
         // Main ground platform
-        let mainGround = SKSpriteNode(color: .systemBrown, size: CGSize(width: 1000, height: 60))
-        mainGround.position = CGPoint(x: 500, y: 30)
+        let mainGround = SKSpriteNode(color: .systemBrown, size: CGSize(width: size.width, height: 60))
+        mainGround.position = CGPoint(x: size.width / 2, y: 30)
         mainGround.physicsBody = SKPhysicsBody(rectangleOf: mainGround.size)
         mainGround.physicsBody?.categoryBitMask = PhysicsCategory.ground
         mainGround.physicsBody?.isDynamic = false
@@ -85,7 +88,7 @@ class GameScene: SKScene {
 
         // Additional platforms
         let platform1 = SKSpriteNode(color: .systemBrown, size: CGSize(width: 200, height: 30))
-        platform1.position = CGPoint(x: 300, y: 200)
+        platform1.position = CGPoint(x: size.width * 0.3, y: size.height * 0.25)
         platform1.physicsBody = SKPhysicsBody(rectangleOf: platform1.size)
         platform1.physicsBody?.categoryBitMask = PhysicsCategory.ground
         platform1.physicsBody?.isDynamic = false
@@ -93,7 +96,7 @@ class GameScene: SKScene {
         ground.append(platform1)
 
         let platform2 = SKSpriteNode(color: .systemBrown, size: CGSize(width: 200, height: 30))
-        platform2.position = CGPoint(x: 700, y: 300)
+        platform2.position = CGPoint(x: size.width * 0.7, y: size.height * 0.375)
         platform2.physicsBody = SKPhysicsBody(rectangleOf: platform2.size)
         platform2.physicsBody?.categoryBitMask = PhysicsCategory.ground
         platform2.physicsBody?.isDynamic = false
@@ -101,15 +104,15 @@ class GameScene: SKScene {
         ground.append(platform2)
 
         // Side walls
-        let leftWall = SKSpriteNode(color: .clear, size: CGSize(width: 10, height: 800))
-        leftWall.position = CGPoint(x: 5, y: 400)
+        let leftWall = SKSpriteNode(color: .clear, size: CGSize(width: 10, height: size.height))
+        leftWall.position = CGPoint(x: 5, y: size.height / 2)
         leftWall.physicsBody = SKPhysicsBody(rectangleOf: leftWall.size)
         leftWall.physicsBody?.categoryBitMask = PhysicsCategory.ground
         leftWall.physicsBody?.isDynamic = false
         addChild(leftWall)
 
-        let rightWall = SKSpriteNode(color: .clear, size: CGSize(width: 10, height: 800))
-        rightWall.position = CGPoint(x: 995, y: 400)
+        let rightWall = SKSpriteNode(color: .clear, size: CGSize(width: 10, height: size.height))
+        rightWall.position = CGPoint(x: size.width - 5, y: size.height / 2)
         rightWall.physicsBody = SKPhysicsBody(rectangleOf: rightWall.size)
         rightWall.physicsBody?.categoryBitMask = PhysicsCategory.ground
         rightWall.physicsBody?.isDynamic = false
@@ -125,13 +128,16 @@ class GameScene: SKScene {
     }
 
     func touchDown(atPoint pos : CGPoint) {
+        // Конвертуємо координати дотику з екрана в світові координати сцени
         let worldPos = convertPoint(fromView: pos)
         player.moveTo(position: worldPos)
     }
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         for t in touches {
-            self.touchDown(atPoint: t.location(in: self))
+            if let view = view {
+                self.touchDown(atPoint: t.location(in: view))
+            }
         }
     }
 
@@ -140,19 +146,34 @@ class GameScene: SKScene {
     }
 
     private func updateCamera() {
+        guard let view = view else { return }
+
         let targetX = player.position.x
         let targetY = player.position.y
 
+        // Розмір області перегляду (viewport)
+        let viewportWidth = view.bounds.width
+        let viewportHeight = view.bounds.height
+
         // Обмеження камери в межах сцени
-        let minX = frame.width / 2
-        let maxX = size.width - frame.width / 2
-        let minY = frame.height / 2
-        let maxY = size.height - frame.height / 2
+        let minX = viewportWidth / 2
+        let maxX = size.width - viewportWidth / 2
+        let minY = viewportHeight / 2
+        let maxY = size.height - viewportHeight / 2
 
-        let clampedX = max(minX, min(maxX, targetX))
-        let clampedY = max(minY, min(maxY, targetY))
+        // Якщо сцена менша за viewport, центруємо камеру
+        let clampedX = size.width > viewportWidth ? max(minX, min(maxX, targetX)) : size.width / 2
+        let clampedY = size.height > viewportHeight ? max(minY, min(maxY, targetY)) : size.height / 2
 
-        gameCamera.position = CGPoint(x: clampedX, y: clampedY)
+        // Плавний рух камери
+        let currentX = gameCamera.position.x
+        let currentY = gameCamera.position.y
+        let lerpFactor: CGFloat = 0.1
+
+        let newX = currentX + (clampedX - currentX) * lerpFactor
+        let newY = currentY + (clampedY - currentY) * lerpFactor
+
+        gameCamera.position = CGPoint(x: newX, y: newY)
     }
 }
 
