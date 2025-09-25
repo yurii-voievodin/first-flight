@@ -24,8 +24,8 @@ class Player: SKSpriteNode {
     private func setupPhysics() {
         physicsBody = SKPhysicsBody(rectangleOf: size)
         physicsBody?.categoryBitMask = PhysicsCategory.player
-        physicsBody?.contactTestBitMask = PhysicsCategory.ground
-        physicsBody?.collisionBitMask = PhysicsCategory.ground
+        physicsBody?.contactTestBitMask = PhysicsCategory.wall
+        physicsBody?.collisionBitMask = PhysicsCategory.wall
         physicsBody?.isDynamic = true
         physicsBody?.affectedByGravity = false
         physicsBody?.allowsRotation = false
@@ -43,19 +43,19 @@ class Player: SKSpriteNode {
 struct PhysicsCategory {
     static let none: UInt32 = 0
     static let player: UInt32 = 0b1
-    static let ground: UInt32 = 0b10
+    static let wall: UInt32 = 0b10
 }
 
 class GameScene: SKScene {
 
     private var player: Player!
     private var gameCamera: SKCameraNode!
-    private var ground: [SKSpriteNode] = []
+    private var walls: [SKSpriteNode] = []
 
     override func didMove(to view: SKView) {
         setupScene()
         createPlayer()
-        createGround()
+        createWalls()
         setupCamera()
     }
 
@@ -76,45 +76,45 @@ class GameScene: SKScene {
         addChild(player)
     }
 
-    private func createGround() {
-        // Main ground platform
-        let mainGround = SKSpriteNode(color: .systemBrown, size: CGSize(width: size.width, height: 60))
-        mainGround.position = CGPoint(x: size.width / 2, y: 30)
-        mainGround.physicsBody = SKPhysicsBody(rectangleOf: mainGround.size)
-        mainGround.physicsBody?.categoryBitMask = PhysicsCategory.ground
-        mainGround.physicsBody?.isDynamic = false
-        addChild(mainGround)
-        ground.append(mainGround)
+    private func createWalls() {
+        // Bottom boundary wall
+        let bottomWall = SKSpriteNode(color: .systemBrown, size: CGSize(width: size.width, height: 2))
+        bottomWall.position = CGPoint(x: size.width / 2, y: 1)
+        bottomWall.physicsBody = SKPhysicsBody(rectangleOf: bottomWall.size)
+        bottomWall.physicsBody?.categoryBitMask = PhysicsCategory.wall
+        bottomWall.physicsBody?.isDynamic = false
+        addChild(bottomWall)
+        walls.append(bottomWall)
 
-        // Additional platforms
-        let platform1 = SKSpriteNode(color: .systemBrown, size: CGSize(width: 200, height: 30))
-        platform1.position = CGPoint(x: size.width * 0.3, y: size.height * 0.25)
-        platform1.physicsBody = SKPhysicsBody(rectangleOf: platform1.size)
-        platform1.physicsBody?.categoryBitMask = PhysicsCategory.ground
-        platform1.physicsBody?.isDynamic = false
-        addChild(platform1)
-        ground.append(platform1)
+        // Additional walls/obstacles
+        let obstacle1 = SKSpriteNode(color: .systemBrown, size: CGSize(width: 200, height: 30))
+        obstacle1.position = CGPoint(x: size.width * 0.3, y: size.height * 0.25)
+        obstacle1.physicsBody = SKPhysicsBody(rectangleOf: obstacle1.size)
+        obstacle1.physicsBody?.categoryBitMask = PhysicsCategory.wall
+        obstacle1.physicsBody?.isDynamic = false
+        addChild(obstacle1)
+        walls.append(obstacle1)
 
-        let platform2 = SKSpriteNode(color: .systemBrown, size: CGSize(width: 200, height: 30))
-        platform2.position = CGPoint(x: size.width * 0.7, y: size.height * 0.375)
-        platform2.physicsBody = SKPhysicsBody(rectangleOf: platform2.size)
-        platform2.physicsBody?.categoryBitMask = PhysicsCategory.ground
-        platform2.physicsBody?.isDynamic = false
-        addChild(platform2)
-        ground.append(platform2)
+        let obstacle2 = SKSpriteNode(color: .systemBrown, size: CGSize(width: 200, height: 30))
+        obstacle2.position = CGPoint(x: size.width * 0.7, y: size.height * 0.375)
+        obstacle2.physicsBody = SKPhysicsBody(rectangleOf: obstacle2.size)
+        obstacle2.physicsBody?.categoryBitMask = PhysicsCategory.wall
+        obstacle2.physicsBody?.isDynamic = false
+        addChild(obstacle2)
+        walls.append(obstacle2)
 
         // Side walls
         let leftWall = SKSpriteNode(color: .clear, size: CGSize(width: 10, height: size.height))
         leftWall.position = CGPoint(x: 5, y: size.height / 2)
         leftWall.physicsBody = SKPhysicsBody(rectangleOf: leftWall.size)
-        leftWall.physicsBody?.categoryBitMask = PhysicsCategory.ground
+        leftWall.physicsBody?.categoryBitMask = PhysicsCategory.wall
         leftWall.physicsBody?.isDynamic = false
         addChild(leftWall)
 
         let rightWall = SKSpriteNode(color: .clear, size: CGSize(width: 10, height: size.height))
         rightWall.position = CGPoint(x: size.width - 5, y: size.height / 2)
         rightWall.physicsBody = SKPhysicsBody(rectangleOf: rightWall.size)
-        rightWall.physicsBody?.categoryBitMask = PhysicsCategory.ground
+        rightWall.physicsBody?.categoryBitMask = PhysicsCategory.wall
         rightWall.physicsBody?.isDynamic = false
         addChild(rightWall)
     }
@@ -179,6 +179,6 @@ class GameScene: SKScene {
 
 extension GameScene: SKPhysicsContactDelegate {
     func didBegin(_ contact: SKPhysicsContact) {
-        // Обробка колізій між персонажем і поверхнею
+        // Обробка колізій між персонажем і стінами
     }
 }
