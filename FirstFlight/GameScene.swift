@@ -9,6 +9,8 @@ import SpriteKit
 import GameplayKit
 
 class Player: SKSpriteNode {
+    private let walkingSpeed: CGFloat = 120.0 // points per second
+
     init() {
         let texture = SKTexture()
         super.init(texture: texture, color: .systemBlue, size: CGSize(width: 40, height: 40))
@@ -34,8 +36,18 @@ class Player: SKSpriteNode {
     }
 
     func moveTo(position: CGPoint) {
-        let moveAction = SKAction.move(to: position, duration: 1.0)
-        moveAction.timingMode = .easeInEaseOut
+        // Calculate distance to target position
+        let currentPosition = self.position
+        let deltaX = position.x - currentPosition.x
+        let deltaY = position.y - currentPosition.y
+        let distance = sqrt(deltaX * deltaX + deltaY * deltaY)
+
+        // Calculate duration based on walking speed (distance / speed)
+        let duration = TimeInterval(distance / walkingSpeed)
+
+        // Create move action with calculated duration and linear timing
+        let moveAction = SKAction.move(to: position, duration: duration)
+        moveAction.timingMode = .linear
         run(moveAction)
     }
 }
