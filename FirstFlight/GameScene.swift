@@ -42,19 +42,11 @@ class Player: SKShapeNode {
     }
 
     func moveTo(position: CGPoint) {
-        // Calculate distance to target position
-        let currentPosition = self.position
-        let deltaX = position.x - currentPosition.x
-        let deltaY = position.y - currentPosition.y
-        let distance = sqrt(deltaX * deltaX + deltaY * deltaY)
-
-        // Calculate duration based on walking speed (distance / speed)
-        let duration = TimeInterval(distance / walkingSpeed)
-
-        // Create move action with calculated duration and linear timing
-        let moveAction = SKAction.move(to: position, duration: duration)
-        moveAction.timingMode = .linear
-        run(moveAction)
+        let direction = CGVector(
+            dx: (position.x - self.position.x) / 2,
+            dy: (position.y - self.position.y) / 2
+        )
+        physicsBody?.velocity = direction
     }
 }
 
