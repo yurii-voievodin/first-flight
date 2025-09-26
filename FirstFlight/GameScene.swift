@@ -8,12 +8,18 @@
 import SpriteKit
 import GameplayKit
 
-class Player: SKSpriteNode {
+class Player: SKShapeNode {
     private let walkingSpeed: CGFloat = 120.0 // points per second
+    private let radius: CGFloat = 20.0
 
-    init() {
-        let texture = SKTexture()
-        super.init(texture: texture, color: .systemBlue, size: CGSize(width: 40, height: 40))
+    override init() {
+        super.init()
+
+        // Create circular path
+        let circlePath = CGPath(ellipseIn: CGRect(x: -radius, y: -radius, width: radius * 2, height: radius * 2), transform: nil)
+        self.path = circlePath
+        self.fillColor = .white
+        self.strokeColor = .clear
 
         setupPhysics()
     }
@@ -24,7 +30,7 @@ class Player: SKSpriteNode {
     }
 
     private func setupPhysics() {
-        physicsBody = SKPhysicsBody(rectangleOf: size)
+        physicsBody = SKPhysicsBody(circleOfRadius: radius)
         physicsBody?.categoryBitMask = PhysicsCategory.player
         physicsBody?.contactTestBitMask = PhysicsCategory.wall
         physicsBody?.collisionBitMask = PhysicsCategory.wall
