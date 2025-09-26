@@ -20,8 +20,7 @@ class GameScene: SKScene {
     override func didMove(to view: SKView) {
         setupScene()
         createPlayer()
-        createOrganicBoundaries()
-        createRockFormations()
+        loadMapFromJSON()
         setupCamera()
     }
 
@@ -44,9 +43,61 @@ class GameScene: SKScene {
 
     private func createPlayer() {
         player = Player()
-        // Start player closer to center of the larger map for better exploration
+        // Initial position will be updated by loadMapFromJSON()
         player.position = CGPoint(x: size.width * 0.25, y: size.height * 0.25)
         addChild(player)
+    }
+
+    private func loadMapFromJSON() {
+        do {
+            // Try to load Map1.json
+            let mapData = try MapLoader.shared.loadMap(named: "Map1")
+
+            // Update map size if different from default
+            let mapSize = MapLoader.shared.getMapSize(from: mapData)
+            if mapSize != self.size {
+                self.size = mapSize
+                setupScene() // Re-setup scene with new size
+            }
+
+            // Update player start position
+            let startPosition = MapLoader.shared.getPlayerStartPosition(from: mapData)
+            player.position = startPosition
+
+            // Create all rock formations from JSON
+            let rocks = MapLoader.shared.createAllRocks(from: mapData)
+
+            // Add boundary rocks
+            boundaryRocks = rocks.boundary
+            for rock in boundaryRocks {
+                addChild(rock)
+            }
+
+            // Add interior rocks
+            for rock in rocks.interior {
+                addChild(rock)
+                rockFormations.append(rock)
+            }
+
+            // Add signature formations
+            for rock in rocks.signature {
+                addChild(rock)
+                rockFormations.append(rock)
+            }
+
+            // Print map info for debugging
+            let mapInfo = MapLoader.shared.getMapInfo(from: mapData)
+            print("Loaded map: \(mapInfo.name) v\(mapInfo.version) - \(mapInfo.description)")
+            print("Total rocks: \(rocks.boundary.count) boundary, \(rocks.interior.count) interior, \(rocks.signature.count) signature")
+
+        } catch {
+            print("Failed to load Map1.json: \(error.localizedDescription)")
+            print("Falling back to procedural generation...")
+
+            // Fallback to original procedural generation
+            createOrganicBoundaries()
+            createRockFormations()
+        }
     }
 
     private func createOrganicBoundaries() {
