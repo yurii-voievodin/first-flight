@@ -40,13 +40,6 @@ class GameScene: SKScene {
         largeBackground.position = CGPoint(x: size.width / 2, y: size.height / 2)
         largeBackground.zPosition = -100
         addChild(largeBackground)
-
-        // Create playable area background (mint color) inside the walls
-        let playableAreaSize = CGSize(width: size.width - 20, height: size.height - 20) // Account for wall thickness
-        let playableBackground = SKSpriteNode(color: .systemMint, size: playableAreaSize)
-        playableBackground.position = CGPoint(x: size.width / 2, y: size.height / 2)
-        playableBackground.zPosition = -50
-        addChild(playableBackground)
     }
 
     private func createPlayer() {
