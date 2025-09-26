@@ -24,8 +24,8 @@ class Player: SKShapeNode {
     private func setupPhysics() {
         physicsBody = SKPhysicsBody(circleOfRadius: radius)
         physicsBody?.categoryBitMask = PhysicsCategory.player
-        physicsBody?.contactTestBitMask = PhysicsCategory.wall
-        physicsBody?.collisionBitMask = PhysicsCategory.wall
+        physicsBody?.contactTestBitMask = PhysicsCategory.wall | PhysicsCategory.rock
+        physicsBody?.collisionBitMask = PhysicsCategory.wall | PhysicsCategory.rock
         physicsBody?.isDynamic = true
         physicsBody?.affectedByGravity = false
         physicsBody?.allowsRotation = false

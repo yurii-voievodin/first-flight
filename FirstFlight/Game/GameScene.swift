@@ -14,11 +14,13 @@ class GameScene: SKScene {
     private var player: Player!
     private var gameCamera: SKCameraNode!
     private var walls: [SKSpriteNode] = []
+    private var rockFormations: [RockFormation] = []
 
     override func didMove(to view: SKView) {
         setupScene()
         createPlayer()
         createWalls()
+        createRockFormations()
         setupCamera()
     }
 
@@ -93,27 +95,53 @@ class GameScene: SKScene {
         addChild(rightWall)
         walls.append(rightWall)
 
-        // Add obstacles distributed across the larger map
-        createObstacle(at: CGPoint(x: 400, y: 300), size: CGSize(width: 150, height: 40))
-        createObstacle(at: CGPoint(x: 800, y: 600), size: CGSize(width: 200, height: 30))
-        createObstacle(at: CGPoint(x: 1200, y: 400), size: CGSize(width: 180, height: 50))
-        createObstacle(at: CGPoint(x: 1600, y: 800), size: CGSize(width: 160, height: 35))
-        createObstacle(at: CGPoint(x: 600, y: 1200), size: CGSize(width: 220, height: 45))
-        createObstacle(at: CGPoint(x: 1000, y: 1500), size: CGSize(width: 140, height: 40))
-        createObstacle(at: CGPoint(x: 1400, y: 1200), size: CGSize(width: 190, height: 30))
-        createObstacle(at: CGPoint(x: 300, y: 1600), size: CGSize(width: 170, height: 50))
-        createObstacle(at: CGPoint(x: 1700, y: 600), size: CGSize(width: 130, height: 60))
-        createObstacle(at: CGPoint(x: 500, y: 900), size: CGSize(width: 250, height: 25))
     }
 
-    private func createObstacle(at position: CGPoint, size: CGSize) {
-        let obstacle = SKSpriteNode(color: .systemBrown, size: size)
-        obstacle.position = position
-        obstacle.physicsBody = SKPhysicsBody(rectangleOf: obstacle.size)
-        obstacle.physicsBody?.categoryBitMask = PhysicsCategory.wall
-        obstacle.physicsBody?.isDynamic = false
-        addChild(obstacle)
-        walls.append(obstacle)
+    private func createRockFormations() {
+        // Create diverse rock formations across the map
+        let mapArea = CGRect(x: 100, y: 100, width: size.width - 200, height: size.height - 200)
+
+        // Generate natural rock placements using the terrain generator
+        let placements = TerrainGenerator.shared.generateNaturalRockPlacements(in: mapArea, density: 0.25)
+
+        for placement in placements {
+            let rock = RockFormation(type: placement.type, size: placement.size, position: placement.position)
+            addChild(rock)
+            rockFormations.append(rock)
+        }
+
+        // Add some specific interesting formations manually
+        createSignatureRockFormations()
+    }
+
+    private func createSignatureRockFormations() {
+        // Large cave system in the center-north area
+        let caveSystem = RockFormation(type: .cave, size: CGSize(width: 300, height: 200), position: CGPoint(x: 1000, y: 1400))
+        addChild(caveSystem)
+        rockFormations.append(caveSystem)
+
+        // Dramatic overhang in the west
+        let overhang = RockFormation(type: .overhang, size: CGSize(width: 250, height: 180), position: CGPoint(x: 400, y: 1000))
+        addChild(overhang)
+        rockFormations.append(overhang)
+
+        // Rock cluster creating a natural maze in the east
+        let cluster1 = RockFormation(type: .cluster, size: CGSize(width: 200, height: 150), position: CGPoint(x: 1600, y: 800))
+        let cluster2 = RockFormation(type: .cluster, size: CGSize(width: 180, height: 160), position: CGPoint(x: 1500, y: 600))
+        let cluster3 = RockFormation(type: .cluster, size: CGSize(width: 220, height: 140), position: CGPoint(x: 1700, y: 650))
+
+        addChild(cluster1)
+        addChild(cluster2)
+        addChild(cluster3)
+        rockFormations.append(contentsOf: [cluster1, cluster2, cluster3])
+
+        // Tall spires creating landmark navigation points
+        let spire1 = RockFormation(type: .spire, size: CGSize(width: 80, height: 300), position: CGPoint(x: 600, y: 600))
+        let spire2 = RockFormation(type: .spire, size: CGSize(width: 90, height: 280), position: CGPoint(x: 1200, y: 1200))
+
+        addChild(spire1)
+        addChild(spire2)
+        rockFormations.append(contentsOf: [spire1, spire2])
     }
 
     private func setupCamera() {
