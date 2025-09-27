@@ -6,7 +6,6 @@
 //
 
 import SpriteKit
-import GameplayKit
 
 
 class GameScene: SKScene {
@@ -91,149 +90,12 @@ class GameScene: SKScene {
             print("Total rocks: \(rocks.boundary.count) boundary, \(rocks.interior.count) interior, \(rocks.signature.count) signature")
 
         } catch {
-            print("Failed to load Map1.json: \(error.localizedDescription)")
-            print("Falling back to procedural generation...")
-
-            // Fallback to original procedural generation
-            createOrganicBoundaries()
-            createRockFormations()
+            print("ERROR: Failed to load Map1.json: \(error.localizedDescription)")
+            print("Cannot start game without valid map data.")
+            fatalError("Map loading failed - no valid map data available")
         }
     }
 
-    private func createOrganicBoundaries() {
-        // Create organic rock boundaries instead of rectangular walls
-        // Try different boundary types: .valleyDefault, .canyonDefault, or .mixedDefault
-        let boundaryParameters = BoundaryParameters.mixedDefault
-        let mapBoundary = MapBoundary(mapSize: size, parameters: boundaryParameters)
-
-        // Generate the organic boundary
-        boundaryRocks = mapBoundary.generateBoundary()
-
-        // Add all boundary rocks to the scene
-        for rock in boundaryRocks {
-            addChild(rock)
-        }
-
-        // Add transition rocks extending inward for seamless boundary-to-interior transition
-        createBoundaryTransition()
-
-        // Add cave openings in boundary walls for hidden exploration
-        createBoundaryCaves()
-    }
-
-    private func createBoundaryTransition() {
-        // Create scattered rocks that transition from boundary to interior
-        let transitionRockCount = 20
-        let transitionZone: CGFloat = 200 // Distance inward from boundary
-
-        for _ in 0..<transitionRockCount {
-            // Pick a random boundary rock as reference
-            guard let boundaryRock = boundaryRocks.randomElement() else { continue }
-
-            // Create transition rock positioned between boundary and interior
-            let randomOffset = CGVector(
-                dx: CGFloat(GKRandomSource.sharedRandom().nextUniform() - 0.5) * transitionZone,
-                dy: CGFloat(GKRandomSource.sharedRandom().nextUniform() - 0.5) * transitionZone
-            )
-
-            let transitionPosition = CGPoint(
-                x: boundaryRock.position.x + randomOffset.dx,
-                y: boundaryRock.position.y + randomOffset.dy
-            )
-
-            // Ensure transition rock is within map bounds
-            let clampedPosition = CGPoint(
-                x: max(100, min(size.width - 100, transitionPosition.x)),
-                y: max(100, min(size.height - 100, transitionPosition.y))
-            )
-
-            let transitionSize = CGSize(
-                width: 60 + CGFloat(GKRandomSource.sharedRandom().nextUniform()) * 80,
-                height: 50 + CGFloat(GKRandomSource.sharedRandom().nextUniform()) * 70
-            )
-
-            let transitionRock = RockFormation(type: .boulder, size: transitionSize, position: clampedPosition)
-            addChild(transitionRock)
-            boundaryRocks.append(transitionRock)
-        }
-    }
-
-    private func createBoundaryCaves() {
-        // Add cave openings in boundary walls for exploration
-        let caveCount = 3
-
-        for _ in 0..<caveCount {
-            // Find a suitable boundary location for a cave
-            guard let boundaryRock = boundaryRocks.randomElement() else { continue }
-
-            // Create a cave formation near the boundary
-            let caveOffset = CGVector(
-                dx: CGFloat(GKRandomSource.sharedRandom().nextUniform() - 0.5) * 150,
-                dy: CGFloat(GKRandomSource.sharedRandom().nextUniform() - 0.5) * 150
-            )
-
-            let cavePosition = CGPoint(
-                x: boundaryRock.position.x + caveOffset.dx,
-                y: boundaryRock.position.y + caveOffset.dy
-            )
-
-            let caveSize = CGSize(
-                width: 180 + CGFloat(GKRandomSource.sharedRandom().nextUniform()) * 120,
-                height: 120 + CGFloat(GKRandomSource.sharedRandom().nextUniform()) * 80
-            )
-
-            let boundaryCave = RockFormation(type: .cave, size: caveSize, position: cavePosition)
-            addChild(boundaryCave)
-            boundaryRocks.append(boundaryCave)
-        }
-    }
-
-    private func createRockFormations() {
-        // Create diverse rock formations across the map
-        let mapArea = CGRect(x: 100, y: 100, width: size.width - 200, height: size.height - 200)
-
-        // Generate natural rock placements using the terrain generator
-        let placements = TerrainGenerator.shared.generateNaturalRockPlacements(in: mapArea, density: 0.25)
-
-        for placement in placements {
-            let rock = RockFormation(type: placement.type, size: placement.size, position: placement.position)
-            addChild(rock)
-            rockFormations.append(rock)
-        }
-
-        // Add some specific interesting formations manually
-        createSignatureRockFormations()
-    }
-
-    private func createSignatureRockFormations() {
-        // Large cave system in the center-north area
-        let caveSystem = RockFormation(type: .cave, size: CGSize(width: 300, height: 200), position: CGPoint(x: 1000, y: 1400))
-        addChild(caveSystem)
-        rockFormations.append(caveSystem)
-
-        // Dramatic overhang in the west
-        let overhang = RockFormation(type: .overhang, size: CGSize(width: 250, height: 180), position: CGPoint(x: 400, y: 1000))
-        addChild(overhang)
-        rockFormations.append(overhang)
-
-        // Rock cluster creating a natural maze in the east
-        let cluster1 = RockFormation(type: .cluster, size: CGSize(width: 200, height: 150), position: CGPoint(x: 1600, y: 800))
-        let cluster2 = RockFormation(type: .cluster, size: CGSize(width: 180, height: 160), position: CGPoint(x: 1500, y: 600))
-        let cluster3 = RockFormation(type: .cluster, size: CGSize(width: 220, height: 140), position: CGPoint(x: 1700, y: 650))
-
-        addChild(cluster1)
-        addChild(cluster2)
-        addChild(cluster3)
-        rockFormations.append(contentsOf: [cluster1, cluster2, cluster3])
-
-        // Tall spires creating landmark navigation points
-        let spire1 = RockFormation(type: .spire, size: CGSize(width: 80, height: 300), position: CGPoint(x: 600, y: 600))
-        let spire2 = RockFormation(type: .spire, size: CGSize(width: 90, height: 280), position: CGPoint(x: 1200, y: 1200))
-
-        addChild(spire1)
-        addChild(spire2)
-        rockFormations.append(contentsOf: [spire1, spire2])
-    }
 
     private func setupCamera() {
         gameCamera = SKCameraNode()
