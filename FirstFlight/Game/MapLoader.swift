@@ -58,6 +58,14 @@ class MapLoader {
                 size: boundaryRock.size.cgSize,
                 position: boundaryRock.position.cgPoint
             )
+
+            // Add debug info
+            rock.debugInfo["type"] = boundaryRock.type
+            rock.debugInfo["position"] = "(\(Int(boundaryRock.position.x)), \(Int(boundaryRock.position.y)))"
+            if let isGap = boundaryRock.isGap {
+                rock.debugInfo["isGap"] = String(isGap)
+            }
+
             rocks.append(rock)
         }
 
@@ -78,6 +86,10 @@ class MapLoader {
             if let rotation = interiorRock.rotation {
                 rock.zRotation = CGFloat(rotation * .pi / 180) // Convert degrees to radians
             }
+
+            // Add debug info
+            rock.debugInfo["type"] = interiorRock.type
+            rock.debugInfo["position"] = "(\(Int(interiorRock.position.x)), \(Int(interiorRock.position.y)))"
 
             rocks.append(rock)
         }
@@ -105,6 +117,11 @@ class MapLoader {
                     rock.userData?[key] = value
                 }
             }
+
+            // Add debug info
+            rock.debugInfo["type"] = signatureFormation.type
+            rock.debugInfo["name"] = signatureFormation.name
+            rock.debugInfo["position"] = "(\(Int(signatureFormation.position.x)), \(Int(signatureFormation.position.y)))"
 
             rocks.append(rock)
         }

@@ -16,6 +16,9 @@ class GameScene: SKScene {
     private var rockFormations: [RockFormation] = []
     private var boundaryRocks: [RockFormation] = []
 
+    // Debug mode flag
+    var showDebugLabels: Bool = true
+
     override func didMove(to view: SKView) {
         setupScene()
         createPlayer()
@@ -71,18 +74,27 @@ class GameScene: SKScene {
             boundaryRocks = rocks.boundary
             for rock in boundaryRocks {
                 addChild(rock)
+                if showDebugLabels {
+                    rock.addDebugLabel()
+                }
             }
 
             // Add interior rocks
             for rock in rocks.interior {
                 addChild(rock)
                 rockFormations.append(rock)
+                if showDebugLabels {
+                    rock.addDebugLabel()
+                }
             }
 
             // Add signature formations
             for rock in rocks.signature {
                 addChild(rock)
                 rockFormations.append(rock)
+                if showDebugLabels {
+                    rock.addDebugLabel()
+                }
             }
 
             // Print map info for debugging

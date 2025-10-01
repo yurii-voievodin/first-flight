@@ -11,6 +11,10 @@ enum RockFormationType {
 class RockFormation: SKShapeNode {
     private let formationType: RockFormationType
     private let rockColor: SKColor = .systemBrown
+    private var debugLabel: SKLabelNode?
+
+    // Debug information
+    var debugInfo: [String: String] = [:]
 
     init(type: RockFormationType, size: CGSize, position: CGPoint) {
         self.formationType = type
@@ -208,5 +212,61 @@ class RockFormation: SKShapeNode {
         }
 
         return bodies
+    }
+
+    // MARK: - Debug Functionality
+
+    func addDebugLabel() {
+        // Remove existing label if any
+        debugLabel?.removeFromParent()
+
+        // Create label text from debug info
+        var labelText = ""
+        for (key, value) in debugInfo.sorted(by: { $0.key < $1.key }) {
+            if !labelText.isEmpty {
+                labelText += ", "
+            }
+            labelText += "\(key): \(value)"
+        }
+
+        guard !labelText.isEmpty else { return }
+
+        // Create label node
+        let label = SKLabelNode(fontNamed: "Courier")
+        label.text = labelText
+        label.numberOfLines = 0
+        label.fontSize = 12
+        label.fontColor = .white
+        label.horizontalAlignmentMode = .center
+        label.verticalAlignmentMode = .center
+
+        // Create background for better visibility
+        let background = SKShapeNode(rectOf: CGSize(width: label.frame.width + 8, height: label.frame.height + 4), cornerRadius: 3)
+        background.fillColor = .black.withAlphaComponent(0.7)
+        background.strokeColor = .white
+        background.lineWidth = 1
+        background.zPosition = 100
+
+        // Position label above the rock (calculate bounds)
+        if let path = self.path {
+            let boundingBox = path.boundingBox
+            background.position = CGPoint(x: boundingBox.midX, y: boundingBox.maxY + 15)
+        } else {
+            background.position = CGPoint(x: 0, y: 50)
+        }
+
+        // Add label to background
+        label.position = CGPoint.zero
+        label.zPosition = 1
+        background.addChild(label)
+
+        // Add background to this node
+        addChild(background)
+        debugLabel = label
+    }
+
+    func removeDebugLabel() {
+        debugLabel?.parent?.removeFromParent()
+        debugLabel = nil
     }
 }
