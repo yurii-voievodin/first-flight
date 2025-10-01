@@ -21,6 +21,7 @@ class GameScene: SKScene {
         createPlayer()
         loadMapFromJSON()
         setupCamera()
+        updateCameraConstraints() // Apply constraints after view is available
     }
 
     private func setupScene() {
@@ -105,6 +106,22 @@ class GameScene: SKScene {
         gameCamera.position = player.position
     }
 
+    private func updateCameraConstraints() {
+        guard let view = view else { return }
+
+        // Account for viewport size when constraining camera position
+        let viewportWidth = view.bounds.width
+        let viewportHeight = view.bounds.height
+
+        // Camera position must be constrained so viewport edges don't exceed scene bounds
+        let xRange = SKRange(lowerLimit: viewportWidth / 2, upperLimit: size.width - viewportWidth / 2)
+        let yRange = SKRange(lowerLimit: viewportHeight / 2, upperLimit: size.height - viewportHeight / 2)
+        let edgeConstraint = SKConstraint.positionX(xRange, y: yRange)
+        edgeConstraint.referenceNode = self
+
+        gameCamera.constraints = [edgeConstraint]
+    }
+
     func touchDown(atPoint pos : CGPoint) {
         // Конвертуємо координати дотику з екрана в світові координати сцени
         let worldPos = convertPoint(fromView: pos)
@@ -124,32 +141,13 @@ class GameScene: SKScene {
     }
 
     private func updateCamera() {
-        guard let view = view else { return }
-
-        let targetX = player.position.x
-        let targetY = player.position.y
-
-        // Розмір області перегляду (viewport)
-        let viewportWidth = view.bounds.width
-        let viewportHeight = view.bounds.height
-
-        // Обмеження камери в межах сцени
-        let minX = viewportWidth / 2
-        let maxX = size.width - viewportWidth / 2
-        let minY = viewportHeight / 2
-        let maxY = size.height - viewportHeight / 2
-
-        // Якщо сцена менша за viewport, центруємо камеру
-        let clampedX = size.width > viewportWidth ? max(minX, min(maxX, targetX)) : size.width / 2
-        let clampedY = size.height > viewportHeight ? max(minY, min(maxY, targetY)) : size.height / 2
-
-        // Плавний рух камери
+        // Simply follow the player - SKConstraint will handle bounds
         let currentX = gameCamera.position.x
         let currentY = gameCamera.position.y
         let lerpFactor: CGFloat = 0.1
 
-        let newX = currentX + (clampedX - currentX) * lerpFactor
-        let newY = currentY + (clampedY - currentY) * lerpFactor
+        let newX = currentX + (player.position.x - currentX) * lerpFactor
+        let newY = currentY + (player.position.y - currentY) * lerpFactor
 
         gameCamera.position = CGPoint(x: newX, y: newY)
     }

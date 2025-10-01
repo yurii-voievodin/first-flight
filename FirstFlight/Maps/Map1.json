@@ -186,6 +186,180 @@
       "size": { "width": 150, "height": 130 },
       "type": "boulder",
       "thickness": 130
+    },
+    {
+      "position": { "x": 50, "y": 1000 },
+      "size": { "width": 140, "height": 180 },
+      "type": "cluster",
+      "thickness": 140
+    },
+    {
+      "position": { "x": 55, "y": 1250 },
+      "size": { "width": 150, "height": 160 },
+      "type": "boulder",
+      "thickness": 135
+    },
+    {
+      "position": { "x": 60, "y": 150 },
+      "size": { "width": 160, "height": 140 },
+      "type": "boulder",
+      "thickness": 130
+    },
+    {
+      "position": { "x": 1100, "y": 50 },
+      "size": { "width": 170, "height": 130 },
+      "type": "cluster",
+      "thickness": 135
+    },
+    {
+      "position": { "x": 1350, "y": 55 },
+      "size": { "width": 150, "height": 120 },
+      "type": "boulder",
+      "thickness": 125
+    },
+    {
+      "position": { "x": 1600, "y": 60 },
+      "size": { "width": 160, "height": 140 },
+      "type": "overhang",
+      "thickness": 140
+    },
+    {
+      "position": { "x": 1800, "y": 1950 },
+      "size": { "width": 180, "height": 140 },
+      "type": "boulder",
+      "thickness": 135
+    },
+    {
+      "position": { "x": 200, "y": 1960 },
+      "size": { "width": 150, "height": 130 },
+      "type": "cluster",
+      "thickness": 130
+    },
+    {
+      "position": { "x": 1950, "y": 200 },
+      "size": { "width": 140, "height": 180 },
+      "type": "boulder",
+      "thickness": 140
+    },
+    {
+      "position": { "x": 1960, "y": 450 },
+      "size": { "width": 150, "height": 170 },
+      "type": "cluster",
+      "thickness": 145
+    },
+    {
+      "position": { "x": 1930, "y": 725 },
+      "size": { "width": 160, "height": 150 },
+      "type": "boulder",
+      "thickness": 135
+    },
+    {
+      "position": { "x": 1930, "y": 975 },
+      "size": { "width": 150, "height": 160 },
+      "type": "overhang",
+      "thickness": 140
+    },
+    {
+      "position": { "x": 1910, "y": 1225 },
+      "size": { "width": 170, "height": 150 },
+      "type": "boulder",
+      "thickness": 140
+    },
+    {
+      "position": { "x": 1890, "y": 1475 },
+      "size": { "width": 160, "height": 140 },
+      "type": "cluster",
+      "thickness": 135
+    },
+    {
+      "position": { "x": 1870, "y": 1725 },
+      "size": { "width": 150, "height": 130 },
+      "type": "boulder",
+      "thickness": 130
+    },
+    {
+      "position": { "x": 1450, "y": 1960 },
+      "size": { "width": 170, "height": 130 },
+      "type": "boulder",
+      "thickness": 130
+    },
+    {
+      "position": { "x": 1750, "y": 1950 },
+      "size": { "width": 160, "height": 140 },
+      "type": "cluster",
+      "thickness": 135
+    },
+    {
+      "position": { "x": 475, "y": 1960 },
+      "size": { "width": 150, "height": 130 },
+      "type": "boulder",
+      "thickness": 130
+    },
+    {
+      "position": { "x": 725, "y": 1950 },
+      "size": { "width": 170, "height": 140 },
+      "type": "overhang",
+      "thickness": 140
+    },
+    {
+      "position": { "x": 975, "y": 1960 },
+      "size": { "width": 160, "height": 130 },
+      "type": "cluster",
+      "thickness": 130
+    },
+    {
+      "position": { "x": 1225, "y": 1955 },
+      "size": { "width": 150, "height": 135 },
+      "type": "boulder",
+      "thickness": 135
+    },
+    {
+      "position": { "x": 50, "y": 525 },
+      "size": { "width": 140, "height": 160 },
+      "type": "boulder",
+      "thickness": 135
+    },
+    {
+      "position": { "x": 55, "y": 775 },
+      "size": { "width": 150, "height": 150 },
+      "type": "cluster",
+      "thickness": 140
+    },
+    {
+      "position": { "x": 60, "y": 1025 },
+      "size": { "width": 160, "height": 170 },
+      "type": "overhang",
+      "thickness": 145
+    },
+    {
+      "position": { "x": 70, "y": 1525 },
+      "size": { "width": 150, "height": 140 },
+      "type": "boulder",
+      "thickness": 135
+    },
+    {
+      "position": { "x": 65, "y": 1775 },
+      "size": { "width": 140, "height": 130 },
+      "type": "cluster",
+      "thickness": 130
+    },
+    {
+      "position": { "x": 55, "y": 275 },
+      "size": { "width": 150, "height": 150 },
+      "type": "boulder",
+      "thickness": 135
+    },
+    {
+      "position": { "x": 850, "y": 50 },
+      "size": { "width": 160, "height": 130 },
+      "type": "cluster",
+      "thickness": 130
+    },
+    {
+      "position": { "x": 1850, "y": 50 },
+      "size": { "width": 140, "height": 120 },
+      "type": "boulder",
+      "thickness": 125
     }
   ],
   "interiorRocks": [
