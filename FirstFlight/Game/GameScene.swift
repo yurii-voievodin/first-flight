@@ -126,6 +126,29 @@ class GameScene: SKScene {
         // Конвертуємо координати дотику з екрана в світові координати сцени
         let worldPos = convertPoint(fromView: pos)
         player.moveTo(position: worldPos)
+
+        // Show tap indicator
+        showTapIndicator(at: worldPos)
+    }
+
+    private func showTapIndicator(at position: CGPoint) {
+        let radius: CGFloat = 20.0 // Match player size
+        let circlePath = CGPath(ellipseIn: CGRect(x: -radius, y: -radius, width: radius * 2, height: radius * 2), transform: nil)
+
+        let indicator = SKShapeNode(path: circlePath)
+        indicator.fillColor = .white.withAlphaComponent(0.5)
+        indicator.strokeColor = .clear
+        indicator.position = position
+        indicator.zPosition = 10 // Above most elements
+
+        addChild(indicator)
+
+        // Fade out and remove
+        let fadeOut = SKAction.fadeOut(withDuration: 0.5)
+        let remove = SKAction.removeFromParent()
+        let sequence = SKAction.sequence([fadeOut, remove])
+
+        indicator.run(sequence)
     }
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
