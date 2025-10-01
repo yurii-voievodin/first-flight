@@ -34,10 +34,20 @@ class Player: SKShapeNode {
     }
 
     func moveTo(position: CGPoint) {
-        let direction = CGVector(
-            dx: (position.x - self.position.x) / 2,
-            dy: (position.y - self.position.y) / 2
-        )
-        physicsBody?.velocity = direction
+        // Stop any current movement
+        removeAction(forKey: "move")
+
+        // Reset velocity to prevent inertia
+        physicsBody?.velocity = .zero
+
+        // Calculate distance and duration for consistent speed
+        let distance = hypot(position.x - self.position.x, position.y - self.position.y)
+        let speed: CGFloat = 150.0 // points per second
+        let duration = TimeInterval(distance / speed)
+
+        // Move directly to position with no overshoot
+        let moveAction = SKAction.move(to: position, duration: duration)
+        moveAction.timingMode = .linear
+        run(moveAction, withKey: "move")
     }
 }

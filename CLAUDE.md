@@ -59,3 +59,4 @@ xcodebuild test -project FirstFlight.xcodeproj -scheme FirstFlight -destination 
 - Scene loads from `GameScene.sks` file with asset-based configuration
 - Status bar is hidden for immersive game experience
 - Debug mode shows FPS and node count overlays
+- Don't build a project until I ask it directly
