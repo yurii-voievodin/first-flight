@@ -178,6 +178,12 @@ class GameScene: SKScene {
 
 extension GameScene: SKPhysicsContactDelegate {
     func didBegin(_ contact: SKPhysicsContact) {
-        // Обробка колізій між персонажем і стінами
+        let collision = contact.bodyA.categoryBitMask | contact.bodyB.categoryBitMask
+
+        // Check if player collided with wall or rock
+        if collision == PhysicsCategory.player | PhysicsCategory.wall ||
+           collision == PhysicsCategory.player | PhysicsCategory.rock {
+            player.stopMovement()
+        }
     }
 }

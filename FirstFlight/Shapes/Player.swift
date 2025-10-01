@@ -50,4 +50,9 @@ class Player: SKShapeNode {
         moveAction.timingMode = .linear
         run(moveAction, withKey: "move")
     }
+
+    func stopMovement() {
+        removeAction(forKey: "move")
+        physicsBody?.velocity = .zero
+    }
 }
