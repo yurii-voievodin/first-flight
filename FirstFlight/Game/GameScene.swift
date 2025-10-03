@@ -17,7 +17,7 @@ class GameScene: SKScene {
     private var boundaryRocks: [RockFormation] = []
 
     // Debug mode flag
-    var showDebugLabels: Bool = true
+    var showDebugLabels: Bool = false
 
     override func didMove(to view: SKView) {
         setupScene()
