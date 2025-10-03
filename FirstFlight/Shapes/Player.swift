@@ -261,7 +261,7 @@ class Player: SKNode {
 
         // Calculate distance and duration for consistent speed
         let distance = hypot(position.x - self.position.x, position.y - self.position.y)
-        let speed: CGFloat = 150.0 // points per second
+        let speed: CGFloat = 55.0 // points per second
         let duration = TimeInterval(distance / speed)
 
         // Move directly to position with no overshoot
@@ -292,13 +292,13 @@ class Player: SKNode {
 
     private func startWalkingAnimation() {
         // Step duration for each limb movement
-        let stepDuration: TimeInterval = 0.25
+        let stepDuration: TimeInterval = 0.15
 
         // Movement angles
-        let thighSwingAngle: CGFloat = .pi / 5 // 36 degrees
-        let kneeBendAngle: CGFloat = .pi / 6 // 30 degrees
-        let upperArmSwingAngle: CGFloat = .pi / 6 // 30 degrees
-        let elbowBendAngle: CGFloat = .pi / 7 // 25 degrees
+        let thighSwingAngle: CGFloat = .pi / 20 // 9 degrees
+        let kneeBendAngle: CGFloat = .pi / 12 // 15 degrees
+        let upperArmSwingAngle: CGFloat = .pi / 24 // 7.5 degrees
+        let elbowBendAngle: CGFloat = .pi / 14 // 12.5 degrees
 
         // === RIGHT LEG (Phase 1: steps first) ===
         // Thigh swings the whole leg
