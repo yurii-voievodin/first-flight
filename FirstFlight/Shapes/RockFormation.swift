@@ -119,24 +119,60 @@ class RockFormation: SKShapeNode {
     private func createClusterPath(size: CGSize) -> CGPath {
         let path = CGMutablePath()
 
-        // Create multiple connected boulders
-        let boulder1Size = CGSize(width: size.width * 0.6, height: size.height * 0.6)
-        let boulder1Path = createBoulderPath(size: boulder1Size)
-        path.addPath(boulder1Path)
+        // Create a single unified cluster shape with 3 interconnected rock formations
+        let w = size.width
+        let h = size.height
 
-        // Second boulder, offset and smaller
-        let boulder2Size = CGSize(width: size.width * 0.4, height: size.height * 0.5)
-        var boulder2Path = createBoulderPath(size: boulder2Size)
-        var transform = CGAffineTransform(translationX: size.width * 0.5, y: size.height * 0.3)
-        boulder2Path = boulder2Path.copy(using: &transform)!
-        path.addPath(boulder2Path)
+        // Start from the left boulder
+        path.move(to: CGPoint(x: w * 0.05, y: h * 0.5))
 
-        // Third boulder, smaller and offset
-        let boulder3Size = CGSize(width: size.width * 0.3, height: size.height * 0.4)
-        var boulder3Path = createBoulderPath(size: boulder3Size)
-        transform = CGAffineTransform(translationX: size.width * 0.1, y: size.height * 0.5)
-        boulder3Path = boulder3Path.copy(using: &transform)!
-        path.addPath(boulder3Path)
+        // Left boulder - bottom to top
+        path.addCurve(to: CGPoint(x: w * 0.15, y: h * 0.85),
+                     control1: CGPoint(x: w * 0.0, y: h * 0.65),
+                     control2: CGPoint(x: w * 0.05, y: h * 0.8))
+        path.addCurve(to: CGPoint(x: w * 0.35, y: h * 0.95),
+                     control1: CGPoint(x: w * 0.2, y: h * 0.92),
+                     control2: CGPoint(x: w * 0.27, y: h * 0.95))
+
+        // Transition to middle boulder
+        path.addCurve(to: CGPoint(x: w * 0.5, y: h * 0.88),
+                     control1: CGPoint(x: w * 0.4, y: h * 0.93),
+                     control2: CGPoint(x: w * 0.45, y: h * 0.9))
+
+        // Middle boulder - bottom to top
+        path.addCurve(to: CGPoint(x: w * 0.65, y: h * 0.7),
+                     control1: CGPoint(x: w * 0.6, y: h * 0.85),
+                     control2: CGPoint(x: w * 0.65, y: h * 0.78))
+
+        // Transition to right boulder
+        path.addCurve(to: CGPoint(x: w * 0.8, y: h * 0.6),
+                     control1: CGPoint(x: w * 0.7, y: h * 0.68),
+                     control2: CGPoint(x: w * 0.75, y: h * 0.63))
+
+        // Right boulder - side to top
+        path.addCurve(to: CGPoint(x: w * 0.85, y: h * 0.4),
+                     control1: CGPoint(x: w * 0.88, y: h * 0.55),
+                     control2: CGPoint(x: w * 0.9, y: h * 0.47))
+        path.addCurve(to: CGPoint(x: w * 0.75, y: h * 0.25),
+                     control1: CGPoint(x: w * 0.82, y: h * 0.32),
+                     control2: CGPoint(x: w * 0.8, y: h * 0.27))
+
+        // Top of middle boulder
+        path.addCurve(to: CGPoint(x: w * 0.5, y: h * 0.2),
+                     control1: CGPoint(x: w * 0.68, y: h * 0.22),
+                     control2: CGPoint(x: w * 0.58, y: h * 0.2))
+
+        // Top of left boulder
+        path.addCurve(to: CGPoint(x: w * 0.2, y: h * 0.3),
+                     control1: CGPoint(x: w * 0.4, y: h * 0.2),
+                     control2: CGPoint(x: w * 0.28, y: h * 0.24))
+
+        // Back to start
+        path.addCurve(to: CGPoint(x: w * 0.05, y: h * 0.5),
+                     control1: CGPoint(x: w * 0.12, y: h * 0.38),
+                     control2: CGPoint(x: w * 0.07, y: h * 0.42))
+
+        path.closeSubpath()
 
         return path
     }
