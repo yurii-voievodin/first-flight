@@ -296,9 +296,9 @@ class Player: SKNode {
 
         // Movement angles
         let thighSwingAngle: CGFloat = .pi / 20 // 9 degrees
-        let kneeBendAngle: CGFloat = .pi / 12 // 15 degrees
+        let kneeBendAngle: CGFloat = .pi / 10 // 15 degrees
         let upperArmSwingAngle: CGFloat = .pi / 24 // 7.5 degrees
-        let elbowBendAngle: CGFloat = .pi / 14 // 12.5 degrees
+        let elbowBendAngle: CGFloat = .pi / 10 // 12.5 degrees
 
         // === RIGHT LEG (Phase 1: steps first) ===
         // Thigh swings the whole leg
