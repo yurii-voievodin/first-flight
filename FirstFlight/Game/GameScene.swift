@@ -10,7 +10,8 @@ import SpriteKit
 
 class GameScene: SKScene {
 
-    private var player: Player!
+    // private var player: Player!
+    private var player: Spider!
     private var gameCamera: SKCameraNode!
     private var walls: [SKSpriteNode] = []
     private var rockFormations: [RockFormation] = []
@@ -45,7 +46,8 @@ class GameScene: SKScene {
     }
 
     private func createPlayer() {
-        player = Player()
+        // player = Player()
+        player = Spider()
         // Initial position will be updated by loadMapFromJSON()
         player.position = CGPoint(x: size.width * 0.25, y: size.height * 0.25)
         addChild(player)
