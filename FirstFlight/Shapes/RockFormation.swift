@@ -258,11 +258,11 @@ class RockFormation: SKShapeNode {
 
         // Create label text from debug info
         var labelText = ""
-        for (key, value) in debugInfo.sorted(by: { $0.key < $1.key }) {
+        for (_, value) in debugInfo.sorted(by: { $0.key < $1.key }) {
             if !labelText.isEmpty {
                 labelText += ", "
             }
-            labelText += "\(key): \(value)"
+            labelText += value
         }
 
         guard !labelText.isEmpty else { return }
