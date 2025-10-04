@@ -24,6 +24,9 @@ class Player: SKNode {
     private var head: SKShapeNode!
     private var helmetGlass: SKShapeNode!
 
+    // Equipment
+    private let blaster = Blaster()
+
     // Arms (multi-segment)
     private var leftUpperArm: SKShapeNode!
     private var leftElbow: SKShapeNode!
@@ -264,6 +267,8 @@ class Player: SKNode {
         rightHand.zPosition = 0.2
         rightWrist.addChild(rightHand)
 
+        rightHand.addChild(blaster)
+
         // Left Thigh - anchor at hip
         let thighSize = CGSize(width: 10, height: 16)
         let leftThighPath = CGPath(
@@ -424,6 +429,8 @@ class Player: SKNode {
 
         xScale = 1
 
+        var blasterOrientation: Blaster.Orientation = .down
+
         switch direction {
         case .up:
             backpack.zPosition = 1.6
@@ -431,8 +438,10 @@ class Player: SKNode {
             backpackStrap.isHidden = true
             helmetGlass.isHidden = true
             concealedJointNodes.forEach { $0.isHidden = true }
+            blasterOrientation = .up
         case .down:
             backpack.isHidden = true
+            blasterOrientation = .down
         case .right:
             backpack.alpha = 0.75
             backpack.zPosition = 0.9
@@ -443,6 +452,7 @@ class Player: SKNode {
             helmetGlass.alpha = 0.85
             helmetGlass.xScale = 0.75
             helmetGlass.position = CGPoint(x: 2.2, y: 2)
+            blasterOrientation = .right
         case .left:
             xScale = -1
             backpack.alpha = 0.75
@@ -454,7 +464,10 @@ class Player: SKNode {
             helmetGlass.alpha = 0.85
             helmetGlass.xScale = 0.75
             helmetGlass.position = CGPoint(x: 2.2, y: 2)
+            blasterOrientation = .left
         }
+
+        blaster.update(for: blasterOrientation)
     }
 
     private func setupPhysics() {
