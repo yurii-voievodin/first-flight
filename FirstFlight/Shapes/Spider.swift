@@ -266,6 +266,27 @@ class Spider: SKNode {
         let speed: CGFloat = 55.0 // points per second
         let duration = TimeInterval(distance / speed)
 
+        // Calculate direction angle toward target
+        let deltaX = position.x - self.position.x
+        let deltaY = position.y - self.position.y
+        let targetAngle = atan2(deltaY, deltaX) - .pi / 2
+
+        // Calculate shortest rotation path
+        let currentAngle = zRotation
+        var angleDifference = targetAngle - currentAngle
+
+        // Normalize to [-π, π] range for shortest path
+        while angleDifference > .pi {
+            angleDifference -= 2 * .pi
+        }
+        while angleDifference < -.pi {
+            angleDifference += 2 * .pi
+        }
+
+        // Rotate to face direction (quick rotation)
+        let rotateAction = SKAction.rotate(byAngle: angleDifference, duration: 0.15)
+        rotateAction.timingMode = .easeInEaseOut
+
         // Move directly to position with no overshoot
         let moveAction = SKAction.move(to: position, duration: duration)
         moveAction.timingMode = .linear
@@ -275,7 +296,7 @@ class Spider: SKNode {
             self?.stopWalkingAnimation()
         }
 
-        let sequence = SKAction.sequence([moveAction, stopAnimation])
+        let sequence = SKAction.sequence([rotateAction, moveAction, stopAnimation])
         run(sequence, withKey: "move")
 
         // Start walking animation
