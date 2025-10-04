@@ -13,17 +13,25 @@ class Player: SKNode {
     private var leftUpperArm: SKShapeNode!
     private var leftElbow: SKShapeNode!
     private var leftForearm: SKShapeNode!
+    private var leftWrist: SKShapeNode!
+    private var leftHand: SKShapeNode!
     private var rightUpperArm: SKShapeNode!
     private var rightElbow: SKShapeNode!
     private var rightForearm: SKShapeNode!
+    private var rightWrist: SKShapeNode!
+    private var rightHand: SKShapeNode!
 
     // Legs (multi-segment)
     private var leftThigh: SKShapeNode!
     private var leftKnee: SKShapeNode!
     private var leftCalf: SKShapeNode!
+    private var leftAnkle: SKShapeNode!
+    private var leftFoot: SKShapeNode!
     private var rightThigh: SKShapeNode!
     private var rightKnee: SKShapeNode!
     private var rightCalf: SKShapeNode!
+    private var rightAnkle: SKShapeNode!
+    private var rightFoot: SKShapeNode!
 
     override init() {
         super.init()
@@ -129,6 +137,20 @@ class Player: SKNode {
         leftForearm.zPosition = 0
         leftUpperArm.addChild(leftForearm)
 
+        leftWrist = SKShapeNode(circleOfRadius: 2.5)
+        leftWrist.fillColor = .systemGray
+        leftWrist.strokeColor = .clear
+        leftWrist.position = CGPoint(x: 0, y: -11)
+        leftWrist.zPosition = 0.6
+        leftForearm.addChild(leftWrist)
+
+        leftHand = SKShapeNode(rectOf: CGSize(width: 6, height: 8), cornerRadius: 2)
+        leftHand.fillColor = .white
+        leftHand.strokeColor = .clear
+        leftHand.position = CGPoint(x: 0, y: -8)
+        leftHand.zPosition = 0.2
+        leftWrist.addChild(leftHand)
+
         // Right Upper Arm - anchor at shoulder
         let rightUpperArmPath = CGPath(
             roundedRect: CGRect(x: -upperArmSize.width / 2, y: -upperArmSize.height * 0.85, width: upperArmSize.width, height: upperArmSize.height),
@@ -164,6 +186,20 @@ class Player: SKNode {
         rightForearm.position = CGPoint(x: 0, y: -12) // At elbow joint
         rightForearm.zPosition = 0
         rightUpperArm.addChild(rightForearm)
+
+        rightWrist = SKShapeNode(circleOfRadius: 2.5)
+        rightWrist.fillColor = .systemGray
+        rightWrist.strokeColor = .clear
+        rightWrist.position = CGPoint(x: 0, y: -11)
+        rightWrist.zPosition = 0.6
+        rightForearm.addChild(rightWrist)
+
+        rightHand = SKShapeNode(rectOf: CGSize(width: 6, height: 8), cornerRadius: 2)
+        rightHand.fillColor = .white
+        rightHand.strokeColor = .clear
+        rightHand.position = CGPoint(x: 0, y: -8)
+        rightHand.zPosition = 0.2
+        rightWrist.addChild(rightHand)
 
         // Left Thigh - anchor at hip
         let thighSize = CGSize(width: 10, height: 16)
@@ -203,6 +239,20 @@ class Player: SKNode {
         leftCalf.zPosition = 0
         leftThigh.addChild(leftCalf)
 
+        leftAnkle = SKShapeNode(circleOfRadius: 3)
+        leftAnkle.fillColor = .systemGray
+        leftAnkle.strokeColor = .clear
+        leftAnkle.position = CGPoint(x: 0, y: -12)
+        leftAnkle.zPosition = 0.6
+        leftCalf.addChild(leftAnkle)
+
+        leftFoot = SKShapeNode(rectOf: CGSize(width: 12, height: 6), cornerRadius: 2)
+        leftFoot.fillColor = .white
+        leftFoot.strokeColor = .clear
+        leftFoot.position = CGPoint(x: 0, y: -5)
+        leftFoot.zPosition = 0.2
+        leftAnkle.addChild(leftFoot)
+
         // Right Thigh - anchor at hip
         let rightThighPath = CGPath(
             roundedRect: CGRect(x: -thighSize.width / 2, y: -thighSize.height * 0.9, width: thighSize.width, height: thighSize.height),
@@ -238,6 +288,20 @@ class Player: SKNode {
         rightCalf.position = CGPoint(x: 0, y: -14) // At knee joint
         rightCalf.zPosition = 0
         rightThigh.addChild(rightCalf)
+
+        rightAnkle = SKShapeNode(circleOfRadius: 3)
+        rightAnkle.fillColor = .systemGray
+        rightAnkle.strokeColor = .clear
+        rightAnkle.position = CGPoint(x: 0, y: -12)
+        rightAnkle.zPosition = 0.6
+        rightCalf.addChild(rightAnkle)
+
+        rightFoot = SKShapeNode(rectOf: CGSize(width: 12, height: 6), cornerRadius: 2)
+        rightFoot.fillColor = .white
+        rightFoot.strokeColor = .clear
+        rightFoot.position = CGPoint(x: 0, y: -5)
+        rightFoot.zPosition = 0.2
+        rightAnkle.addChild(rightFoot)
     }
 
     private func setupPhysics() {
@@ -262,7 +326,38 @@ class Player: SKNode {
         // Calculate distance and duration for consistent speed
         let distance = hypot(position.x - self.position.x, position.y - self.position.y)
         let speed: CGFloat = 55.0 // points per second
-        let duration = TimeInterval(distance / speed)
+        let duration = max(TimeInterval(distance / speed), 0.05)
+
+        // Avoid needless animation if already at target
+        if distance < 1 {
+            let settle = SKAction.move(to: position, duration: 0.05)
+            let stopAnimation = SKAction.run { [weak self] in
+                self?.stopWalkingAnimation()
+            }
+            run(SKAction.sequence([settle, stopAnimation]), withKey: "move")
+            return
+        }
+
+        // Calculate direction angle toward target
+        let deltaX = position.x - self.position.x
+        let deltaY = position.y - self.position.y
+        let targetAngle = atan2(deltaY, deltaX) - .pi / 2
+
+        // Calculate shortest rotation path
+        let currentAngle = zRotation
+        var angleDifference = targetAngle - currentAngle
+
+        // Normalize to [-π, π] range for shortest path
+        while angleDifference > .pi {
+            angleDifference -= 2 * .pi
+        }
+        while angleDifference < -.pi {
+            angleDifference += 2 * .pi
+        }
+
+        // Rotate to face direction first
+        let rotateAction = SKAction.rotate(byAngle: angleDifference, duration: min(0.18, duration * 0.4))
+        rotateAction.timingMode = .easeInEaseOut
 
         // Move directly to position with no overshoot
         let moveAction = SKAction.move(to: position, duration: duration)
@@ -273,7 +368,7 @@ class Player: SKNode {
             self?.stopWalkingAnimation()
         }
 
-        let sequence = SKAction.sequence([moveAction, stopAnimation])
+        let sequence = SKAction.sequence([rotateAction, moveAction, stopAnimation])
         run(sequence, withKey: "move")
 
         // Start walking animation
@@ -291,105 +386,214 @@ class Player: SKNode {
     // MARK: - Animation
 
     private func startWalkingAnimation() {
+        stopWalkingAnimation()
+
         // Step duration for each limb movement
-        let stepDuration: TimeInterval = 0.15
+        let stepDuration: TimeInterval = 0.16
 
         // Movement angles
-        let thighSwingAngle: CGFloat = .pi / 20 // 9 degrees
-        let kneeBendAngle: CGFloat = .pi / 10 // 15 degrees
-        let upperArmSwingAngle: CGFloat = .pi / 24 // 7.5 degrees
-        let elbowBendAngle: CGFloat = .pi / 10 // 12.5 degrees
+        let thighSwingAngle: CGFloat = .pi / 18 // ~10 degrees
+        let kneeBendAngle: CGFloat = .pi / 9    // ~20 degrees
+        let upperArmSwingAngle: CGFloat = .pi / 20 // ~9 degrees
+        let elbowBendAngle: CGFloat = .pi / 12     // ~15 degrees
+        let wristFlickAngle: CGFloat = .pi / 18    // ~10 degrees
+        let ankleRollAngle: CGFloat = .pi / 14     // ~13 degrees
+
+        // Helper closure to repeat action forever
+        func cycle(_ actions: SKAction...) -> SKAction {
+            SKAction.sequence(actions)
+        }
 
         // === RIGHT LEG (Phase 1: steps first) ===
-        // Thigh swings the whole leg
-        let rightThighCycle = SKAction.sequence([
+        let rightThighCycle = cycle(
             SKAction.rotate(toAngle: thighSwingAngle, duration: stepDuration),
             SKAction.wait(forDuration: stepDuration),
             SKAction.rotate(toAngle: -thighSwingAngle, duration: stepDuration),
             SKAction.wait(forDuration: stepDuration)
-        ])
+        )
 
-        // Calf bends at knee (relative to thigh)
-        let rightCalfCycle = SKAction.sequence([
+        let rightCalfCycle = cycle(
             SKAction.rotate(toAngle: -kneeBendAngle, duration: stepDuration),
-            SKAction.rotate(toAngle: 0, duration: stepDuration),
+            SKAction.rotate(toAngle: -kneeBendAngle * 0.3, duration: stepDuration),
             SKAction.rotate(toAngle: 0, duration: stepDuration * 2)
-        ])
+        )
+
+        let rightAnkleCycle = cycle(
+            SKAction.rotate(toAngle: ankleRollAngle, duration: stepDuration),
+            SKAction.rotate(toAngle: -ankleRollAngle * 0.6, duration: stepDuration),
+            SKAction.rotate(toAngle: 0, duration: stepDuration * 2)
+        )
+
+        let rightFootCycle = cycle(
+            SKAction.rotate(toAngle: -ankleRollAngle * 0.7, duration: stepDuration),
+            SKAction.rotate(toAngle: ankleRollAngle * 0.4, duration: stepDuration),
+            SKAction.rotate(toAngle: 0, duration: stepDuration * 2)
+        )
 
         // === LEFT ARM (Phase 1: swings with right leg) ===
-        let leftUpperArmCycle = SKAction.sequence([
+        let leftUpperArmCycle = cycle(
             SKAction.rotate(toAngle: upperArmSwingAngle, duration: stepDuration),
             SKAction.wait(forDuration: stepDuration),
             SKAction.rotate(toAngle: -upperArmSwingAngle, duration: stepDuration),
             SKAction.wait(forDuration: stepDuration)
-        ])
+        )
 
-        let leftForearmCycle = SKAction.sequence([
+        let leftForearmCycle = cycle(
             SKAction.rotate(toAngle: -elbowBendAngle, duration: stepDuration),
-            SKAction.rotate(toAngle: -elbowBendAngle * 0.5, duration: stepDuration),
+            SKAction.rotate(toAngle: -elbowBendAngle * 0.4, duration: stepDuration),
             SKAction.rotate(toAngle: -elbowBendAngle, duration: stepDuration),
-            SKAction.rotate(toAngle: -elbowBendAngle * 0.5, duration: stepDuration)
-        ])
+            SKAction.rotate(toAngle: -elbowBendAngle * 0.4, duration: stepDuration)
+        )
+
+        let leftWristCycle = cycle(
+            SKAction.rotate(toAngle: wristFlickAngle, duration: stepDuration),
+            SKAction.rotate(toAngle: -wristFlickAngle * 0.8, duration: stepDuration),
+            SKAction.rotate(toAngle: wristFlickAngle * 0.3, duration: stepDuration),
+            SKAction.rotate(toAngle: -wristFlickAngle * 0.3, duration: stepDuration)
+        )
+
+        let leftHandCycle = cycle(
+            SKAction.rotate(toAngle: -wristFlickAngle * 0.5, duration: stepDuration),
+            SKAction.rotate(toAngle: wristFlickAngle * 0.4, duration: stepDuration),
+            SKAction.rotate(toAngle: 0, duration: stepDuration * 2)
+        )
 
         // === LEFT LEG (Phase 3: steps after right leg) ===
         let leftThighCycle = SKAction.sequence([
             SKAction.wait(forDuration: stepDuration * 2),
-            SKAction.rotate(toAngle: thighSwingAngle, duration: stepDuration),
-            SKAction.wait(forDuration: stepDuration),
-            SKAction.rotate(toAngle: -thighSwingAngle, duration: stepDuration * 0) // Instant reset
+            SKAction.repeatForever(cycle(
+                SKAction.rotate(toAngle: thighSwingAngle, duration: stepDuration),
+                SKAction.wait(forDuration: stepDuration),
+                SKAction.rotate(toAngle: -thighSwingAngle, duration: stepDuration),
+                SKAction.wait(forDuration: stepDuration)
+            ))
         ])
 
         let leftCalfCycle = SKAction.sequence([
             SKAction.wait(forDuration: stepDuration * 2),
-            SKAction.rotate(toAngle: -kneeBendAngle, duration: stepDuration),
-            SKAction.rotate(toAngle: 0, duration: stepDuration)
+            SKAction.repeatForever(cycle(
+                SKAction.rotate(toAngle: -kneeBendAngle, duration: stepDuration),
+                SKAction.rotate(toAngle: -kneeBendAngle * 0.3, duration: stepDuration),
+                SKAction.rotate(toAngle: 0, duration: stepDuration * 2)
+            ))
+        ])
+
+        let leftAnkleCycle = SKAction.sequence([
+            SKAction.wait(forDuration: stepDuration * 2),
+            SKAction.repeatForever(cycle(
+                SKAction.rotate(toAngle: ankleRollAngle, duration: stepDuration),
+                SKAction.rotate(toAngle: -ankleRollAngle * 0.6, duration: stepDuration),
+                SKAction.rotate(toAngle: 0, duration: stepDuration * 2)
+            ))
+        ])
+
+        let leftFootCycle = SKAction.sequence([
+            SKAction.wait(forDuration: stepDuration * 2),
+            SKAction.repeatForever(cycle(
+                SKAction.rotate(toAngle: -ankleRollAngle * 0.7, duration: stepDuration),
+                SKAction.rotate(toAngle: ankleRollAngle * 0.4, duration: stepDuration),
+                SKAction.rotate(toAngle: 0, duration: stepDuration * 2)
+            ))
         ])
 
         // === RIGHT ARM (Phase 3: swings with left leg) ===
         let rightUpperArmCycle = SKAction.sequence([
             SKAction.wait(forDuration: stepDuration * 2),
-            SKAction.rotate(toAngle: upperArmSwingAngle, duration: stepDuration),
-            SKAction.wait(forDuration: stepDuration),
-            SKAction.rotate(toAngle: -upperArmSwingAngle, duration: stepDuration * 0) // Instant reset
+            SKAction.repeatForever(cycle(
+                SKAction.rotate(toAngle: upperArmSwingAngle, duration: stepDuration),
+                SKAction.wait(forDuration: stepDuration),
+                SKAction.rotate(toAngle: -upperArmSwingAngle, duration: stepDuration),
+                SKAction.wait(forDuration: stepDuration)
+            ))
         ])
 
         let rightForearmCycle = SKAction.sequence([
-            SKAction.rotate(toAngle: -elbowBendAngle * 0.5, duration: stepDuration * 2),
-            SKAction.rotate(toAngle: -elbowBendAngle, duration: stepDuration),
-            SKAction.rotate(toAngle: -elbowBendAngle * 0.5, duration: stepDuration)
+            SKAction.wait(forDuration: stepDuration * 2),
+            SKAction.repeatForever(cycle(
+                SKAction.rotate(toAngle: -elbowBendAngle, duration: stepDuration),
+                SKAction.rotate(toAngle: -elbowBendAngle * 0.4, duration: stepDuration),
+                SKAction.rotate(toAngle: -elbowBendAngle, duration: stepDuration),
+                SKAction.rotate(toAngle: -elbowBendAngle * 0.4, duration: stepDuration)
+            ))
         ])
 
-        // Run all animations on individual limb segments
+        let rightWristCycle = SKAction.sequence([
+            SKAction.wait(forDuration: stepDuration * 2),
+            SKAction.repeatForever(cycle(
+                SKAction.rotate(toAngle: wristFlickAngle, duration: stepDuration),
+                SKAction.rotate(toAngle: -wristFlickAngle * 0.8, duration: stepDuration),
+                SKAction.rotate(toAngle: wristFlickAngle * 0.3, duration: stepDuration),
+                SKAction.rotate(toAngle: -wristFlickAngle * 0.3, duration: stepDuration)
+            ))
+        ])
+
+        let rightHandCycle = SKAction.sequence([
+            SKAction.wait(forDuration: stepDuration * 2),
+            SKAction.repeatForever(cycle(
+                SKAction.rotate(toAngle: -wristFlickAngle * 0.5, duration: stepDuration),
+                SKAction.rotate(toAngle: wristFlickAngle * 0.4, duration: stepDuration),
+                SKAction.rotate(toAngle: 0, duration: stepDuration * 2)
+            ))
+        ])
+
+        // Run animations
         rightThigh.run(SKAction.repeatForever(rightThighCycle), withKey: "walk")
         rightCalf.run(SKAction.repeatForever(rightCalfCycle), withKey: "walk")
+        rightAnkle.run(SKAction.repeatForever(rightAnkleCycle), withKey: "walk")
+        rightFoot.run(SKAction.repeatForever(rightFootCycle), withKey: "walk")
+
         leftUpperArm.run(SKAction.repeatForever(leftUpperArmCycle), withKey: "walk")
         leftForearm.run(SKAction.repeatForever(leftForearmCycle), withKey: "walk")
-        leftThigh.run(SKAction.repeatForever(leftThighCycle), withKey: "walk")
-        leftCalf.run(SKAction.repeatForever(leftCalfCycle), withKey: "walk")
-        rightUpperArm.run(SKAction.repeatForever(rightUpperArmCycle), withKey: "walk")
-        rightForearm.run(SKAction.repeatForever(rightForearmCycle), withKey: "walk")
+        leftWrist.run(SKAction.repeatForever(leftWristCycle), withKey: "walk")
+        leftHand.run(SKAction.repeatForever(leftHandCycle), withKey: "walk")
+
+        leftThigh.run(leftThighCycle, withKey: "walk")
+        leftCalf.run(leftCalfCycle, withKey: "walk")
+        leftAnkle.run(leftAnkleCycle, withKey: "walk")
+        leftFoot.run(leftFootCycle, withKey: "walk")
+
+        rightUpperArm.run(rightUpperArmCycle, withKey: "walk")
+        rightForearm.run(rightForearmCycle, withKey: "walk")
+        rightWrist.run(rightWristCycle, withKey: "walk")
+        rightHand.run(rightHandCycle, withKey: "walk")
     }
 
     private func stopWalkingAnimation() {
         // Stop all limb animations
         leftThigh.removeAction(forKey: "walk")
         leftCalf.removeAction(forKey: "walk")
+        leftAnkle.removeAction(forKey: "walk")
+        leftFoot.removeAction(forKey: "walk")
         rightThigh.removeAction(forKey: "walk")
         rightCalf.removeAction(forKey: "walk")
+        rightAnkle.removeAction(forKey: "walk")
+        rightFoot.removeAction(forKey: "walk")
         leftUpperArm.removeAction(forKey: "walk")
         leftForearm.removeAction(forKey: "walk")
+        leftWrist.removeAction(forKey: "walk")
+        leftHand.removeAction(forKey: "walk")
         rightUpperArm.removeAction(forKey: "walk")
         rightForearm.removeAction(forKey: "walk")
+        rightWrist.removeAction(forKey: "walk")
+        rightHand.removeAction(forKey: "walk")
 
         // Reset all segments to neutral position
         let resetDuration: TimeInterval = 0.2
         leftThigh.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
         leftCalf.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
+        leftAnkle.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
+        leftFoot.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
         rightThigh.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
         rightCalf.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
+        rightAnkle.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
+        rightFoot.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
         leftUpperArm.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
         leftForearm.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
+        leftWrist.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
+        leftHand.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
         rightUpperArm.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
         rightForearm.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
+        rightWrist.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
+        rightHand.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
     }
 }
