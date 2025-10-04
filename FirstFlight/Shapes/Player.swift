@@ -3,6 +3,7 @@ import SpriteKit
 
 class Player: SKNode {
     private let bodyRadius: CGFloat = 20.0
+    private let maxRotationAngle: CGFloat = .pi / 4 // limit to 45° tilt
 
     // Body parts
     private var body: SKShapeNode!
@@ -338,25 +339,14 @@ class Player: SKNode {
             return
         }
 
-        // Calculate direction angle toward target
+        // Calculate direction angle toward target and clamp to avoid extreme spins
         let deltaX = position.x - self.position.x
         let deltaY = position.y - self.position.y
-        let targetAngle = atan2(deltaY, deltaX) - .pi / 2
+        let desiredAngle = atan2(deltaY, deltaX) - .pi / 2
+        let clampedTargetAngle = min(max(desiredAngle, -maxRotationAngle), maxRotationAngle)
 
-        // Calculate shortest rotation path
-        let currentAngle = zRotation
-        var angleDifference = targetAngle - currentAngle
-
-        // Normalize to [-π, π] range for shortest path
-        while angleDifference > .pi {
-            angleDifference -= 2 * .pi
-        }
-        while angleDifference < -.pi {
-            angleDifference += 2 * .pi
-        }
-
-        // Rotate to face direction first
-        let rotateAction = SKAction.rotate(byAngle: angleDifference, duration: min(0.18, duration * 0.4))
+        // Rotate to face direction first (limited to ±45°)
+        let rotateAction = SKAction.rotate(toAngle: clampedTargetAngle, duration: min(0.18, duration * 0.4))
         rotateAction.timingMode = .easeInEaseOut
 
         // Move directly to position with no overshoot
