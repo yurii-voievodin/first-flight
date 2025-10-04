@@ -534,6 +534,14 @@ class Player: SKNode {
         stopWalkingAnimation()
     }
 
+    func startFiringBlaster() {
+        blaster.startBeam()
+    }
+
+    func stopFiringBlaster() {
+        blaster.stopBeam()
+    }
+
     // MARK: - Animation
 
     private func startWalkingAnimation() {

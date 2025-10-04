@@ -7,10 +7,26 @@
 
 import SpriteKit
 
+fileprivate protocol ControllableEntity: AnyObject {
+    func moveTo(position: CGPoint)
+    func stopMovement()
+}
+
+extension Player: ControllableEntity {}
+extension Spider: ControllableEntity {}
+
 
 class GameScene: SKScene {
 
-    private var player: Player!
+    private enum CharacterSelection {
+        case astronaut
+        case spider
+    }
+
+    private var astronaut: Player!
+    private var spiderCharacter: Spider!
+    private var activeCharacter: (SKNode & ControllableEntity)?
+    private var activeSelection: CharacterSelection = .astronaut
     private var gameCamera: SKCameraNode!
     private var walls: [SKSpriteNode] = []
     private var rockFormations: [RockFormation] = []
@@ -21,7 +37,7 @@ class GameScene: SKScene {
 
     override func didMove(to view: SKView) {
         setupScene()
-        createPlayer()
+        createCharacters()
         loadMapFromJSON()
         setupCamera()
         updateCameraConstraints() // Apply constraints after view is available
@@ -44,12 +60,16 @@ class GameScene: SKScene {
         addChild(largeBackground)
     }
 
-    private func createPlayer() {
-        player = Player()
-        // let spider = Spider() // Kept for reference while Player matures
-        // Initial position will be updated by loadMapFromJSON()
-        player.position = CGPoint(x: size.width * 0.25, y: size.height * 0.25)
-        addChild(player)
+    private func createCharacters() {
+        astronaut = Player()
+        astronaut.position = CGPoint(x: size.width * 0.25, y: size.height * 0.25)
+        addChild(astronaut)
+        activeCharacter = astronaut
+        activeSelection = .astronaut
+
+        spiderCharacter = Spider()
+        spiderCharacter.zPosition = astronaut.zPosition
+        spiderCharacter.position = astronaut.position
     }
 
     private func loadMapFromJSON() {
@@ -66,7 +86,8 @@ class GameScene: SKScene {
 
             // Update player start position
             let startPosition = MapLoader.shared.getPlayerStartPosition(from: mapData)
-            player.position = startPosition
+            astronaut.position = startPosition
+            spiderCharacter.position = startPosition
 
             // Create all rock formations from JSON
             let rocks = MapLoader.shared.createAllRocks(from: mapData)
@@ -116,7 +137,9 @@ class GameScene: SKScene {
         camera = gameCamera
         addChild(gameCamera)
 
-        gameCamera.position = player.position
+        if let activeCharacter = activeCharacter {
+            gameCamera.position = activeCharacter.position
+        }
     }
 
     private func updateCameraConstraints() {
@@ -138,10 +161,34 @@ class GameScene: SKScene {
     func touchDown(atPoint pos : CGPoint) {
         // Конвертуємо координати дотику з екрана в світові координати сцени
         let worldPos = convertPoint(fromView: pos)
-        player.moveTo(position: worldPos)
+        activeCharacter?.moveTo(position: worldPos)
 
         // Show tap indicator
         showTapIndicator(at: worldPos)
+    }
+
+    func toggleCharacterSelection() {
+        guard activeCharacter != nil else { return }
+        let nextSelection: CharacterSelection = activeSelection == .astronaut ? .spider : .astronaut
+        switchToCharacter(nextSelection)
+    }
+
+    var toggleButtonTitle: String {
+        "⇄"
+    }
+
+    var isBlasterAvailable: Bool {
+        activeSelection == .astronaut
+    }
+
+    func beginBlasterBeam() {
+        guard activeSelection == .astronaut, let astronaut else { return }
+        astronaut.startFiringBlaster()
+    }
+
+    func endBlasterBeam() {
+        guard let astronaut else { return }
+        astronaut.stopFiringBlaster()
     }
 
     private func showTapIndicator(at position: CGPoint) {
@@ -182,10 +229,42 @@ class GameScene: SKScene {
         let currentY = gameCamera.position.y
         let lerpFactor: CGFloat = 0.1
 
-        let newX = currentX + (player.position.x - currentX) * lerpFactor
-        let newY = currentY + (player.position.y - currentY) * lerpFactor
+        guard let activeCharacter = activeCharacter else { return }
+
+        let newX = currentX + (activeCharacter.position.x - currentX) * lerpFactor
+        let newY = currentY + (activeCharacter.position.y - currentY) * lerpFactor
 
         gameCamera.position = CGPoint(x: newX, y: newY)
+    }
+
+    private func switchToCharacter(_ selection: CharacterSelection) {
+        guard selection != activeSelection else { return }
+        guard let currentCharacter = activeCharacter else { return }
+
+        if activeSelection == .astronaut, let astronaut {
+            astronaut.stopFiringBlaster()
+        }
+
+        let currentPosition = currentCharacter.position
+        currentCharacter.stopMovement()
+        currentCharacter.removeFromParent()
+
+        let newCharacter = character(for: selection)
+        newCharacter.position = currentPosition
+        addChild(newCharacter)
+        activeCharacter = newCharacter
+        activeSelection = selection
+        activeCharacter?.stopMovement()
+        gameCamera?.position = currentPosition
+    }
+
+    private func character(for selection: CharacterSelection) -> (SKNode & ControllableEntity) {
+        switch selection {
+        case .astronaut:
+            return astronaut
+        case .spider:
+            return spiderCharacter
+        }
     }
 }
 
@@ -196,7 +275,7 @@ extension GameScene: SKPhysicsContactDelegate {
         // Check if player collided with wall or rock
         if collision == PhysicsCategory.player | PhysicsCategory.wall ||
            collision == PhysicsCategory.player | PhysicsCategory.rock {
-            player.stopMovement()
+            activeCharacter?.stopMovement()
         }
     }
 }
