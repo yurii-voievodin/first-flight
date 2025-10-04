@@ -3,6 +3,17 @@ import SpriteKit
 
 class Player: SKNode {
     private let bodyRadius: CGFloat = 20.0
+    private let backpackBasePosition = CGPoint(x: 0, y: -2)
+    private let helmetGlassBasePosition = CGPoint(x: 0, y: 2)
+
+    private enum FacingDirection {
+        case up
+        case down
+        case left
+        case right
+    }
+
+    private var facingDirection: FacingDirection = .down
 
     // Body parts
     private var body: SKShapeNode!
@@ -76,7 +87,7 @@ class Player: SKNode {
         backpack.fillColor = SKColor(red: 0.27, green: 0.31, blue: 0.36, alpha: 1)
         backpack.strokeColor = SKColor.black.withAlphaComponent(0.25)
         backpack.lineWidth = 1.5
-        backpack.position = CGPoint(x: 0, y: -2)
+        backpack.position = backpackBasePosition
         backpack.zPosition = 0.2
         addChild(backpack)
 
@@ -144,7 +155,7 @@ class Player: SKNode {
         helmetGlass.fillColor = SKColor.cyan.withAlphaComponent(0.35)
         helmetGlass.strokeColor = SKColor.white.withAlphaComponent(0.45)
         helmetGlass.lineWidth = 1.2
-        helmetGlass.position = CGPoint(x: 0, y: 2)
+        helmetGlass.position = helmetGlassBasePosition
         helmetGlass.zPosition = 0.5
         head.addChild(helmetGlass)
 
@@ -351,6 +362,80 @@ class Player: SKNode {
         rightFoot.position = CGPoint(x: 0, y: -5)
         rightFoot.zPosition = 0.2
         rightAnkle.addChild(rightFoot)
+
+        applyAppearance(for: facingDirection)
+    }
+
+    private func setFacingDirection(_ direction: FacingDirection) {
+        guard direction != facingDirection else { return }
+        facingDirection = direction
+        applyAppearance(for: direction)
+    }
+
+    private func updateFacingDirection(dx: CGFloat, dy: CGFloat) {
+        let threshold: CGFloat = 2
+        if abs(dx) < threshold && abs(dy) < threshold {
+            return
+        }
+
+        if abs(dx) > abs(dy) {
+            setFacingDirection(dx > 0 ? .right : .left)
+        } else {
+            setFacingDirection(dy > 0 ? .up : .down)
+        }
+    }
+
+    private func applyAppearance(for direction: FacingDirection) {
+        // Reset to a neutral front-facing look before applying directional tweaks.
+        backpack.isHidden = false
+        backpack.alpha = 1
+        backpack.xScale = 1
+        backpack.yScale = 1
+        backpack.position = backpackBasePosition
+        backpack.zPosition = 0.2
+
+        backpackStrap.isHidden = false
+        backpackStrap.alpha = 1
+        backpackStrap.zPosition = 1.2
+
+        helmetGlass.isHidden = false
+        helmetGlass.alpha = 1
+        helmetGlass.xScale = 1
+        helmetGlass.yScale = 1
+        helmetGlass.position = helmetGlassBasePosition
+
+        xScale = 1
+
+        switch direction {
+        case .up:
+            backpack.zPosition = 1.6
+            backpack.position = CGPoint(x: 0, y: -1)
+            backpackStrap.isHidden = true
+            helmetGlass.isHidden = true
+        case .down:
+            backpack.isHidden = true
+        case .right:
+            backpack.alpha = 0.75
+            backpack.zPosition = 0.9
+            backpack.xScale = 0.7
+            backpack.position = CGPoint(x: -3, y: -2)
+            backpackStrap.alpha = 0.7
+            backpackStrap.zPosition = 1.1
+            helmetGlass.alpha = 0.85
+            helmetGlass.xScale = 0.75
+            helmetGlass.position = CGPoint(x: 2.2, y: 2)
+        case .left:
+            xScale = -1
+            backpack.alpha = 0.75
+            backpack.zPosition = 0.9
+            backpack.xScale = 0.7
+            backpack.position = CGPoint(x: -3, y: -2)
+            backpackStrap.alpha = 0.7
+            backpackStrap.zPosition = 1.1
+            helmetGlass.alpha = 0.85
+            helmetGlass.xScale = 0.75
+            helmetGlass.position = CGPoint(x: 2.2, y: 2)
+        }
     }
 
     private func setupPhysics() {
@@ -373,7 +458,11 @@ class Player: SKNode {
         physicsBody?.velocity = .zero
 
         // Calculate distance and duration for consistent speed
-        let distance = hypot(position.x - self.position.x, position.y - self.position.y)
+        let deltaX = position.x - self.position.x
+        let deltaY = position.y - self.position.y
+        updateFacingDirection(dx: deltaX, dy: deltaY)
+
+        let distance = hypot(deltaX, deltaY)
         let speed: CGFloat = 55.0 // points per second
         let duration = max(TimeInterval(distance / speed), 0.05)
 
