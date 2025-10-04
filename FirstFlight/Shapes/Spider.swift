@@ -4,6 +4,12 @@ import SpriteKit
 class Spider: SKNode {
     private let bodyRadius: CGFloat = 20.0
 
+    // Leg angles
+    private let frontLegsAngle: CGFloat = -35 * .pi / 180
+    private let midFrontLegsAngle: CGFloat = -10 * .pi / 180
+    private let midBackLegsAngle: CGFloat = 25 * .pi / 180
+    private let backLegsAngle: CGFloat = 55 * .pi / 180
+
     // Body parts
     private var abdomen: SKShapeNode!
     private var head: SKShapeNode!
@@ -85,7 +91,7 @@ class Spider: SKNode {
         let upperLegSize = CGSize(width: 5, height: 18)
         let lowerLegSize = CGSize(width: 4, height: 16)
 
-        // FRONT LEGS (Pair 1) - Attached to front of abdomen
+        // FRONT LEGS (Pair 1) - Angled upward/forward
         setupLegPair(
             leftUpper: &frontLeftUpperLeg,
             leftJoint: &frontLeftJoint,
@@ -95,12 +101,12 @@ class Spider: SKNode {
             rightLower: &frontRightLowerLeg,
             upperSize: upperLegSize,
             lowerSize: lowerLegSize,
-            position: CGPoint(x: 0, y: 12),
+            position: CGPoint(x: 0, y: 0),
             xOffset: 16,
-            forwardAngle: .pi / 3 // 60 degrees forward
+            forwardAngle: frontLegsAngle
         )
 
-        // MID-FRONT LEGS (Pair 2)
+        // MID-FRONT LEGS (Pair 2) - Angled forward
         setupLegPair(
             leftUpper: &midFrontLeftUpperLeg,
             leftJoint: &midFrontLeftJoint,
@@ -110,12 +116,12 @@ class Spider: SKNode {
             rightLower: &midFrontRightLowerLeg,
             upperSize: upperLegSize,
             lowerSize: lowerLegSize,
-            position: CGPoint(x: 0, y: 4),
+            position: CGPoint(x: 0, y: 0),
             xOffset: 18,
-            forwardAngle: .pi / 6 // 30 degrees forward
+            forwardAngle: midFrontLegsAngle
         )
 
-        // MID-BACK LEGS (Pair 3)
+        // MID-BACK LEGS (Pair 3) - Angled backward with more spacing
         setupLegPair(
             leftUpper: &midBackLeftUpperLeg,
             leftJoint: &midBackLeftJoint,
@@ -125,12 +131,12 @@ class Spider: SKNode {
             rightLower: &midBackRightLowerLeg,
             upperSize: upperLegSize,
             lowerSize: lowerLegSize,
-            position: CGPoint(x: 0, y: -4),
+            position: CGPoint(x: 0, y: 0),
             xOffset: 18,
-            forwardAngle: -.pi / 6 // 30 degrees backward
+            forwardAngle: midBackLegsAngle
         )
 
-        // BACK LEGS (Pair 4) - Attached to back of abdomen
+        // BACK LEGS (Pair 4) - Angled backward
         setupLegPair(
             leftUpper: &backLeftUpperLeg,
             leftJoint: &backLeftJoint,
@@ -140,9 +146,9 @@ class Spider: SKNode {
             rightLower: &backRightLowerLeg,
             upperSize: upperLegSize,
             lowerSize: lowerLegSize,
-            position: CGPoint(x: 0, y: -12),
+            position: CGPoint(x: 0, y: 0),
             xOffset: 16,
-            forwardAngle: -.pi / 3 // 60 degrees backward
+            forwardAngle: backLegsAngle
         )
     }
 
@@ -391,11 +397,16 @@ class Spider: SKNode {
             leg?.removeAction(forKey: "walk")
         }
 
-        // Reset upper legs to neutral position (0 relative rotation)
+        // Reset upper legs to their initial angles
         let resetDuration: TimeInterval = 0.2
-        for leg in allUpperLegs {
-            leg?.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
-        }
+        frontLeftUpperLeg?.run(SKAction.rotate(toAngle: frontLegsAngle, duration: resetDuration))
+        frontRightUpperLeg?.run(SKAction.rotate(toAngle: -frontLegsAngle, duration: resetDuration))
+        midFrontLeftUpperLeg?.run(SKAction.rotate(toAngle: midFrontLegsAngle, duration: resetDuration))
+        midFrontRightUpperLeg?.run(SKAction.rotate(toAngle: -midFrontLegsAngle, duration: resetDuration))
+        midBackLeftUpperLeg?.run(SKAction.rotate(toAngle: midBackLegsAngle, duration: resetDuration))
+        midBackRightUpperLeg?.run(SKAction.rotate(toAngle: -midBackLegsAngle, duration: resetDuration))
+        backLeftUpperLeg?.run(SKAction.rotate(toAngle: backLegsAngle, duration: resetDuration))
+        backRightUpperLeg?.run(SKAction.rotate(toAngle: -backLegsAngle, duration: resetDuration))
 
         // Reset lower legs to bent neutral position (downward bend)
         let kneeBend: CGFloat = .pi / 6
