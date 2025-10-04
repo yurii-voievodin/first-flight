@@ -3,12 +3,14 @@ import SpriteKit
 
 class Player: SKNode {
     private let bodyRadius: CGFloat = 20.0
-    private let maxRotationAngle: CGFloat = .pi / 4 // limit to 45° tilt
 
     // Body parts
     private var body: SKShapeNode!
+    private var backpack: SKShapeNode!
+    private var backpackStrap: SKShapeNode!
     private var shoulderArmor: SKShapeNode!
     private var head: SKShapeNode!
+    private var helmetGlass: SKShapeNode!
 
     // Arms (multi-segment)
     private var leftUpperArm: SKShapeNode!
@@ -56,12 +58,50 @@ class Player: SKNode {
             cornerHeight: 6,
             transform: nil
         )
+
+        // Backpack - rounded capsule sitting behind the torso
+        let backpackSize = CGSize(width: bodySize.width + 6, height: bodySize.height - 4)
+        let backpackPath = CGPath(
+            roundedRect: CGRect(
+                x: -backpackSize.width / 2,
+                y: -backpackSize.height / 2,
+                width: backpackSize.width,
+                height: backpackSize.height
+            ),
+            cornerWidth: 8,
+            cornerHeight: 8,
+            transform: nil
+        )
+        backpack = SKShapeNode(path: backpackPath)
+        backpack.fillColor = SKColor(red: 0.27, green: 0.31, blue: 0.36, alpha: 1)
+        backpack.strokeColor = SKColor.black.withAlphaComponent(0.25)
+        backpack.lineWidth = 1.5
+        backpack.position = CGPoint(x: 0, y: -2)
+        backpack.zPosition = 0.2
+        addChild(backpack)
+
         body = SKShapeNode(path: bodyPath)
         body.fillColor = .lightGray
         body.strokeColor = .clear
         body.position = CGPoint(x: 0, y: 0)
         body.zPosition = 1
         addChild(body)
+
+        // Backpack strap - light accent crossing the torso
+        let strapPath = CGMutablePath()
+        strapPath.move(to: CGPoint(x: -bodySize.width / 2 - 1, y: 12))
+        strapPath.addQuadCurve(
+            to: CGPoint(x: bodySize.width / 2 + 1, y: -10),
+            control: CGPoint(x: 0, y: 16)
+        )
+        backpackStrap = SKShapeNode(path: strapPath)
+        backpackStrap.strokeColor = SKColor(red: 0.71, green: 0.75, blue: 0.8, alpha: 1)
+        backpackStrap.lineWidth = 4
+        backpackStrap.lineCap = .round
+        backpackStrap.fillColor = .clear
+        backpackStrap.position = .zero
+        backpackStrap.zPosition = 1.2
+        addChild(backpackStrap)
 
         // Shoulder armor - half circle arc on shoulders
         let shoulderPath = CGMutablePath()
@@ -99,6 +139,14 @@ class Player: SKNode {
         head.position = CGPoint(x: 0, y: 26) // Above body
         head.zPosition = 2
         addChild(head)
+
+        helmetGlass = SKShapeNode(rectOf: CGSize(width: 14, height: 12), cornerRadius: 5)
+        helmetGlass.fillColor = SKColor.cyan.withAlphaComponent(0.35)
+        helmetGlass.strokeColor = SKColor.white.withAlphaComponent(0.45)
+        helmetGlass.lineWidth = 1.2
+        helmetGlass.position = CGPoint(x: 0, y: 2)
+        helmetGlass.zPosition = 0.5
+        head.addChild(helmetGlass)
 
         // Left Upper Arm - anchor at shoulder
         let upperArmSize = CGSize(width: 8, height: 14)
@@ -339,16 +387,6 @@ class Player: SKNode {
             return
         }
 
-        // Calculate direction angle toward target and clamp to avoid extreme spins
-        let deltaX = position.x - self.position.x
-        let deltaY = position.y - self.position.y
-        let desiredAngle = atan2(deltaY, deltaX) - .pi / 2
-        let clampedTargetAngle = min(max(desiredAngle, -maxRotationAngle), maxRotationAngle)
-
-        // Rotate to face direction first (limited to ±45°)
-        let rotateAction = SKAction.rotate(toAngle: clampedTargetAngle, duration: min(0.18, duration * 0.4))
-        rotateAction.timingMode = .easeInEaseOut
-
         // Move directly to position with no overshoot
         let moveAction = SKAction.move(to: position, duration: duration)
         moveAction.timingMode = .linear
@@ -358,7 +396,8 @@ class Player: SKNode {
             self?.stopWalkingAnimation()
         }
 
-        let sequence = SKAction.sequence([rotateAction, moveAction, stopAnimation])
+        zRotation = 0
+        let sequence = SKAction.sequence([moveAction, stopAnimation])
         run(sequence, withKey: "move")
 
         // Start walking animation
@@ -368,6 +407,7 @@ class Player: SKNode {
     func stopMovement() {
         removeAction(forKey: "move")
         physicsBody?.velocity = .zero
+        zRotation = 0
 
         // Stop walking animation
         stopWalkingAnimation()
