@@ -5,6 +5,7 @@ class Player: SKNode {
     private let bodyRadius: CGFloat = 20.0
     private let backpackBasePosition = CGPoint(x: 0, y: -2)
     private let helmetGlassBasePosition = CGPoint(x: 0, y: 2)
+    private let baseZPosition: CGFloat = -10
 
     private enum FacingDirection {
         case up
@@ -50,12 +51,14 @@ class Player: SKNode {
     override init() {
         super.init()
 
+        configureBaseLayer()
         setupBodyParts()
         setupPhysics()
     }
 
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
+        configureBaseLayer()
         setupBodyParts()
         setupPhysics()
     }
@@ -364,6 +367,10 @@ class Player: SKNode {
         rightAnkle.addChild(rightFoot)
 
         applyAppearance(for: facingDirection)
+    }
+
+    private func configureBaseLayer() {
+        zPosition = baseZPosition
     }
 
     private func setFacingDirection(_ direction: FacingDirection) {
