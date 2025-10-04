@@ -88,7 +88,7 @@ class Spider: SKNode {
         addChild(head)
 
         // Leg dimensions
-        let upperLegSize = CGSize(width: 5, height: 18)
+        let upperLegSize = CGSize(width: 5, height: 24)
         let lowerLegSize = CGSize(width: 4, height: 16)
 
         // FRONT LEGS (Pair 1) - Angled upward/forward
@@ -177,7 +177,7 @@ class Spider: SKNode {
         leftUpper.strokeColor = .clear
         leftUpper.position = position
         leftUpper.zRotation = forwardAngle // Forward/backward tilt only
-        leftUpper.zPosition = 0
+        leftUpper.zPosition = -1
         abdomen.addChild(leftUpper)
 
         // Left joint
@@ -215,7 +215,7 @@ class Spider: SKNode {
         rightUpper.strokeColor = .clear
         rightUpper.position = position
         rightUpper.zRotation = -forwardAngle // Forward/backward tilt (mirrored)
-        rightUpper.zPosition = 0
+        rightUpper.zPosition = -1
         abdomen.addChild(rightUpper)
 
         // Right joint
@@ -293,83 +293,97 @@ class Spider: SKNode {
     // MARK: - Animation
 
     private func startWalkingAnimation() {
-        // Spider walking uses alternating tripod gait
-        // Left side: legs 1, 3 move together
-        // Right side: legs 2, 4 move together
+        // Spider walking uses alternating tetrapods gait
+        // Tetrapod 1: R1, L2, R3, L4 (right front, left mid-front, right mid-back, left back)
+        // Tetrapod 2: L1, R2, L3, R4 (left front, right mid-front, left mid-back, right back)
+        // Wave sequence creates 1-2-3-4 staggered motion within each tetrapod
 
-        let stepDuration: TimeInterval = 0.12
+        let stepDuration: TimeInterval = 0.3
+        let waveLag: TimeInterval = stepDuration * 0.25 // Delay between legs in wave
+        let cycleDuration = stepDuration * 4 // Full cycle time
 
         // Leg movement angles
-        let upperLegSwing: CGFloat = .pi / 12 // 15 degrees
-        let lowerLegBend: CGFloat = .pi / 8 // 22.5 degrees
+        let upperLegSwing: CGFloat = .pi / 10 // 18 degrees swing
+        let lowerLegBend: CGFloat = .pi / 6 // 30 degrees bend when lifted
 
-        // LEFT SIDE LEGS (1 & 3) - Move together
-        // Front left (leg 1)
-        let frontLeftCycle = SKAction.sequence([
-            SKAction.rotate(byAngle: upperLegSwing, duration: stepDuration),
-            SKAction.rotate(byAngle: -upperLegSwing * 2, duration: stepDuration),
-            SKAction.rotate(byAngle: upperLegSwing, duration: stepDuration),
-            SKAction.wait(forDuration: stepDuration)
-        ])
+        // Helper function to create a leg step cycle with wave offset
+        func createLegCycle(startDelay: TimeInterval, swingDirection: CGFloat) -> SKAction {
+            return SKAction.sequence([
+                SKAction.wait(forDuration: startDelay),
+                SKAction.rotate(byAngle: swingDirection * upperLegSwing, duration: stepDuration),
+                SKAction.rotate(byAngle: -swingDirection * upperLegSwing, duration: stepDuration),
+                SKAction.wait(forDuration: cycleDuration - stepDuration * 2 - startDelay)
+            ])
+        }
 
-        let frontLeftLowerCycle = SKAction.sequence([
-            SKAction.rotate(toAngle: -lowerLegBend, duration: stepDuration),
-            SKAction.rotate(toAngle: 0, duration: stepDuration),
-            SKAction.wait(forDuration: stepDuration * 2)
-        ])
+        func createLowerLegCycle(startDelay: TimeInterval, bendDirection: CGFloat) -> SKAction {
+            return SKAction.sequence([
+                SKAction.wait(forDuration: startDelay),
+                SKAction.rotate(toAngle: bendDirection * lowerLegBend, duration: stepDuration * 0.5),
+                SKAction.rotate(toAngle: 0, duration: stepDuration * 0.5),
+                SKAction.wait(forDuration: cycleDuration - stepDuration - startDelay)
+            ])
+        }
 
-        // Mid-back left (leg 3)
-        let midBackLeftCycle = frontLeftCycle
-        let midBackLeftLowerCycle = frontLeftLowerCycle
+        // TETRAPOD 1: R1 → L2 → R3 → L4 (wave sequence)
+        // R1 - Front Right
+        let frontRightUpperCycle = createLegCycle(startDelay: 0, swingDirection: -1)
+        let frontRightLowerCycle = createLowerLegCycle(startDelay: 0, bendDirection: 1)
 
-        // RIGHT SIDE LEGS (2 & 4) - Move together (offset phase)
-        // Mid-front right (leg 2)
-        let midFrontRightCycle = SKAction.sequence([
-            SKAction.wait(forDuration: stepDuration * 2),
-            SKAction.rotate(byAngle: -upperLegSwing, duration: stepDuration),
-            SKAction.rotate(byAngle: upperLegSwing * 2, duration: stepDuration),
-            SKAction.rotate(byAngle: -upperLegSwing, duration: stepDuration * 0)
-        ])
+        // L2 - Mid-Front Left
+        let midFrontLeftUpperCycle = createLegCycle(startDelay: waveLag, swingDirection: 1)
+        let midFrontLeftLowerCycle = createLowerLegCycle(startDelay: waveLag, bendDirection: -1)
 
-        let midFrontRightLowerCycle = SKAction.sequence([
-            SKAction.wait(forDuration: stepDuration * 2),
-            SKAction.rotate(toAngle: -lowerLegBend, duration: stepDuration),
-            SKAction.rotate(toAngle: 0, duration: stepDuration)
-        ])
+        // R3 - Mid-Back Right
+        let midBackRightUpperCycle = createLegCycle(startDelay: waveLag * 2, swingDirection: -1)
+        let midBackRightLowerCycle = createLowerLegCycle(startDelay: waveLag * 2, bendDirection: 1)
 
-        // Back right (leg 4)
-        let backRightCycle = midFrontRightCycle
-        let backRightLowerCycle = midFrontRightLowerCycle
+        // L4 - Back Left
+        let backLeftUpperCycle = createLegCycle(startDelay: waveLag * 3, swingDirection: 1)
+        let backLeftLowerCycle = createLowerLegCycle(startDelay: waveLag * 3, bendDirection: -1)
 
-        // MIDDLE LEGS - Subtle movement for stability
-        let midFrontLeftCycle = SKAction.sequence([
-            SKAction.rotate(byAngle: upperLegSwing * 0.5, duration: stepDuration * 2),
-            SKAction.rotate(byAngle: -upperLegSwing * 0.5, duration: stepDuration * 2)
-        ])
+        // TETRAPOD 2: L1 → R2 → L3 → R4 (opposite phase - half cycle offset)
+        let halfCycle = cycleDuration / 2
 
-        let midBackRightCycle = midFrontLeftCycle
+        // L1 - Front Left
+        let frontLeftUpperCycle = createLegCycle(startDelay: halfCycle, swingDirection: 1)
+        let frontLeftLowerCycle = createLowerLegCycle(startDelay: halfCycle, bendDirection: -1)
+
+        // R2 - Mid-Front Right
+        let midFrontRightUpperCycle = createLegCycle(startDelay: halfCycle + waveLag, swingDirection: -1)
+        let midFrontRightLowerCycle = createLowerLegCycle(startDelay: halfCycle + waveLag, bendDirection: 1)
+
+        // L3 - Mid-Back Left
+        let midBackLeftUpperCycle = createLegCycle(startDelay: halfCycle + waveLag * 2, swingDirection: 1)
+        let midBackLeftLowerCycle = createLowerLegCycle(startDelay: halfCycle + waveLag * 2, bendDirection: -1)
+
+        // R4 - Back Right
+        let backRightUpperCycle = createLegCycle(startDelay: halfCycle + waveLag * 3, swingDirection: -1)
+        let backRightLowerCycle = createLowerLegCycle(startDelay: halfCycle + waveLag * 3, bendDirection: 1)
 
         // Run all leg animations
-        frontLeftUpperLeg.run(SKAction.repeatForever(frontLeftCycle), withKey: "walk")
+        frontRightUpperLeg.run(SKAction.repeatForever(frontRightUpperCycle), withKey: "walk")
+        frontRightLowerLeg.run(SKAction.repeatForever(frontRightLowerCycle), withKey: "walk")
+
+        midFrontLeftUpperLeg.run(SKAction.repeatForever(midFrontLeftUpperCycle), withKey: "walk")
+        midFrontLeftLowerLeg.run(SKAction.repeatForever(midFrontLeftLowerCycle), withKey: "walk")
+
+        midBackRightUpperLeg.run(SKAction.repeatForever(midBackRightUpperCycle), withKey: "walk")
+        midBackRightLowerLeg.run(SKAction.repeatForever(midBackRightLowerCycle), withKey: "walk")
+
+        backLeftUpperLeg.run(SKAction.repeatForever(backLeftUpperCycle), withKey: "walk")
+        backLeftLowerLeg.run(SKAction.repeatForever(backLeftLowerCycle), withKey: "walk")
+
+        frontLeftUpperLeg.run(SKAction.repeatForever(frontLeftUpperCycle), withKey: "walk")
         frontLeftLowerLeg.run(SKAction.repeatForever(frontLeftLowerCycle), withKey: "walk")
 
-        midFrontLeftUpperLeg.run(SKAction.repeatForever(midFrontLeftCycle), withKey: "walk")
-
-        midBackLeftUpperLeg.run(SKAction.repeatForever(midBackLeftCycle), withKey: "walk")
-        midBackLeftLowerLeg.run(SKAction.repeatForever(midBackLeftLowerCycle), withKey: "walk")
-
-        backLeftUpperLeg.run(SKAction.repeatForever(frontLeftCycle), withKey: "walk")
-        backLeftLowerLeg.run(SKAction.repeatForever(frontLeftLowerCycle), withKey: "walk")
-
-        frontRightUpperLeg.run(SKAction.repeatForever(midFrontRightCycle), withKey: "walk")
-        frontRightLowerLeg.run(SKAction.repeatForever(midFrontRightLowerCycle), withKey: "walk")
-
-        midFrontRightUpperLeg.run(SKAction.repeatForever(midFrontRightCycle), withKey: "walk")
+        midFrontRightUpperLeg.run(SKAction.repeatForever(midFrontRightUpperCycle), withKey: "walk")
         midFrontRightLowerLeg.run(SKAction.repeatForever(midFrontRightLowerCycle), withKey: "walk")
 
-        midBackRightUpperLeg.run(SKAction.repeatForever(midBackRightCycle), withKey: "walk")
+        midBackLeftUpperLeg.run(SKAction.repeatForever(midBackLeftUpperCycle), withKey: "walk")
+        midBackLeftLowerLeg.run(SKAction.repeatForever(midBackLeftLowerCycle), withKey: "walk")
 
-        backRightUpperLeg.run(SKAction.repeatForever(backRightCycle), withKey: "walk")
+        backRightUpperLeg.run(SKAction.repeatForever(backRightUpperCycle), withKey: "walk")
         backRightLowerLeg.run(SKAction.repeatForever(backRightLowerCycle), withKey: "walk")
     }
 
