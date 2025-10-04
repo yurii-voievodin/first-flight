@@ -527,11 +527,11 @@ class Player: SKNode {
         stopWalkingAnimation()
 
         // Step duration for each limb movement
-        let stepDuration: TimeInterval = 0.16
+        let stepDuration: TimeInterval = 0.12
 
         // Movement angles
-        let thighSwingAngle: CGFloat = .pi / 18 // ~10 degrees
-        let kneeBendAngle: CGFloat = .pi / 9    // ~20 degrees
+        let thighSwingAngle: CGFloat = .pi / 14 // ~13 degrees
+        let kneeBendAngle: CGFloat = .pi / 7    // ~26 degrees
         let upperArmSwingAngle: CGFloat = .pi / 20 // ~9 degrees
         let elbowBendAngle: CGFloat = .pi / 12     // ~15 degrees
         let wristFlickAngle: CGFloat = .pi / 18    // ~10 degrees
