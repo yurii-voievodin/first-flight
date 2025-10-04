@@ -321,100 +321,54 @@ class Spider: SKNode {
         // Stop any existing animations and reset legs to initial positions
         stopWalkingAnimation()
 
-        // Spider walking uses alternating tetrapods gait
-        // Tetrapod 1: R1, L2, R3, L4 (right front, left mid-front, right mid-back, left back)
-        // Tetrapod 2: L1, R2, L3, R4 (left front, right mid-front, left mid-back, right back)
-        // Wave sequence creates 1-2-3-4 staggered motion within each tetrapod
+        // Parameters
+        let cycleDuration: TimeInterval = 0.6   // seconds per full stride
+        let upperAmp: CGFloat = .pi / 18        // ~15° swing around the base angle
+        let lowerAmp: CGFloat = .pi / 18        // ~10° knee modulation around the base bend
 
-        let stepDuration: TimeInterval = 0.15
-        let waveLag: TimeInterval = stepDuration * 0.25 // Delay between legs in wave
-        let cycleDuration = stepDuration * 4 // Full cycle time
+        // Small left/right side desync (fraction of cycle); left starts slightly earlier
+        let sidePhaseOffset: CGFloat = 0.12
+        let leftSideΔ: CGFloat = -sidePhaseOffset * 0.5
+        let rightSideΔ: CGFloat =  sidePhaseOffset * 0.5
 
-        // Leg movement angles
-        let upperLegSwing: CGFloat = .pi / 8 // 18 degrees swing
-        let lowerLegBend: CGFloat = .pi / 6 // 30 degrees bend when lifted
+        // Helper to run a continuous oscillation for a leg pair (upper+lower)
+        func runLeg(upper: SKShapeNode?, lower: SKShapeNode?, phase: CGFloat, key: String) {
+            guard let upper = upper, let lower = lower else { return }
+            let baseUpper = upper.zRotation
+            let baseLower = lower.zRotation
 
-        // Helper function to create a leg step cycle with wave offset
-        func createLegCycle(startDelay: TimeInterval, swingDirection: CGFloat) -> SKAction {
-            let remainingTime = max(0, cycleDuration - stepDuration * 2 - startDelay)
-            return SKAction.sequence([
-                SKAction.wait(forDuration: startDelay),
-                SKAction.rotate(byAngle: swingDirection * upperLegSwing, duration: stepDuration),
-                SKAction.rotate(byAngle: -swingDirection * upperLegSwing, duration: stepDuration),
-                SKAction.wait(forDuration: remainingTime)
-            ])
+            let osc = SKAction.customAction(withDuration: cycleDuration) { _, t in
+                let u = CGFloat(t / CGFloat(cycleDuration))
+                let theta = 2 * .pi * (u + phase)
+
+                // Upper segment swings around its base angle (fore–aft)
+                upper.zRotation = baseUpper + sin(theta) * upperAmp
+
+                // Lower segment bends a bit opposite to swing to suggest lift/stance
+                // Using cosine to offset relative to upper
+                lower.zRotation = baseLower + (-cos(theta)) * lowerAmp
+            }
+            let forever = SKAction.repeatForever(SKAction.sequence([osc]))
+            upper.run(forever, withKey: key)
+            lower.run(forever, withKey: key)
         }
 
-        func createLowerLegCycle(startDelay: TimeInterval, bendDirection: CGFloat) -> SKAction {
-            let remainingTime = max(0, cycleDuration - stepDuration - startDelay)
-            return SKAction.sequence([
-                SKAction.wait(forDuration: startDelay),
-                SKAction.rotate(toAngle: bendDirection * lowerLegBend, duration: stepDuration * 0.5),
-                SKAction.rotate(toAngle: 0, duration: stepDuration * 0.5),
-                SKAction.wait(forDuration: remainingTime)
-            ])
-        }
+        // Phase map for alternating tetrapod gait
+        // Set A (phase 0): R1, L2, R3, L4
+        // Set B (phase 0.5): L1, R2, L3, R4
+        // Indices by name variables below
 
-        // TETRAPOD 1: R1 → L2 → R3 → L4 (wave sequence)
-        // R1 - Front Right
-        let frontRightUpperCycle = createLegCycle(startDelay: 0, swingDirection: -1)
-        let frontRightLowerCycle = createLowerLegCycle(startDelay: 0, bendDirection: 1)
+        // Set A
+        runLeg(upper: frontRightUpperLeg, lower: frontRightLowerLeg, phase: 0.0 + rightSideΔ, key: "gait")
+        runLeg(upper: midFrontLeftUpperLeg, lower: midFrontLeftLowerLeg, phase: 0.0 + leftSideΔ, key: "gait")
+        runLeg(upper: midBackRightUpperLeg, lower: midBackRightLowerLeg, phase: 0.0 + rightSideΔ, key: "gait")
+        runLeg(upper: backLeftUpperLeg, lower: backLeftLowerLeg, phase: 0.0 + leftSideΔ, key: "gait")
 
-        // L2 - Mid-Front Left
-        let midFrontLeftUpperCycle = createLegCycle(startDelay: waveLag, swingDirection: 1)
-        let midFrontLeftLowerCycle = createLowerLegCycle(startDelay: waveLag, bendDirection: -1)
-
-        // R3 - Mid-Back Right
-        let midBackRightUpperCycle = createLegCycle(startDelay: waveLag * 2, swingDirection: -1)
-        let midBackRightLowerCycle = createLowerLegCycle(startDelay: waveLag * 2, bendDirection: 1)
-
-        // L4 - Back Left
-        let backLeftUpperCycle = createLegCycle(startDelay: waveLag * 3, swingDirection: 1)
-        let backLeftLowerCycle = createLowerLegCycle(startDelay: waveLag * 3, bendDirection: -1)
-
-        // TETRAPOD 2: L1 → R2 → L3 → R4 (opposite phase - half cycle offset)
-        let halfCycle = cycleDuration / 2
-
-        // L1 - Front Left
-        let frontLeftUpperCycle = createLegCycle(startDelay: halfCycle, swingDirection: 1)
-        let frontLeftLowerCycle = createLowerLegCycle(startDelay: halfCycle, bendDirection: -1)
-
-        // R2 - Mid-Front Right
-        let midFrontRightUpperCycle = createLegCycle(startDelay: halfCycle + waveLag, swingDirection: -1)
-        let midFrontRightLowerCycle = createLowerLegCycle(startDelay: halfCycle + waveLag, bendDirection: 1)
-
-        // L3 - Mid-Back Left
-        let midBackLeftUpperCycle = createLegCycle(startDelay: halfCycle + waveLag * 2, swingDirection: 1)
-        let midBackLeftLowerCycle = createLowerLegCycle(startDelay: halfCycle + waveLag * 2, bendDirection: -1)
-
-        // R4 - Back Right
-        let backRightUpperCycle = createLegCycle(startDelay: halfCycle + waveLag * 3, swingDirection: -1)
-        let backRightLowerCycle = createLowerLegCycle(startDelay: halfCycle + waveLag * 3, bendDirection: 1)
-
-        // Run all leg animations
-        frontRightUpperLeg.run(SKAction.repeatForever(frontRightUpperCycle), withKey: "walk")
-        frontRightLowerLeg.run(SKAction.repeatForever(frontRightLowerCycle), withKey: "walk")
-
-        midFrontLeftUpperLeg.run(SKAction.repeatForever(midFrontLeftUpperCycle), withKey: "walk")
-        midFrontLeftLowerLeg.run(SKAction.repeatForever(midFrontLeftLowerCycle), withKey: "walk")
-
-        midBackRightUpperLeg.run(SKAction.repeatForever(midBackRightUpperCycle), withKey: "walk")
-        midBackRightLowerLeg.run(SKAction.repeatForever(midBackRightLowerCycle), withKey: "walk")
-
-        backLeftUpperLeg.run(SKAction.repeatForever(backLeftUpperCycle), withKey: "walk")
-        backLeftLowerLeg.run(SKAction.repeatForever(backLeftLowerCycle), withKey: "walk")
-
-        frontLeftUpperLeg.run(SKAction.repeatForever(frontLeftUpperCycle), withKey: "walk")
-        frontLeftLowerLeg.run(SKAction.repeatForever(frontLeftLowerCycle), withKey: "walk")
-
-        midFrontRightUpperLeg.run(SKAction.repeatForever(midFrontRightUpperCycle), withKey: "walk")
-        midFrontRightLowerLeg.run(SKAction.repeatForever(midFrontRightLowerCycle), withKey: "walk")
-
-        midBackLeftUpperLeg.run(SKAction.repeatForever(midBackLeftUpperCycle), withKey: "walk")
-        midBackLeftLowerLeg.run(SKAction.repeatForever(midBackLeftLowerCycle), withKey: "walk")
-
-        backRightUpperLeg.run(SKAction.repeatForever(backRightUpperCycle), withKey: "walk")
-        backRightLowerLeg.run(SKAction.repeatForever(backRightLowerCycle), withKey: "walk")
+        // Set B (half-cycle offset)
+        runLeg(upper: frontLeftUpperLeg, lower: frontLeftLowerLeg, phase: 0.5 + leftSideΔ, key: "gait")
+        runLeg(upper: midFrontRightUpperLeg, lower: midFrontRightLowerLeg, phase: 0.5 + rightSideΔ, key: "gait")
+        runLeg(upper: midBackLeftUpperLeg, lower: midBackLeftLowerLeg, phase: 0.5 + leftSideΔ, key: "gait")
+        runLeg(upper: backRightUpperLeg, lower: backRightLowerLeg, phase: 0.5 + rightSideΔ, key: "gait")
     }
 
     private func stopWalkingAnimation() {
@@ -433,13 +387,8 @@ class Spider: SKNode {
             backLeftLowerLeg, backRightLowerLeg
         ]
 
-        for leg in allUpperLegs {
-            leg?.removeAction(forKey: "walk")
-        }
-
-        for leg in allLowerLegs {
-            leg?.removeAction(forKey: "walk")
-        }
+        for leg in allUpperLegs { leg?.removeAction(forKey: "walk"); leg?.removeAction(forKey: "gait") }
+        for leg in allLowerLegs { leg?.removeAction(forKey: "walk"); leg?.removeAction(forKey: "gait") }
 
         // Reset upper legs to their initial angles immediately
         frontLeftUpperLeg?.zRotation = frontLegsAngle
