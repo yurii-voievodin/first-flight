@@ -411,6 +411,17 @@ class Player: SKNode {
         helmetGlass.yScale = 1
         helmetGlass.position = helmetGlassBasePosition
 
+        let concealedJointNodes: [SKNode] = [
+            leftElbow,
+            leftWrist,
+            rightElbow,
+            rightWrist,
+            leftKnee,
+            rightKnee
+        ]
+
+        concealedJointNodes.forEach { $0.isHidden = false }
+
         xScale = 1
 
         switch direction {
@@ -419,6 +430,7 @@ class Player: SKNode {
             backpack.position = CGPoint(x: 0, y: -1)
             backpackStrap.isHidden = true
             helmetGlass.isHidden = true
+            concealedJointNodes.forEach { $0.isHidden = true }
         case .down:
             backpack.isHidden = true
         case .right:
