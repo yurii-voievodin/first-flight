@@ -2,7 +2,7 @@ import SpriteKit
 
 
 class Spider: SKNode {
-    private let bodyRadius: CGFloat = 20.0
+    private let bodyRadius: CGFloat = 25.0
 
     // Leg angles
     private let frontLegsAngle: CGFloat = -35 * .pi / 180
@@ -61,21 +61,8 @@ class Spider: SKNode {
     }
 
     private func setupBodyParts() {
-        // Abdomen (main body) - oval shape
-        let abdomenSize = CGSize(width: 28, height: 36)
-        let abdomenPath = CGPath(
-            ellipseIn: CGRect(x: -abdomenSize.width / 2, y: -abdomenSize.height / 2, width: abdomenSize.width, height: abdomenSize.height),
-            transform: nil
-        )
-        abdomen = SKShapeNode(path: abdomenPath)
-        abdomen.fillColor = .lightGray
-        abdomen.strokeColor = .clear
-        abdomen.position = CGPoint(x: 0, y: 0)
-        abdomen.zPosition = 1
-        addChild(abdomen)
-
-        // Head - smaller oval
-        let headSize = CGSize(width: 20, height: 20)
+        // Cephalothorax (head+thorax, front body part where legs attach) - smaller oval
+        let headSize = CGSize(width: 24, height: 28)
         let headPath = CGPath(
             ellipseIn: CGRect(x: -headSize.width / 2, y: -headSize.height / 2, width: headSize.width, height: headSize.height),
             transform: nil
@@ -83,15 +70,32 @@ class Spider: SKNode {
         head = SKShapeNode(path: headPath)
         head.fillColor = .white
         head.strokeColor = .clear
-        head.position = CGPoint(x: 0, y: 24) // Above abdomen
+        head.position = CGPoint(x: 0, y: 10) // Front part
         head.zPosition = 2
         addChild(head)
 
-        // Leg dimensions
-        let upperLegSize = CGSize(width: 5, height: 24)
-        let lowerLegSize = CGSize(width: 4, height: 16)
+        // Abdomen (rear body part, larger) - no legs attached
+        let abdomenSize = CGSize(width: 35, height: 50)
+        let abdomenPath = CGPath(
+            ellipseIn: CGRect(x: -abdomenSize.width / 2, y: -abdomenSize.height / 2, width: abdomenSize.width, height: abdomenSize.height),
+            transform: nil
+        )
+        abdomen = SKShapeNode(path: abdomenPath)
+        abdomen.fillColor = .lightGray
+        abdomen.strokeColor = .clear
+        abdomen.position = CGPoint(x: 0, y: -20) // Behind cephalothorax
+        abdomen.zPosition = 1
+        addChild(abdomen)
 
-        // FRONT LEGS (Pair 1) - Angled upward/forward
+        // Leg dimensions - long and thin
+        let upperLegSize = CGSize(width: 3, height: 40)
+        let lowerLegSize = CGSize(width: 2.5, height: 35)
+
+        // Mid leg dimensions - slightly smaller
+        let midUpperLegSize = CGSize(width: 3, height: 35)
+        let midLowerLegSize = CGSize(width: 2.5, height: 30)
+
+        // FRONT LEGS (Pair 1) - Angled upward/forward (longest)
         setupLegPair(
             leftUpper: &frontLeftUpperLeg,
             leftJoint: &frontLeftJoint,
@@ -106,7 +110,7 @@ class Spider: SKNode {
             forwardAngle: frontLegsAngle
         )
 
-        // MID-FRONT LEGS (Pair 2) - Angled forward
+        // MID-FRONT LEGS (Pair 2) - Angled forward (shorter)
         setupLegPair(
             leftUpper: &midFrontLeftUpperLeg,
             leftJoint: &midFrontLeftJoint,
@@ -114,14 +118,14 @@ class Spider: SKNode {
             rightUpper: &midFrontRightUpperLeg,
             rightJoint: &midFrontRightJoint,
             rightLower: &midFrontRightLowerLeg,
-            upperSize: upperLegSize,
-            lowerSize: lowerLegSize,
+            upperSize: midUpperLegSize,
+            lowerSize: midLowerLegSize,
             position: CGPoint(x: 0, y: 0),
             xOffset: 18,
             forwardAngle: midFrontLegsAngle
         )
 
-        // MID-BACK LEGS (Pair 3) - Angled backward with more spacing
+        // MID-BACK LEGS (Pair 3) - Angled backward (shorter)
         setupLegPair(
             leftUpper: &midBackLeftUpperLeg,
             leftJoint: &midBackLeftJoint,
@@ -129,14 +133,14 @@ class Spider: SKNode {
             rightUpper: &midBackRightUpperLeg,
             rightJoint: &midBackRightJoint,
             rightLower: &midBackRightLowerLeg,
-            upperSize: upperLegSize,
-            lowerSize: lowerLegSize,
+            upperSize: midUpperLegSize,
+            lowerSize: midLowerLegSize,
             position: CGPoint(x: 0, y: 0),
             xOffset: 18,
             forwardAngle: midBackLegsAngle
         )
 
-        // BACK LEGS (Pair 4) - Angled backward
+        // BACK LEGS (Pair 4) - Angled backward (longest)
         setupLegPair(
             leftUpper: &backLeftUpperLeg,
             leftJoint: &backLeftJoint,
@@ -178,7 +182,7 @@ class Spider: SKNode {
         leftUpper.position = position
         leftUpper.zRotation = forwardAngle // Forward/backward tilt only
         leftUpper.zPosition = -1
-        abdomen.addChild(leftUpper)
+        head.addChild(leftUpper)
 
         // Left joint
         leftJoint = SKShapeNode(circleOfRadius: 2.5)
@@ -216,7 +220,7 @@ class Spider: SKNode {
         rightUpper.position = position
         rightUpper.zRotation = -forwardAngle // Forward/backward tilt (mirrored)
         rightUpper.zPosition = -1
-        abdomen.addChild(rightUpper)
+        head.addChild(rightUpper)
 
         // Right joint
         rightJoint = SKShapeNode(circleOfRadius: 2.5)
