@@ -68,7 +68,7 @@ class Spider: SKNode {
             transform: nil
         )
         head = SKShapeNode(path: headPath)
-        head.fillColor = .white
+        head.fillColor = .lightGray
         head.strokeColor = .clear
         head.position = CGPoint(x: 0, y: 10) // Front part
         head.zPosition = 2
@@ -81,7 +81,7 @@ class Spider: SKNode {
             transform: nil
         )
         abdomen = SKShapeNode(path: abdomenPath)
-        abdomen.fillColor = .lightGray
+        abdomen.fillColor = .systemGray2
         abdomen.strokeColor = .clear
         abdomen.position = CGPoint(x: 0, y: -20) // Behind cephalothorax
         abdomen.zPosition = 1
@@ -318,35 +318,40 @@ class Spider: SKNode {
     // MARK: - Animation
 
     private func startWalkingAnimation() {
+        // Stop any existing animations and reset legs to initial positions
+        stopWalkingAnimation()
+
         // Spider walking uses alternating tetrapods gait
         // Tetrapod 1: R1, L2, R3, L4 (right front, left mid-front, right mid-back, left back)
         // Tetrapod 2: L1, R2, L3, R4 (left front, right mid-front, left mid-back, right back)
         // Wave sequence creates 1-2-3-4 staggered motion within each tetrapod
 
-        let stepDuration: TimeInterval = 0.3
+        let stepDuration: TimeInterval = 0.15
         let waveLag: TimeInterval = stepDuration * 0.25 // Delay between legs in wave
         let cycleDuration = stepDuration * 4 // Full cycle time
 
         // Leg movement angles
-        let upperLegSwing: CGFloat = .pi / 10 // 18 degrees swing
+        let upperLegSwing: CGFloat = .pi / 8 // 18 degrees swing
         let lowerLegBend: CGFloat = .pi / 6 // 30 degrees bend when lifted
 
         // Helper function to create a leg step cycle with wave offset
         func createLegCycle(startDelay: TimeInterval, swingDirection: CGFloat) -> SKAction {
+            let remainingTime = max(0, cycleDuration - stepDuration * 2 - startDelay)
             return SKAction.sequence([
                 SKAction.wait(forDuration: startDelay),
                 SKAction.rotate(byAngle: swingDirection * upperLegSwing, duration: stepDuration),
                 SKAction.rotate(byAngle: -swingDirection * upperLegSwing, duration: stepDuration),
-                SKAction.wait(forDuration: cycleDuration - stepDuration * 2 - startDelay)
+                SKAction.wait(forDuration: remainingTime)
             ])
         }
 
         func createLowerLegCycle(startDelay: TimeInterval, bendDirection: CGFloat) -> SKAction {
+            let remainingTime = max(0, cycleDuration - stepDuration - startDelay)
             return SKAction.sequence([
                 SKAction.wait(forDuration: startDelay),
                 SKAction.rotate(toAngle: bendDirection * lowerLegBend, duration: stepDuration * 0.5),
                 SKAction.rotate(toAngle: 0, duration: stepDuration * 0.5),
-                SKAction.wait(forDuration: cycleDuration - stepDuration - startDelay)
+                SKAction.wait(forDuration: remainingTime)
             ])
         }
 
@@ -436,26 +441,25 @@ class Spider: SKNode {
             leg?.removeAction(forKey: "walk")
         }
 
-        // Reset upper legs to their initial angles
-        let resetDuration: TimeInterval = 0.2
-        frontLeftUpperLeg?.run(SKAction.rotate(toAngle: frontLegsAngle, duration: resetDuration))
-        frontRightUpperLeg?.run(SKAction.rotate(toAngle: -frontLegsAngle, duration: resetDuration))
-        midFrontLeftUpperLeg?.run(SKAction.rotate(toAngle: midFrontLegsAngle, duration: resetDuration))
-        midFrontRightUpperLeg?.run(SKAction.rotate(toAngle: -midFrontLegsAngle, duration: resetDuration))
-        midBackLeftUpperLeg?.run(SKAction.rotate(toAngle: midBackLegsAngle, duration: resetDuration))
-        midBackRightUpperLeg?.run(SKAction.rotate(toAngle: -midBackLegsAngle, duration: resetDuration))
-        backLeftUpperLeg?.run(SKAction.rotate(toAngle: backLegsAngle, duration: resetDuration))
-        backRightUpperLeg?.run(SKAction.rotate(toAngle: -backLegsAngle, duration: resetDuration))
+        // Reset upper legs to their initial angles immediately
+        frontLeftUpperLeg?.zRotation = frontLegsAngle
+        frontRightUpperLeg?.zRotation = -frontLegsAngle
+        midFrontLeftUpperLeg?.zRotation = midFrontLegsAngle
+        midFrontRightUpperLeg?.zRotation = -midFrontLegsAngle
+        midBackLeftUpperLeg?.zRotation = midBackLegsAngle
+        midBackRightUpperLeg?.zRotation = -midBackLegsAngle
+        backLeftUpperLeg?.zRotation = backLegsAngle
+        backRightUpperLeg?.zRotation = -backLegsAngle
 
-        // Reset lower legs to bent neutral position (downward bend)
+        // Reset lower legs to bent neutral position (downward bend) immediately
         let kneeBend: CGFloat = .pi / 6
-        frontLeftLowerLeg?.run(SKAction.rotate(toAngle: -kneeBend, duration: resetDuration))
-        frontRightLowerLeg?.run(SKAction.rotate(toAngle: kneeBend, duration: resetDuration))
-        midFrontLeftLowerLeg?.run(SKAction.rotate(toAngle: -kneeBend, duration: resetDuration))
-        midFrontRightLowerLeg?.run(SKAction.rotate(toAngle: kneeBend, duration: resetDuration))
-        midBackLeftLowerLeg?.run(SKAction.rotate(toAngle: -kneeBend, duration: resetDuration))
-        midBackRightLowerLeg?.run(SKAction.rotate(toAngle: kneeBend, duration: resetDuration))
-        backLeftLowerLeg?.run(SKAction.rotate(toAngle: -kneeBend, duration: resetDuration))
-        backRightLowerLeg?.run(SKAction.rotate(toAngle: kneeBend, duration: resetDuration))
+        frontLeftLowerLeg?.zRotation = -kneeBend
+        frontRightLowerLeg?.zRotation = kneeBend
+        midFrontLeftLowerLeg?.zRotation = -kneeBend
+        midFrontRightLowerLeg?.zRotation = kneeBend
+        midBackLeftLowerLeg?.zRotation = -kneeBend
+        midBackRightLowerLeg?.zRotation = kneeBend
+        backLeftLowerLeg?.zRotation = -kneeBend
+        backRightLowerLeg?.zRotation = kneeBend
     }
 }
