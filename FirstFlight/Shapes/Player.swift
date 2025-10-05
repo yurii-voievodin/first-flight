@@ -494,7 +494,10 @@ class Player: SKNode {
         }
 
         let duration: TimeInterval = animated ? 0.12 : 0
-        let directionSign: CGFloat = facingDirection == .left ? 1 : -1
+        let parentScaleSign: CGFloat = xScale >= 0 ? 1 : -1
+        let desiredWorldSign: CGFloat = facingDirection == .left ? -1 : 1
+        // Adjust for mirrored player scale so the beam matches the on-screen facing.
+        let directionSign: CGFloat = desiredWorldSign * parentScaleSign
 
         rotate(leftUpperArm, to: directionSign * (.pi / 2), duration: duration, key: "aimUpper")
         rotate(leftForearm, to: directionSign * (.pi / 16), duration: duration, key: "aimFore")
