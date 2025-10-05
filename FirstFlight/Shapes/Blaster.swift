@@ -87,6 +87,8 @@ final class Blaster: SKNode {
         beam.isHidden = true
         beam.alpha = 0
         beam.blendMode = .add
+        // Physics body will be created when firing starts
+
         addChild(beam)
     }
 
@@ -113,7 +115,6 @@ final class Blaster: SKNode {
 
         switch orientation {
         case .up:
-            zRotation = .pi
             zPosition = 2.5
             emitterAlpha = 0.85
         case .down:
@@ -155,6 +156,37 @@ final class Blaster: SKNode {
         guard !isFiring else { return }
         isFiring = true
         emitter.alpha = 1
+
+        // Create physics body for collision detection
+        let beamCenter = CGPoint(x: 0, y: -beam.size.height / 2)
+        beam.physicsBody = SKPhysicsBody(rectangleOf: beam.size, center: beamCenter)
+        beam.physicsBody?.categoryBitMask = PhysicsCategory.blasterBeam
+        beam.physicsBody?.contactTestBitMask = PhysicsCategory.rock
+        beam.physicsBody?.collisionBitMask = PhysicsCategory.none
+        beam.physicsBody?.isDynamic = true
+        beam.physicsBody?.affectedByGravity = false
+        beam.physicsBody?.allowsRotation = false
+        beam.physicsBody?.linearDamping = 0
+        beam.physicsBody?.angularDamping = 0
+
+        print("⚡ BLASTER: Starting beam")
+        print("  Beam local position: \(beam.position)")
+        print("  Beam size: \(beam.size)")
+
+        // Log world position (convert from beam's parent coordinate system to scene coordinates)
+        if let scene = self.scene {
+            let beamWorldPos = scene.convert(beam.position, from: self)
+            print("  Beam WORLD position: \(beamWorldPos)")
+            print("  Blaster world position: \(scene.convert(self.position, from: self.parent ?? scene))")
+        }
+
+        print("  Beam physics body CREATED: \(beam.physicsBody != nil)")
+        if let physics = beam.physicsBody {
+            print("  Physics category: \(physics.categoryBitMask)")
+            print("  Physics contactTest: \(physics.contactTestBitMask)")
+            print("  Physics collision: \(physics.collisionBitMask)")
+            print("  Physics isDynamic: \(physics.isDynamic)")
+        }
         updateBeamState(animated: true)
     }
 
@@ -162,6 +194,13 @@ final class Blaster: SKNode {
         guard isFiring else { return }
         isFiring = false
         emitter.alpha = restingEmitterAlpha
+
+        // Remove physics body to stop collision detection
+        beam.physicsBody = nil
+
+        print("⚡ BLASTER: Stopping beam")
+        print("  Beam physics body REMOVED: \(beam.physicsBody == nil)")
+
         updateBeamState(animated: true)
     }
 
@@ -172,14 +211,23 @@ final class Blaster: SKNode {
             beam.isHidden = false
             beam.yScale = 1
             beam.position = emitter.position
+            beam.zRotation = 0
+            print("  📍 Beam state updated - visible: true, position: \(beam.position)")
+
+            if let scene = self.scene {
+                let beamWorldPos = scene.convert(beam.position, from: self)
+                print("  📍 Beam world position after update: \(beamWorldPos)")
+            }
         } else if !animated {
             beam.alpha = 0
             beam.isHidden = true
+            print("  📍 Beam state updated - hidden immediately")
         }
 
         guard animated else {
             if isFiring {
                 beam.alpha = 1
+                print("  📍 Beam alpha set to 1 (not animated)")
             }
             return
         }
@@ -188,12 +236,14 @@ final class Blaster: SKNode {
             beam.alpha = 0
             let fadeIn = SKAction.fadeAlpha(to: 1, duration: 0.08)
             beam.run(fadeIn, withKey: "beamFadeIn")
+            print("  📍 Beam fading in (animated)")
         } else {
             let fadeOut = SKAction.fadeAlpha(to: 0, duration: 0.1)
             let hide = SKAction.run { [weak self] in
                 self?.beam.isHidden = true
             }
             beam.run(SKAction.sequence([fadeOut, hide]), withKey: "beamFadeOut")
+            print("  📍 Beam fading out (animated)")
         }
     }
 }

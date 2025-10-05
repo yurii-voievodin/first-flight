@@ -206,7 +206,7 @@ class RockFormation: SKShapeNode {
         // Create physics body from the shape path
         physicsBody = SKPhysicsBody(polygonFrom: path)
         physicsBody?.categoryBitMask = PhysicsCategory.rock
-        physicsBody?.contactTestBitMask = PhysicsCategory.player
+        physicsBody?.contactTestBitMask = PhysicsCategory.player | PhysicsCategory.blasterBeam
         physicsBody?.collisionBitMask = PhysicsCategory.player
         physicsBody?.isDynamic = false
         physicsBody?.friction = 0.8

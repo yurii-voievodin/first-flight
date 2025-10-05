@@ -272,10 +272,59 @@ extension GameScene: SKPhysicsContactDelegate {
     func didBegin(_ contact: SKPhysicsContact) {
         let collision = contact.bodyA.categoryBitMask | contact.bodyB.categoryBitMask
 
+        // Debug logging
+        print("🔵 COLLISION DETECTED:")
+        print("  Body A: \(contact.bodyA.categoryBitMask) (\(categoryName(contact.bodyA.categoryBitMask)))")
+        print("  Body B: \(contact.bodyB.categoryBitMask) (\(categoryName(contact.bodyB.categoryBitMask)))")
+        print("  Combined: \(collision)")
+
         // Check if player collided with wall or rock
         if collision == PhysicsCategory.player | PhysicsCategory.wall ||
            collision == PhysicsCategory.player | PhysicsCategory.rock {
+            print("  ➡️ Player collision - stopping movement")
             activeCharacter?.stopMovement()
         }
+
+        // Check if blaster beam hit a rock
+        if collision == PhysicsCategory.blasterBeam | PhysicsCategory.rock {
+            print("  ➡️ Beam-Rock collision detected!")
+            // Determine which body is the rock
+            let rockBody = contact.bodyA.categoryBitMask == PhysicsCategory.rock ? contact.bodyA : contact.bodyB
+
+            // Get the rock node
+            if let rock = rockBody.node as? RockFormation {
+                print("  ✅ Destroying rock")
+                destroyRock(rock)
+            } else {
+                print("  ❌ Rock node not found")
+            }
+        }
+    }
+
+    private func categoryName(_ category: UInt32) -> String {
+        switch category {
+        case PhysicsCategory.player: return "Player"
+        case PhysicsCategory.wall: return "Wall"
+        case PhysicsCategory.rock: return "Rock"
+        case PhysicsCategory.terrain: return "Terrain"
+        case PhysicsCategory.blasterBeam: return "BlasterBeam"
+        default: return "Unknown(\(category))"
+        }
+    }
+
+    private func destroyRock(_ rock: RockFormation) {
+        // Remove from rockFormations array
+        if let index = rockFormations.firstIndex(of: rock) {
+            rockFormations.remove(at: index)
+        }
+
+        // Create destruction animation
+        let fadeOut = SKAction.fadeOut(withDuration: 0.3)
+        let scaleDown = SKAction.scale(to: 0.1, duration: 0.3)
+        let group = SKAction.group([fadeOut, scaleDown])
+        let remove = SKAction.removeFromParent()
+        let sequence = SKAction.sequence([group, remove])
+
+        rock.run(sequence)
     }
 }

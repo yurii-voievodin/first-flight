@@ -426,7 +426,8 @@ class Player: SKNode {
             backpack.zPosition = 1.6
             backpack.position = CGPoint(x: 0, y: -1)
             helmetGlass.isHidden = true
-            concealedJointNodes.forEach { $0.isHidden = true }
+            leftKnee.isHidden = true
+            rightKnee.isHidden = true
             blasterOrientation = .up
         case .down:
             backpack.isHidden = true
@@ -438,7 +439,7 @@ class Player: SKNode {
             backpack.position = CGPoint(x: -3, y: -2)
             helmetGlass.alpha = 0.85
             helmetGlass.xScale = 0.75
-            helmetGlass.position = CGPoint(x: 2.2, y: 2)
+            helmetGlass.position = CGPoint(x: 4.2, y: 2)
             blasterOrientation = .right
         case .left:
             xScale = -1
@@ -448,7 +449,7 @@ class Player: SKNode {
             backpack.position = CGPoint(x: -3, y: -2)
             helmetGlass.alpha = 0.85
             helmetGlass.xScale = 0.75
-            helmetGlass.position = CGPoint(x: 2.2, y: 2)
+            helmetGlass.position = CGPoint(x: 4.2, y: 2)
             leftUpperArm.position = CGPoint(x: -leftShoulderBasePosition.x, y: leftShoulderBasePosition.y)
             rightUpperArm.position = CGPoint(x: -rightShoulderBasePosition.x, y: rightShoulderBasePosition.y)
             leftThigh.position = CGPoint(x: -leftHipBasePosition.x, y: leftHipBasePosition.y)
@@ -461,6 +462,10 @@ class Player: SKNode {
         if isFiring {
             if direction == .left || direction == .right {
                 configureLeftArmAimPose(manageWalkCycle: false, animated: true)
+            } else if direction == .up {
+                configureLeftArmRaisePose(manageWalkCycle: false, animated: true)
+            } else if direction == .down {
+                configureLeftArmLowerPose(manageWalkCycle: false, animated: true)
             } else {
                 resetLeftArmPose(manageWalkCycle: false, animated: true)
             }
@@ -508,13 +513,58 @@ class Player: SKNode {
         rotate(leftHand, to: directionSign * (-.pi / 24), duration: duration, key: "aimHand", completion: completion)
     }
 
+    private func configureLeftArmRaisePose(manageWalkCycle: Bool, animated: Bool, completion: (() -> Void)? = nil) {
+        guard facingDirection == .up else {
+            completion?()
+            return
+        }
+
+        if manageWalkCycle {
+            leftArmWasSwinging = leftUpperArm.action(forKey: "walk") != nil
+            if leftArmWasSwinging {
+                leftUpperArm.removeAction(forKey: "walk")
+                leftForearm.removeAction(forKey: "walk")
+                leftWrist.removeAction(forKey: "walk")
+                leftHand.removeAction(forKey: "walk")
+            }
+        }
+
+        let duration: TimeInterval = animated ? 0.12 : 0
+        rotate(leftUpperArm, to: .pi, duration: duration, key: "raiseUpper", completion: completion)
+    }
+
+    private func configureLeftArmLowerPose(manageWalkCycle: Bool, animated: Bool, completion: (() -> Void)? = nil) {
+        guard facingDirection == .down else {
+            completion?()
+            return
+        }
+
+        if manageWalkCycle {
+            leftArmWasSwinging = leftUpperArm.action(forKey: "walk") != nil
+            if leftArmWasSwinging {
+                leftUpperArm.removeAction(forKey: "walk")
+                leftForearm.removeAction(forKey: "walk")
+                leftWrist.removeAction(forKey: "walk")
+                leftHand.removeAction(forKey: "walk")
+            }
+        }
+
+        let duration: TimeInterval = animated ? 0.12 : 0
+        rotate(leftUpperArm, to: 0, duration: duration, key: "lowerUpper", completion: completion)
+    }
+
     private func resetLeftArmPose(manageWalkCycle: Bool, animated: Bool) {
         let duration: TimeInterval = animated ? 0.15 : 0
 
-        rotate(leftUpperArm, to: 0, duration: duration, key: "aimUpper")
-        rotate(leftForearm, to: 0, duration: duration, key: "aimFore")
-        rotate(leftWrist, to: 0, duration: duration, key: "aimWrist")
-        rotate(leftHand, to: 0, duration: duration, key: "aimHand")
+        leftUpperArm.removeAction(forKey: "aimUpper")
+        leftForearm.removeAction(forKey: "aimFore")
+        leftWrist.removeAction(forKey: "aimWrist")
+        leftHand.removeAction(forKey: "aimHand")
+
+        rotate(leftUpperArm, to: 0, duration: duration, key: "resetUpper")
+        rotate(leftForearm, to: 0, duration: duration, key: "resetFore")
+        rotate(leftWrist, to: 0, duration: duration, key: "resetWrist")
+        rotate(leftHand, to: 0, duration: duration, key: "resetHand")
 
         if manageWalkCycle && leftArmWasSwinging {
             leftArmWasSwinging = false
@@ -607,8 +657,19 @@ class Player: SKNode {
         guard !isFiring else { return }
         isFiring = true
         blaster.update(for: blasterOrientation(for: facingDirection))
-        configureLeftArmAimPose(manageWalkCycle: true, animated: true) { [weak self] in
-            self?.blaster.startBeam()
+
+        if facingDirection == .up {
+            configureLeftArmRaisePose(manageWalkCycle: true, animated: true) { [weak self] in
+                self?.blaster.startBeam()
+            }
+        } else if facingDirection == .down {
+            configureLeftArmLowerPose(manageWalkCycle: true, animated: true) { [weak self] in
+                self?.blaster.startBeam()
+            }
+        } else if facingDirection == .left || facingDirection == .right {
+            configureLeftArmAimPose(manageWalkCycle: true, animated: true) { [weak self] in
+                self?.blaster.startBeam()
+            }
         }
     }
 
@@ -632,7 +693,7 @@ class Player: SKNode {
         let thighSwingAngle: CGFloat = .pi / 14 // ~13 degrees
         let kneeBendAngle: CGFloat = .pi / 7    // ~26 degrees
         let upperArmSwingAngle: CGFloat = .pi / 20 // ~9 degrees
-        let elbowBendAngle: CGFloat = .pi / 12     // ~15 degrees
+        let elbowBendAngle: CGFloat = .pi / -12     // ~15 degrees
         let wristFlickAngle: CGFloat = .pi / 18    // ~10 degrees
         let ankleRollAngle: CGFloat = .pi / 14     // ~13 degrees
 
@@ -779,7 +840,7 @@ class Player: SKNode {
         rightAnkle.run(SKAction.repeatForever(rightAnkleCycle), withKey: "walk")
         rightFoot.run(SKAction.repeatForever(rightFootCycle), withKey: "walk")
 
-        if !(isFiring && (facingDirection == .left || facingDirection == .right)) {
+        if !isFiring {
             leftUpperArm.run(SKAction.repeatForever(leftUpperArmCycle), withKey: "walk")
             leftForearm.run(SKAction.repeatForever(leftForearmCycle), withKey: "walk")
             leftWrist.run(SKAction.repeatForever(leftWristCycle), withKey: "walk")
@@ -796,8 +857,14 @@ class Player: SKNode {
         rightWrist.run(rightWristCycle, withKey: "walk")
         rightHand.run(rightHandCycle, withKey: "walk")
 
-        if isFiring && (facingDirection == .left || facingDirection == .right) {
-            configureLeftArmAimPose(manageWalkCycle: false, animated: false)
+        if isFiring {
+            if facingDirection == .left || facingDirection == .right {
+                configureLeftArmAimPose(manageWalkCycle: false, animated: false)
+            } else if facingDirection == .up {
+                configureLeftArmRaisePose(manageWalkCycle: false, animated: false)
+            } else if facingDirection == .down {
+                configureLeftArmLowerPose(manageWalkCycle: false, animated: false)
+            }
         }
     }
 
@@ -841,8 +908,14 @@ class Player: SKNode {
         rightWrist.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
         rightHand.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
 
-        if isFiring && (facingDirection == .left || facingDirection == .right) {
-            configureLeftArmAimPose(manageWalkCycle: false, animated: false)
+        if isFiring {
+            if facingDirection == .left || facingDirection == .right {
+                configureLeftArmAimPose(manageWalkCycle: false, animated: false)
+            } else if facingDirection == .up {
+                configureLeftArmRaisePose(manageWalkCycle: false, animated: false)
+            } else if facingDirection == .down {
+                configureLeftArmLowerPose(manageWalkCycle: false, animated: false)
+            }
         }
     }
 }
