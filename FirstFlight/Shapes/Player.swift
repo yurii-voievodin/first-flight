@@ -5,6 +5,10 @@ class Player: SKNode {
     private let bodyRadius: CGFloat = 20.0
     private let backpackBasePosition = CGPoint(x: 0, y: -2)
     private let helmetGlassBasePosition = CGPoint(x: 0, y: 2)
+    private let leftShoulderBasePosition = CGPoint(x: -16, y: 8)
+    private let rightShoulderBasePosition = CGPoint(x: 16, y: 8)
+    private let leftHipBasePosition = CGPoint(x: -8, y: -16)
+    private let rightHipBasePosition = CGPoint(x: 8, y: -16)
     private let baseZPosition: CGFloat = -10
 
     private enum FacingDirection {
@@ -19,7 +23,6 @@ class Player: SKNode {
     // Body parts
     private var body: SKShapeNode!
     private var backpack: SKShapeNode!
-    private var backpackStrap: SKShapeNode!
     private var shoulderArmor: SKShapeNode!
     private var head: SKShapeNode!
     private var helmetGlass: SKShapeNode!
@@ -104,22 +107,6 @@ class Player: SKNode {
         body.zPosition = 1
         addChild(body)
 
-        // Backpack strap - light accent crossing the torso
-        let strapPath = CGMutablePath()
-        strapPath.move(to: CGPoint(x: -bodySize.width / 2 - 1, y: 12))
-        strapPath.addQuadCurve(
-            to: CGPoint(x: bodySize.width / 2 + 1, y: -10),
-            control: CGPoint(x: 0, y: 16)
-        )
-        backpackStrap = SKShapeNode(path: strapPath)
-        backpackStrap.strokeColor = SKColor(red: 0.71, green: 0.75, blue: 0.8, alpha: 1)
-        backpackStrap.lineWidth = 4
-        backpackStrap.lineCap = .round
-        backpackStrap.fillColor = .clear
-        backpackStrap.position = .zero
-        backpackStrap.zPosition = 1.2
-        addChild(backpackStrap)
-
         // Shoulder armor - half circle arc on shoulders
         let shoulderPath = CGMutablePath()
         let shoulderRadius: CGFloat = 14
@@ -176,7 +163,7 @@ class Player: SKNode {
         leftUpperArm = SKShapeNode(path: leftUpperArmPath)
         leftUpperArm.fillColor = .white
         leftUpperArm.strokeColor = .clear
-        leftUpperArm.position = CGPoint(x: -16, y: 8) // Left shoulder
+        leftUpperArm.position = leftShoulderBasePosition // Left shoulder
         leftUpperArm.zPosition = 0
         addChild(leftUpperArm)
 
@@ -227,7 +214,7 @@ class Player: SKNode {
         rightUpperArm = SKShapeNode(path: rightUpperArmPath)
         rightUpperArm.fillColor = .white
         rightUpperArm.strokeColor = .clear
-        rightUpperArm.position = CGPoint(x: 16, y: 8) // Right shoulder
+        rightUpperArm.position = rightShoulderBasePosition // Right shoulder
         rightUpperArm.zPosition = 0
         addChild(rightUpperArm)
 
@@ -267,7 +254,7 @@ class Player: SKNode {
         rightHand.zPosition = 0.2
         rightWrist.addChild(rightHand)
 
-        rightHand.addChild(blaster)
+        leftHand.addChild(blaster)
 
         // Left Thigh - anchor at hip
         let thighSize = CGSize(width: 10, height: 16)
@@ -280,7 +267,7 @@ class Player: SKNode {
         leftThigh = SKShapeNode(path: leftThighPath)
         leftThigh.fillColor = .white
         leftThigh.strokeColor = .clear
-        leftThigh.position = CGPoint(x: -8, y: -16) // Left hip
+        leftThigh.position = leftHipBasePosition // Left hip
         leftThigh.zPosition = 0
         addChild(leftThigh)
 
@@ -331,7 +318,7 @@ class Player: SKNode {
         rightThigh = SKShapeNode(path: rightThighPath)
         rightThigh.fillColor = .white
         rightThigh.strokeColor = .clear
-        rightThigh.position = CGPoint(x: 8, y: -16) // Right hip
+        rightThigh.position = rightHipBasePosition // Right hip
         rightThigh.zPosition = 0
         addChild(rightThigh)
 
@@ -406,10 +393,6 @@ class Player: SKNode {
         backpack.position = backpackBasePosition
         backpack.zPosition = 0.2
 
-        backpackStrap.isHidden = false
-        backpackStrap.alpha = 1
-        backpackStrap.zPosition = 1.2
-
         helmetGlass.isHidden = false
         helmetGlass.alpha = 1
         helmetGlass.xScale = 1
@@ -429,13 +412,17 @@ class Player: SKNode {
 
         xScale = 1
 
+        leftUpperArm.position = leftShoulderBasePosition
+        rightUpperArm.position = rightShoulderBasePosition
+        leftThigh.position = leftHipBasePosition
+        rightThigh.position = rightHipBasePosition
+
         var blasterOrientation: Blaster.Orientation = .down
 
         switch direction {
         case .up:
             backpack.zPosition = 1.6
             backpack.position = CGPoint(x: 0, y: -1)
-            backpackStrap.isHidden = true
             helmetGlass.isHidden = true
             concealedJointNodes.forEach { $0.isHidden = true }
             blasterOrientation = .up
@@ -447,8 +434,6 @@ class Player: SKNode {
             backpack.zPosition = 0.9
             backpack.xScale = 0.7
             backpack.position = CGPoint(x: -3, y: -2)
-            backpackStrap.alpha = 0.7
-            backpackStrap.zPosition = 1.1
             helmetGlass.alpha = 0.85
             helmetGlass.xScale = 0.75
             helmetGlass.position = CGPoint(x: 2.2, y: 2)
@@ -459,11 +444,13 @@ class Player: SKNode {
             backpack.zPosition = 0.9
             backpack.xScale = 0.7
             backpack.position = CGPoint(x: -3, y: -2)
-            backpackStrap.alpha = 0.7
-            backpackStrap.zPosition = 1.1
             helmetGlass.alpha = 0.85
             helmetGlass.xScale = 0.75
             helmetGlass.position = CGPoint(x: 2.2, y: 2)
+            leftUpperArm.position = CGPoint(x: -leftShoulderBasePosition.x, y: leftShoulderBasePosition.y)
+            rightUpperArm.position = CGPoint(x: -rightShoulderBasePosition.x, y: rightShoulderBasePosition.y)
+            leftThigh.position = CGPoint(x: -leftHipBasePosition.x, y: leftHipBasePosition.y)
+            rightThigh.position = CGPoint(x: -rightHipBasePosition.x, y: rightHipBasePosition.y)
             blasterOrientation = .left
         }
 

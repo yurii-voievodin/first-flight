@@ -109,6 +109,8 @@ final class Blaster: SKNode {
         barrel.alpha = 0.9
         var emitterAlpha: CGFloat = 0.8
 
+        var gripPose = orientation
+
         switch orientation {
         case .up:
             zRotation = .pi
@@ -117,13 +119,13 @@ final class Blaster: SKNode {
         case .down:
             emitterAlpha = 0.9
         case .right:
-            zRotation = .pi / 2
+            gripPose = .down
             zPosition = 2.3
             body.fillColor = SKColor(red: 0.42, green: 0.5, blue: 0.58, alpha: 1)
             gripMount.fillColor = SKColor(red: 0.37, green: 0.44, blue: 0.52, alpha: 1)
             emitterAlpha = 0.75
         case .left:
-            zRotation = .pi / 2
+            gripPose = .down
             zPosition = 2.3
             body.fillColor = SKColor(red: 0.42, green: 0.5, blue: 0.58, alpha: 1)
             gripMount.fillColor = SKColor(red: 0.37, green: 0.44, blue: 0.52, alpha: 1)
@@ -131,7 +133,7 @@ final class Blaster: SKNode {
         }
 
         let anchorInBlaster = convert(gripAnchor.position, from: grip)
-        let palm = palmTarget(for: orientation)
+        let palm = palmTarget(for: gripPose)
         position = CGPoint(x: palm.x - anchorInBlaster.x, y: palm.y - anchorInBlaster.y)
 
         restingEmitterAlpha = emitterAlpha
@@ -142,14 +144,10 @@ final class Blaster: SKNode {
 
     private func palmTarget(for orientation: Orientation) -> CGPoint {
         switch orientation {
-        case .down:
-            return CGPoint(x: 0.6, y: -3.9)
+        case .down, .right, .left:
+            return CGPoint(x: -0.6, y: -3.9)
         case .up:
             return CGPoint(x: -0.4, y: 3.6)
-        case .right:
-            return CGPoint(x: 3.6, y: -0.4)
-        case .left:
-            return CGPoint(x: 3.6, y: -0.4)
         }
     }
 
