@@ -166,7 +166,7 @@ class Player: SKNode {
         leftUpperArm.fillColor = .white
         leftUpperArm.strokeColor = .clear
         leftUpperArm.position = leftShoulderBasePosition // Left shoulder
-        leftUpperArm.zPosition = 0
+        leftUpperArm.zPosition = 2
         addChild(leftUpperArm)
 
         // Left Elbow - joint circle (child of upper arm)
@@ -189,21 +189,21 @@ class Player: SKNode {
         leftForearm.fillColor = .white
         leftForearm.strokeColor = .clear
         leftForearm.position = CGPoint(x: 0, y: -12) // At elbow joint
-        leftForearm.zPosition = 0
+        leftForearm.zPosition = 0.2
         leftUpperArm.addChild(leftForearm)
 
         leftWrist = SKShapeNode(circleOfRadius: 2.5)
         leftWrist.fillColor = .systemGray
         leftWrist.strokeColor = .clear
         leftWrist.position = CGPoint(x: 0, y: -11)
-        leftWrist.zPosition = 0.6
+        leftWrist.zPosition = 0.3
         leftForearm.addChild(leftWrist)
 
         leftHand = SKShapeNode(rectOf: CGSize(width: 6, height: 8), cornerRadius: 2)
         leftHand.fillColor = .white
         leftHand.strokeColor = .clear
         leftHand.position = CGPoint(x: 0, y: -8)
-        leftHand.zPosition = 0.2
+        leftHand.zPosition = 0.4
         leftWrist.addChild(leftHand)
 
         // Right Upper Arm - anchor at shoulder
@@ -217,7 +217,7 @@ class Player: SKNode {
         rightUpperArm.fillColor = .white
         rightUpperArm.strokeColor = .clear
         rightUpperArm.position = rightShoulderBasePosition // Right shoulder
-        rightUpperArm.zPosition = 0
+        rightUpperArm.zPosition = 2
         addChild(rightUpperArm)
 
         // Right Elbow - joint circle (child of upper arm)
@@ -239,21 +239,21 @@ class Player: SKNode {
         rightForearm.fillColor = .white
         rightForearm.strokeColor = .clear
         rightForearm.position = CGPoint(x: 0, y: -12) // At elbow joint
-        rightForearm.zPosition = 0
+        rightForearm.zPosition = 0.2
         rightUpperArm.addChild(rightForearm)
 
         rightWrist = SKShapeNode(circleOfRadius: 2.5)
         rightWrist.fillColor = .systemGray
         rightWrist.strokeColor = .clear
         rightWrist.position = CGPoint(x: 0, y: -11)
-        rightWrist.zPosition = 0.6
+        rightWrist.zPosition = 0.3
         rightForearm.addChild(rightWrist)
 
         rightHand = SKShapeNode(rectOf: CGSize(width: 6, height: 8), cornerRadius: 2)
         rightHand.fillColor = .white
         rightHand.strokeColor = .clear
         rightHand.position = CGPoint(x: 0, y: -8)
-        rightHand.zPosition = 0.2
+        rightHand.zPosition = 0.4
         rightWrist.addChild(rightHand)
 
         leftHand.addChild(blaster)
@@ -480,8 +480,11 @@ class Player: SKNode {
         }
     }
 
-    private func configureLeftArmAimPose(manageWalkCycle: Bool, animated: Bool) {
-        guard facingDirection == .left || facingDirection == .right else { return }
+    private func configureLeftArmAimPose(manageWalkCycle: Bool, animated: Bool, completion: (() -> Void)? = nil) {
+        guard facingDirection == .left || facingDirection == .right else {
+            completion?()
+            return
+        }
 
         if manageWalkCycle {
             leftArmWasSwinging = leftUpperArm.action(forKey: "walk") != nil
@@ -502,7 +505,7 @@ class Player: SKNode {
         rotate(leftUpperArm, to: directionSign * (.pi / 2), duration: duration, key: "aimUpper")
         rotate(leftForearm, to: directionSign * (.pi / 16), duration: duration, key: "aimFore")
         rotate(leftWrist, to: directionSign * (.pi / 20), duration: duration, key: "aimWrist")
-        rotate(leftHand, to: directionSign * (-.pi / 24), duration: duration, key: "aimHand")
+        rotate(leftHand, to: directionSign * (-.pi / 24), duration: duration, key: "aimHand", completion: completion)
     }
 
     private func resetLeftArmPose(manageWalkCycle: Bool, animated: Bool) {
@@ -521,11 +524,19 @@ class Player: SKNode {
         }
     }
 
-    private func rotate(_ node: SKNode?, to angle: CGFloat, duration: TimeInterval, key: String) {
-        guard let node = node else { return }
+    private func rotate(_ node: SKNode?, to angle: CGFloat, duration: TimeInterval, key: String, completion: (() -> Void)? = nil) {
+        guard let node = node else {
+            completion?()
+            return
+        }
         node.removeAction(forKey: key)
         let action = SKAction.rotate(toAngle: angle, duration: duration, shortestUnitArc: true)
-        node.run(action, withKey: key)
+        if let completion = completion {
+            let sequence = SKAction.sequence([action, SKAction.run(completion)])
+            node.run(sequence, withKey: key)
+        } else {
+            node.run(action, withKey: key)
+        }
     }
 
     private func setupPhysics() {
@@ -595,9 +606,10 @@ class Player: SKNode {
     func startFiringBlaster() {
         guard !isFiring else { return }
         isFiring = true
-        blaster.startBeam()
         blaster.update(for: blasterOrientation(for: facingDirection))
-        configureLeftArmAimPose(manageWalkCycle: true, animated: true)
+        configureLeftArmAimPose(manageWalkCycle: true, animated: true) { [weak self] in
+            self?.blaster.startBeam()
+        }
     }
 
     func stopFiringBlaster() {
