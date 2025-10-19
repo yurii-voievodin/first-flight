@@ -609,6 +609,11 @@ class Player: SKNode {
     }
 
     func moveTo(position: CGPoint) {
+        // Stop firing if currently firing
+        if isFiring {
+            stopFiringBlaster()
+        }
+
         // Stop any current movement
         removeAction(forKey: "move")
 
@@ -652,6 +657,11 @@ class Player: SKNode {
     }
 
     func moveInDirection(direction: CGVector) {
+        // Stop firing if currently firing
+        if isFiring {
+            stopFiringBlaster()
+        }
+
         // Update facing direction based on movement vector
         // Scale direction to exceed threshold (direction is normalized -1 to 1, threshold is 2)
         updateFacingDirection(dx: direction.dx * 100, dy: direction.dy * 100)
@@ -681,6 +691,7 @@ class Player: SKNode {
 
     func startFiringBlaster() {
         guard !isFiring else { return }
+        guard !isWalking else { return }
         isFiring = true
         blaster.update(for: blasterOrientation(for: facingDirection))
 
