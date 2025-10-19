@@ -22,6 +22,7 @@ class Player: SKNode {
     private var isFiring = false
     private var leftArmWasSwinging = false
     private var isWalking = false
+    private var lastWalkingDirection: FacingDirection?
     private var blasterAimAngle: CGFloat?
     private var desiredAimAngle: CGFloat?
 
@@ -829,9 +830,14 @@ class Player: SKNode {
         // Ensure rotation stays zero
         zRotation = 0
 
-        // Start walking animation if not already animating
-        if !isWalking {
+        // Determine if leg phasing should change (only matters for left vs non-left)
+        let needsLeftLegLeading = facingDirection == .left
+        let hadLeftLegLeading = lastWalkingDirection == .left
+
+        // Restart animation if not walking or leg phasing changed
+        if !isWalking || needsLeftLegLeading != hadLeftLegLeading {
             startWalkingAnimation()
+            lastWalkingDirection = facingDirection  // Set after starting animation
         }
     }
 
@@ -912,12 +918,16 @@ class Player: SKNode {
         // Direction multiplier for leg animations - reverse when facing left
         let legDirectionMultiplier: CGFloat = facingDirection == .left ? -1 : 1
 
+        // Phase timing: swap leading leg when facing left
+        let rightLegDelay: TimeInterval = facingDirection == .left ? stepDuration * 2 : 0
+        let leftLegDelay: TimeInterval = facingDirection == .left ? 0 : stepDuration * 2
+
         // Helper closure to repeat action forever
         func cycle(_ actions: SKAction...) -> SKAction {
             SKAction.sequence(actions)
         }
 
-        // === RIGHT LEG (Phase 1: steps first) ===
+        // === RIGHT LEG ===
         let rightThighCycle = cycle(
             SKAction.rotate(toAngle: thighSwingAngle * legDirectionMultiplier, duration: stepDuration),
             SKAction.wait(forDuration: stepDuration),
@@ -926,8 +936,8 @@ class Player: SKNode {
         )
 
         let rightCalfCycle = cycle(
-            SKAction.rotate(toAngle: -kneeBendAngle, duration: stepDuration),
-            SKAction.rotate(toAngle: -kneeBendAngle * 0.3, duration: stepDuration),
+            SKAction.rotate(toAngle: -kneeBendAngle * legDirectionMultiplier, duration: stepDuration),
+            SKAction.rotate(toAngle: -kneeBendAngle * 0.3 * legDirectionMultiplier, duration: stepDuration),
             SKAction.rotate(toAngle: 0, duration: stepDuration * 2)
         )
 
@@ -971,9 +981,9 @@ class Player: SKNode {
             SKAction.rotate(toAngle: 0, duration: stepDuration * 2)
         )
 
-        // === LEFT LEG (Phase 3: steps after right leg) ===
+        // === LEFT LEG ===
         let leftThighCycle = SKAction.sequence([
-            SKAction.wait(forDuration: stepDuration * 2),
+            SKAction.wait(forDuration: leftLegDelay),
             SKAction.repeatForever(cycle(
                 SKAction.rotate(toAngle: thighSwingAngle * legDirectionMultiplier, duration: stepDuration),
                 SKAction.wait(forDuration: stepDuration),
@@ -983,16 +993,16 @@ class Player: SKNode {
         ])
 
         let leftCalfCycle = SKAction.sequence([
-            SKAction.wait(forDuration: stepDuration * 2),
+            SKAction.wait(forDuration: leftLegDelay),
             SKAction.repeatForever(cycle(
-                SKAction.rotate(toAngle: -kneeBendAngle, duration: stepDuration),
-                SKAction.rotate(toAngle: -kneeBendAngle * 0.3, duration: stepDuration),
+                SKAction.rotate(toAngle: -kneeBendAngle * legDirectionMultiplier, duration: stepDuration),
+                SKAction.rotate(toAngle: -kneeBendAngle * 0.3 * legDirectionMultiplier, duration: stepDuration),
                 SKAction.rotate(toAngle: 0, duration: stepDuration * 2)
             ))
         ])
 
         let leftAnkleCycle = SKAction.sequence([
-            SKAction.wait(forDuration: stepDuration * 2),
+            SKAction.wait(forDuration: leftLegDelay),
             SKAction.repeatForever(cycle(
                 SKAction.rotate(toAngle: ankleRollAngle, duration: stepDuration),
                 SKAction.rotate(toAngle: -ankleRollAngle * 0.6, duration: stepDuration),
@@ -1001,7 +1011,7 @@ class Player: SKNode {
         ])
 
         let leftFootCycle = SKAction.sequence([
-            SKAction.wait(forDuration: stepDuration * 2),
+            SKAction.wait(forDuration: leftLegDelay),
             SKAction.repeatForever(cycle(
                 SKAction.rotate(toAngle: -ankleRollAngle * 0.7, duration: stepDuration),
                 SKAction.rotate(toAngle: ankleRollAngle * 0.4, duration: stepDuration),
@@ -1049,11 +1059,28 @@ class Player: SKNode {
             ))
         ])
 
-        // Run animations
-        rightThigh.run(SKAction.repeatForever(rightThighCycle), withKey: "walk")
-        rightCalf.run(SKAction.repeatForever(rightCalfCycle), withKey: "walk")
-        rightAnkle.run(SKAction.repeatForever(rightAnkleCycle), withKey: "walk")
-        rightFoot.run(SKAction.repeatForever(rightFootCycle), withKey: "walk")
+        // Run animations with conditional delays
+        let rightThighSequence = SKAction.sequence([
+            SKAction.wait(forDuration: rightLegDelay),
+            SKAction.repeatForever(rightThighCycle)
+        ])
+        let rightCalfSequence = SKAction.sequence([
+            SKAction.wait(forDuration: rightLegDelay),
+            SKAction.repeatForever(rightCalfCycle)
+        ])
+        let rightAnkleSequence = SKAction.sequence([
+            SKAction.wait(forDuration: rightLegDelay),
+            SKAction.repeatForever(rightAnkleCycle)
+        ])
+        let rightFootSequence = SKAction.sequence([
+            SKAction.wait(forDuration: rightLegDelay),
+            SKAction.repeatForever(rightFootCycle)
+        ])
+
+        rightThigh.run(rightThighSequence, withKey: "walk")
+        rightCalf.run(rightCalfSequence, withKey: "walk")
+        rightAnkle.run(rightAnkleSequence, withKey: "walk")
+        rightFoot.run(rightFootSequence, withKey: "walk")
 
         if !isFiring {
             leftUpperArm.run(SKAction.repeatForever(leftUpperArmCycle), withKey: "walk")
@@ -1136,5 +1163,6 @@ class Player: SKNode {
         }
 
         isWalking = false
+        lastWalkingDirection = nil  // Reset direction tracking
     }
 }
