@@ -647,7 +647,8 @@ class Player: SKNode {
 
     func moveInDirection(direction: CGVector) {
         // Update facing direction based on movement vector
-        updateFacingDirection(dx: direction.dx, dy: direction.dy)
+        // Scale direction to exceed threshold (direction is normalized -1 to 1, threshold is 2)
+        updateFacingDirection(dx: direction.dx * 100, dy: direction.dy * 100)
 
         // Apply velocity directly to physics body for continuous movement
         let speed: CGFloat = 55.0 // points per second
