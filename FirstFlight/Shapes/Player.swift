@@ -462,11 +462,17 @@ class Player: SKNode {
 
         if isFiring {
             if direction == .left || direction == .right {
-                configureLeftArmAimPose(manageWalkCycle: false, animated: true)
+                configureLeftArmAimPose(manageWalkCycle: false, animated: true) { [weak self] in
+                    self?.blaster.startBeam()
+                }
             } else if direction == .up {
-                configureLeftArmRaisePose(manageWalkCycle: false, animated: true)
+                configureLeftArmRaisePose(manageWalkCycle: false, animated: true) { [weak self] in
+                    self?.blaster.startBeam()
+                }
             } else if direction == .down {
-                configureLeftArmLowerPose(manageWalkCycle: false, animated: true)
+                configureLeftArmLowerPose(manageWalkCycle: false, animated: true) { [weak self] in
+                    self?.blaster.startBeam()
+                }
             } else {
                 resetLeftArmPose(manageWalkCycle: false, animated: true)
             }

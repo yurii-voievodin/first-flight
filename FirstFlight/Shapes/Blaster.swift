@@ -138,7 +138,8 @@ final class Blaster: SKNode {
         restingEmitterAlpha = emitterAlpha
         emitter.alpha = isFiring ? 1 : restingEmitterAlpha
 
-        updateBeamState()
+        // Beam state is exclusively managed by startBeam() and stopBeam()
+        // Do not call updateBeamState() here to avoid race conditions
     }
 
     private func palmTarget(for orientation: Orientation) -> CGPoint {
