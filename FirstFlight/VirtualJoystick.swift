@@ -16,6 +16,12 @@ class VirtualJoystick: SKNode {
     private var touchStartLocation: CGPoint = .zero
     var currentDirection: CGVector = .zero
 
+    // Computed angle in radians (nil when in dead zone)
+    var currentAngle: CGFloat? {
+        guard currentDirection != .zero else { return nil }
+        return atan2(currentDirection.dy, currentDirection.dx)
+    }
+
     override init() {
         // Create outer base circle
         outerCircle = SKShapeNode(circleOfRadius: outerRadius)

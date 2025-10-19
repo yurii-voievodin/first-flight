@@ -22,6 +22,16 @@ class Player: SKNode {
     private var isFiring = false
     private var leftArmWasSwinging = false
     private var isWalking = false
+    private var blasterAimAngle: CGFloat?
+    private var desiredAimAngle: CGFloat?
+
+    var isCurrentlyFiring: Bool {
+        return isFiring
+    }
+
+    var isCurrentlyWalking: Bool {
+        return isWalking
+    }
 
     // Body parts
     private var body: SKShapeNode!
@@ -32,6 +42,7 @@ class Player: SKNode {
 
     // Equipment
     private let blaster = Blaster()
+    private var aimSight: SKShapeNode!
 
     // Arms (multi-segment)
     private var leftUpperArm: SKShapeNode!
@@ -361,6 +372,25 @@ class Player: SKNode {
         rightFoot.zPosition = 0.2
         rightAnkle.addChild(rightFoot)
 
+        // Create aim sight (targeting reticle)
+        let sightPath = CGMutablePath()
+        let sightSize: CGFloat = 8
+        // Horizontal line
+        sightPath.move(to: CGPoint(x: -sightSize, y: 0))
+        sightPath.addLine(to: CGPoint(x: sightSize, y: 0))
+        // Vertical line
+        sightPath.move(to: CGPoint(x: 0, y: -sightSize))
+        sightPath.addLine(to: CGPoint(x: 0, y: sightSize))
+        aimSight = SKShapeNode(path: sightPath)
+        aimSight.strokeColor = SKColor.cyan.withAlphaComponent(0.7)
+        aimSight.lineWidth = 1.5
+        aimSight.lineCap = .round
+        aimSight.zPosition = 5.0 // Above everything else
+        aimSight.isHidden = false // Always visible for debugging
+        // Default position - will be adjusted by xScale automatically
+        aimSight.position = CGPoint(x: 120 * xScale, y: 0)
+        addChild(aimSight)
+
         applyAppearance(for: facingDirection)
     }
 
@@ -492,6 +522,113 @@ class Player: SKNode {
         }
     }
 
+    func updateAimSight(angle: CGFloat) {
+        // Store desired aim angle
+        desiredAimAngle = angle
+
+        // Determine facing direction from aim angle (not from movement!)
+        // Normalize angle to 0-2π range
+        var normalizedAngle = angle.truncatingRemainder(dividingBy: 2 * .pi)
+        if normalizedAngle < 0 {
+            normalizedAngle += 2 * .pi
+        }
+
+        // Map to cardinal directions
+        // 0° = right, 90° = up, 180° = left, 270° = down
+        let newDirection: FacingDirection
+        if normalizedAngle < .pi / 4 || normalizedAngle >= 7 * .pi / 4 {
+            newDirection = .right
+        } else if normalizedAngle >= .pi / 4 && normalizedAngle < 3 * .pi / 4 {
+            newDirection = .up
+        } else if normalizedAngle >= 3 * .pi / 4 && normalizedAngle < 5 * .pi / 4 {
+            newDirection = .left
+        } else {
+            newDirection = .down
+        }
+
+        // Store old xScale to detect if it will change
+        let oldXScale = xScale
+
+        // Update facing direction (this may change xScale)
+        setFacingDirection(newDirection)
+
+        // Show and position sight at 120 units from player center
+        let sightDistance: CGFloat = 120
+        let sightX = cos(angle) * sightDistance
+        let sightY = sin(angle) * sightDistance
+
+        // Compensate for player mirroring (xScale = -1 when facing left)
+        // This ensures sight appears in correct world position regardless of player flip
+        let adjustedX = sightX * xScale
+
+        aimSight.position = CGPoint(x: adjustedX, y: sightY)
+        // aimSight.isHidden = false // Commented out for debugging - always visible
+    }
+
+    func hideAimSight() {
+        // aimSight.isHidden = true // Commented out for debugging - always visible
+        desiredAimAngle = nil
+    }
+
+    func setBlasterAim(angle: CGFloat) {
+        blasterAimAngle = angle
+
+        // Determine facing direction from aim angle
+        // Normalize angle to 0-2π range
+        var normalizedAngle = angle.truncatingRemainder(dividingBy: 2 * .pi)
+        if normalizedAngle < 0 {
+            normalizedAngle += 2 * .pi
+        }
+
+        // Map to cardinal directions
+        // 0° = right, 90° = up, 180° = left, 270° = down
+        let newDirection: FacingDirection
+        if normalizedAngle < .pi / 4 || normalizedAngle >= 7 * .pi / 4 {
+            newDirection = .right
+        } else if normalizedAngle >= .pi / 4 && normalizedAngle < 3 * .pi / 4 {
+            newDirection = .up
+        } else if normalizedAngle >= 3 * .pi / 4 && normalizedAngle < 5 * .pi / 4 {
+            newDirection = .left
+        } else {
+            newDirection = .down
+        }
+
+        // Update facing direction (this will update body appearance)
+        setFacingDirection(newDirection)
+
+        // Rotate blaster immediately (so sight shows)
+        blaster.rotateToAngle(angle)
+
+        // Rotate left arm to aim at angle
+        configureLeftArmAimAtAngle(angle, animated: true) { [weak self] in
+            // Animation complete - blaster is now in position
+            // If firing was started during animation, the beam will appear after this
+        }
+    }
+
+    private func configureLeftArmAimAtAngle(_ angle: CGFloat, animated: Bool, completion: (() -> Void)? = nil) {
+        let duration: TimeInterval = animated ? 0.12 : 0
+
+        // Stop walk cycle if needed
+        if leftUpperArm.action(forKey: "walk") != nil {
+            leftArmWasSwinging = true
+            leftUpperArm.removeAction(forKey: "walk")
+            leftForearm.removeAction(forKey: "walk")
+            leftWrist.removeAction(forKey: "walk")
+            leftHand.removeAction(forKey: "walk")
+        }
+
+        // Calculate the arm rotation needed
+        // The arm naturally hangs down, so we rotate it to point at the aim angle
+        // Account for player xScale (mirroring)
+        let armAngle = angle
+
+        rotate(leftUpperArm, to: armAngle, duration: duration, key: "aimAngle")
+        rotate(leftForearm, to: 0, duration: duration, key: "aimFore")
+        rotate(leftWrist, to: 0, duration: duration, key: "aimWrist")
+        rotate(leftHand, to: 0, duration: duration, key: "aimHand", completion: completion)
+    }
+
     private func configureLeftArmAimPose(manageWalkCycle: Bool, animated: Bool, completion: (() -> Void)? = nil) {
         guard facingDirection == .left || facingDirection == .right else {
             completion?()
@@ -614,6 +751,11 @@ class Player: SKNode {
             stopFiringBlaster()
         }
 
+        // Hide aim sight and reset manual blaster rotation
+        hideAimSight()
+        blaster.resetManualRotation()
+        blasterAimAngle = nil
+
         // Stop any current movement
         removeAction(forKey: "move")
 
@@ -623,7 +765,8 @@ class Player: SKNode {
         // Calculate distance and duration for consistent speed
         let deltaX = position.x - self.position.x
         let deltaY = position.y - self.position.y
-        updateFacingDirection(dx: deltaX, dy: deltaY)
+        // DON'T update facing direction - controlled by sight only
+        // updateFacingDirection(dx: deltaX, dy: deltaY) // REMOVED
 
         let distance = hypot(deltaX, deltaY)
         let speed: CGFloat = 55.0 // points per second
@@ -662,9 +805,14 @@ class Player: SKNode {
             stopFiringBlaster()
         }
 
-        // Update facing direction based on movement vector
-        // Scale direction to exceed threshold (direction is normalized -1 to 1, threshold is 2)
-        updateFacingDirection(dx: direction.dx * 100, dy: direction.dy * 100)
+        // Reset manual blaster rotation (but keep sight visible for aiming while moving)
+        // hideAimSight() // Commented - keep sight visible for now
+        blaster.resetManualRotation()
+        blasterAimAngle = nil
+
+        // DON'T update facing direction based on movement!
+        // Player direction is controlled by aim sight, not movement
+        // updateFacingDirection(dx: direction.dx * 100, dy: direction.dy * 100) // REMOVED
 
         // Apply velocity directly to physics body for continuous movement
         let speed: CGFloat = 55.0 // points per second
@@ -692,20 +840,37 @@ class Player: SKNode {
     func startFiringBlaster() {
         guard !isFiring else { return }
         guard !isWalking else { return }
-        isFiring = true
-        blaster.update(for: blasterOrientation(for: facingDirection))
 
-        if facingDirection == .up {
-            configureLeftArmRaisePose(manageWalkCycle: true, animated: true) { [weak self] in
+        // Use desired aim angle if available, otherwise use current facing direction
+        if let aimAngle = desiredAimAngle {
+            isFiring = true
+            // Hide sight when firing starts
+            // aimSight.isHidden = true // Commented out for debugging - always visible
+
+            // Animate to aim position and fire
+            setBlasterAim(angle: aimAngle)
+
+            // Start beam after animation completes
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { [weak self] in
                 self?.blaster.startBeam()
             }
-        } else if facingDirection == .down {
-            configureLeftArmLowerPose(manageWalkCycle: true, animated: true) { [weak self] in
-                self?.blaster.startBeam()
-            }
-        } else if facingDirection == .left || facingDirection == .right {
-            configureLeftArmAimPose(manageWalkCycle: true, animated: true) { [weak self] in
-                self?.blaster.startBeam()
+        } else {
+            // Fallback to old behavior if no aim angle set
+            isFiring = true
+            blaster.update(for: blasterOrientation(for: facingDirection))
+
+            if facingDirection == .up {
+                configureLeftArmRaisePose(manageWalkCycle: true, animated: true) { [weak self] in
+                    self?.blaster.startBeam()
+                }
+            } else if facingDirection == .down {
+                configureLeftArmLowerPose(manageWalkCycle: true, animated: true) { [weak self] in
+                    self?.blaster.startBeam()
+                }
+            } else if facingDirection == .left || facingDirection == .right {
+                configureLeftArmAimPose(manageWalkCycle: true, animated: true) { [weak self] in
+                    self?.blaster.startBeam()
+                }
             }
         }
     }
@@ -714,6 +879,9 @@ class Player: SKNode {
         guard isFiring else { return }
         isFiring = false
         blaster.stopBeam()
+        hideAimSight()
+        blaster.resetManualRotation()
+        blasterAimAngle = nil
         blaster.update(for: blasterOrientation(for: facingDirection))
         resetLeftArmPose(manageWalkCycle: true, animated: true)
     }

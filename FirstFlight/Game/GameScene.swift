@@ -215,12 +215,35 @@ class GameScene: SKScene {
 
         let direction = joystick.currentDirection
 
-        // If joystick has a direction, move character continuously
+        // Special handling for astronaut aiming
+        if let player = activeCharacter as? Player {
+            if let aimAngle = joystick.currentAngle {
+                // Joystick is active - always update sight position
+                player.updateAimSight(angle: aimAngle)
+
+                // Check joystick magnitude to decide between aiming and moving
+                let magnitude = hypot(direction.dx, direction.dy)
+                let movementThreshold: CGFloat = 0.5 // 50% of max joystick distance
+
+                if magnitude > movementThreshold || player.isCurrentlyWalking {
+                    // Strong joystick push or already walking - move player
+                    activeCharacter.moveInDirection(direction: direction)
+                } else {
+                    // Light joystick touch - just aim, don't move
+                    activeCharacter.stopMovement()
+                }
+            } else {
+                // Joystick released - hide sight and stop
+                player.hideAimSight()
+                activeCharacter.stopMovement()
+            }
+            return
+        }
+
+        // Normal movement behavior for non-player characters
         if direction != .zero {
-            // Use velocity-based continuous movement
             activeCharacter.moveInDirection(direction: direction)
         } else {
-            // No joystick input - stop movement
             activeCharacter.stopMovement()
         }
     }

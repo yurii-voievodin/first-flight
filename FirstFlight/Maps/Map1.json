@@ -110,12 +110,6 @@
       "thickness": 115
     },
     {
-      "position": { "x": 480, "y": 520 },
-      "size": { "width": 170, "height": 140 },
-      "type": "boulder",
-      "thickness": 135
-    },
-    {
       "position": { "x": 1680, "y": 280 },
       "size": { "width": 160, "height": 120 },
       "type": "cluster",
