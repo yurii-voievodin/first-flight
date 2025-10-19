@@ -207,14 +207,14 @@ class Player: SKNode {
         leftWrist = SKShapeNode(circleOfRadius: 2.5)
         leftWrist.fillColor = .systemGray
         leftWrist.strokeColor = .clear
-        leftWrist.position = CGPoint(x: 0, y: -11)
+        leftWrist.position = CGPoint(x: 0, y: -9)
         leftWrist.zPosition = 0.3
         leftForearm.addChild(leftWrist)
 
         leftHand = SKShapeNode(rectOf: CGSize(width: 6, height: 8), cornerRadius: 2)
         leftHand.fillColor = .white
         leftHand.strokeColor = .clear
-        leftHand.position = CGPoint(x: 0, y: -8)
+        leftHand.position = CGPoint(x: 0, y: -5)
         leftHand.zPosition = 0.4
         leftWrist.addChild(leftHand)
 
@@ -257,14 +257,14 @@ class Player: SKNode {
         rightWrist = SKShapeNode(circleOfRadius: 2.5)
         rightWrist.fillColor = .systemGray
         rightWrist.strokeColor = .clear
-        rightWrist.position = CGPoint(x: 0, y: -11)
+        rightWrist.position = CGPoint(x: 0, y: -9)
         rightWrist.zPosition = 0.3
         rightForearm.addChild(rightWrist)
 
         rightHand = SKShapeNode(rectOf: CGSize(width: 6, height: 8), cornerRadius: 2)
         rightHand.fillColor = .white
         rightHand.strokeColor = .clear
-        rightHand.position = CGPoint(x: 0, y: -8)
+        rightHand.position = CGPoint(x: 0, y: -5)
         rightHand.zPosition = 0.4
         rightWrist.addChild(rightHand)
 
@@ -372,20 +372,29 @@ class Player: SKNode {
         rightFoot.zPosition = 0.2
         rightAnkle.addChild(rightFoot)
 
-        // Create aim sight (targeting reticle)
+        // Create aim sight (double arrow ">>" design)
         let sightPath = CGMutablePath()
-        let sightSize: CGFloat = 8
-        // Horizontal line
-        sightPath.move(to: CGPoint(x: -sightSize, y: 0))
-        sightPath.addLine(to: CGPoint(x: sightSize, y: 0))
-        // Vertical line
-        sightPath.move(to: CGPoint(x: 0, y: -sightSize))
-        sightPath.addLine(to: CGPoint(x: 0, y: sightSize))
+
+        // First arrow ">" (larger)
+        let arrowSize: CGFloat = 6
+        let arrowSpacing: CGFloat = 3
+        sightPath.move(to: CGPoint(x: 0, y: arrowSize))
+        sightPath.addLine(to: CGPoint(x: arrowSize, y: 0))
+        sightPath.addLine(to: CGPoint(x: 0, y: -arrowSize))
+
+        // Second arrow ">" (slightly smaller, positioned after the first)
+        let smallArrowSize: CGFloat = 5
+        let offset = arrowSize + arrowSpacing
+        sightPath.move(to: CGPoint(x: offset, y: smallArrowSize))
+        sightPath.addLine(to: CGPoint(x: offset + smallArrowSize, y: 0))
+        sightPath.addLine(to: CGPoint(x: offset, y: -smallArrowSize))
+
         aimSight = SKShapeNode(path: sightPath)
-        aimSight.strokeColor = SKColor.cyan.withAlphaComponent(0.7)
-        aimSight.lineWidth = 1.5
+        aimSight.strokeColor = SKColor.cyan.withAlphaComponent(0.5)
+        aimSight.lineWidth = 2
         aimSight.lineCap = .round
-        aimSight.zPosition = 5.0 // Above everything else
+        aimSight.lineJoin = .round
+        aimSight.zPosition = 1000 // Always on top of everything
         aimSight.isHidden = false // Always visible for debugging
         // Default position - will be adjusted by xScale automatically
         aimSight.position = CGPoint(x: 120 * xScale, y: 0)
@@ -473,18 +482,15 @@ class Player: SKNode {
             helmetGlass.position = CGPoint(x: 4.2, y: 2)
             blasterOrientation = .right
         case .left:
-            xScale = -1
+            // No xScale mirroring - create left-facing appearance manually
             backpack.alpha = 0.75
             backpack.zPosition = 0.9
             backpack.xScale = 0.7
-            backpack.position = CGPoint(x: -3, y: -2)
+            backpack.position = CGPoint(x: 3, y: -2) // Flipped horizontally (positive x)
             helmetGlass.alpha = 0.85
             helmetGlass.xScale = 0.75
-            helmetGlass.position = CGPoint(x: 4.2, y: 2)
-            leftUpperArm.position = CGPoint(x: -leftShoulderBasePosition.x, y: leftShoulderBasePosition.y)
-            rightUpperArm.position = CGPoint(x: -rightShoulderBasePosition.x, y: rightShoulderBasePosition.y)
-            leftThigh.position = CGPoint(x: -leftHipBasePosition.x, y: leftHipBasePosition.y)
-            rightThigh.position = CGPoint(x: -rightHipBasePosition.x, y: rightHipBasePosition.y)
+            helmetGlass.position = CGPoint(x: -4.2, y: 2) // Flipped horizontally (negative x)
+            // Don't swap arms/legs - keep blaster in left hand and legs natural
             blasterOrientation = .left
         }
 
@@ -557,11 +563,12 @@ class Player: SKNode {
         let sightX = cos(angle) * sightDistance
         let sightY = sin(angle) * sightDistance
 
-        // Compensate for player mirroring (xScale = -1 when facing left)
-        // This ensures sight appears in correct world position regardless of player flip
-        let adjustedX = sightX * xScale
+        // Position sight in world space (no mirroring compensation needed)
+        aimSight.position = CGPoint(x: sightX, y: sightY)
 
-        aimSight.position = CGPoint(x: adjustedX, y: sightY)
+        // Rotate arrows to point away from player (showing direction of movement/aim)
+        aimSight.zRotation = angle
+
         // aimSight.isHidden = false // Commented out for debugging - always visible
     }
 
@@ -902,6 +909,9 @@ class Player: SKNode {
         let wristFlickAngle: CGFloat = .pi / 18    // ~10 degrees
         let ankleRollAngle: CGFloat = .pi / 14     // ~13 degrees
 
+        // Direction multiplier for leg animations - reverse when facing left
+        let legDirectionMultiplier: CGFloat = facingDirection == .left ? -1 : 1
+
         // Helper closure to repeat action forever
         func cycle(_ actions: SKAction...) -> SKAction {
             SKAction.sequence(actions)
@@ -909,9 +919,9 @@ class Player: SKNode {
 
         // === RIGHT LEG (Phase 1: steps first) ===
         let rightThighCycle = cycle(
-            SKAction.rotate(toAngle: thighSwingAngle, duration: stepDuration),
+            SKAction.rotate(toAngle: thighSwingAngle * legDirectionMultiplier, duration: stepDuration),
             SKAction.wait(forDuration: stepDuration),
-            SKAction.rotate(toAngle: -thighSwingAngle, duration: stepDuration),
+            SKAction.rotate(toAngle: -thighSwingAngle * legDirectionMultiplier, duration: stepDuration),
             SKAction.wait(forDuration: stepDuration)
         )
 
@@ -965,9 +975,9 @@ class Player: SKNode {
         let leftThighCycle = SKAction.sequence([
             SKAction.wait(forDuration: stepDuration * 2),
             SKAction.repeatForever(cycle(
-                SKAction.rotate(toAngle: thighSwingAngle, duration: stepDuration),
+                SKAction.rotate(toAngle: thighSwingAngle * legDirectionMultiplier, duration: stepDuration),
                 SKAction.wait(forDuration: stepDuration),
-                SKAction.rotate(toAngle: -thighSwingAngle, duration: stepDuration),
+                SKAction.rotate(toAngle: -thighSwingAngle * legDirectionMultiplier, duration: stepDuration),
                 SKAction.wait(forDuration: stepDuration)
             ))
         ])

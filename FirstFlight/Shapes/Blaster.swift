@@ -141,6 +141,7 @@ final class Blaster: SKNode {
             gripMount.fillColor = SKColor(red: 0.37, green: 0.44, blue: 0.52, alpha: 1)
             emitterAlpha = 0.75
         case .left:
+            xScale = -1 // Flip blaster horizontally to show left-facing direction
             zPosition = 2.3
             body.fillColor = SKColor(red: 0.42, green: 0.5, blue: 0.58, alpha: 1)
             gripMount.fillColor = SKColor(red: 0.37, green: 0.44, blue: 0.52, alpha: 1)
@@ -162,8 +163,10 @@ final class Blaster: SKNode {
         switch orientation {
         case .down:
             return CGPoint(x: -0.6, y: -3.9)
-        case .right, .left:
-            return CGPoint(x: 2.6, y: -0.2)
+        case .right:
+            return CGPoint(x: 5.0, y: 1.5) // Shifted right and up to grip handle
+        case .left:
+            return CGPoint(x: -5.0, y: 1.5) // Shifted left and up to grip handle
         case .up:
             return CGPoint(x: -0.4, y: 3.6)
         }
