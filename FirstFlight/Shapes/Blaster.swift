@@ -34,14 +34,14 @@ final class Blaster: SKNode {
         super.init()
 
         position = CGPoint(x: 3, y: -4)
-        zPosition = 2.4
+        zPosition = -1.0 // Low base so grip can hide behind hand
 
         grip.fillColor = SKColor(red: 0.2, green: 0.24, blue: 0.28, alpha: 1)
         grip.strokeColor = SKColor.black.withAlphaComponent(0.35)
         grip.lineWidth = 1
         grip.position = CGPoint(x: -4.4, y: -3.8)
         grip.zRotation = -.pi / 2.08
-        grip.zPosition = 0.2
+        grip.zPosition = -1.0 // Behind hand to show grip is inside hand
         addChild(grip)
 
         gripAnchor.position = CGPoint(x: 0, y: gripSize.height * 0.5 - 0.6)
@@ -58,28 +58,28 @@ final class Blaster: SKNode {
         gripMount.lineWidth = 0.9
         gripMount.lineJoin = .round
         gripMount.position = CGPoint(x: -2.2, y: -3.6)
-        gripMount.zPosition = 0.25
+        gripMount.zPosition = 1.0 // Above hand
         addChild(gripMount)
 
         body.fillColor = SKColor(red: 0.45, green: 0.52, blue: 0.6, alpha: 1)
         body.strokeColor = SKColor.black.withAlphaComponent(0.28)
         body.lineWidth = 1
         body.position = CGPoint(x: 0.2, y: -9.6)
-        body.zPosition = 0.4
+        body.zPosition = 1.5 // Above hand
         addChild(body)
 
         barrel.fillColor = SKColor(red: 0.72, green: 0.84, blue: 0.95, alpha: 0.9)
         barrel.strokeColor = SKColor.white.withAlphaComponent(0.4)
         barrel.lineWidth = 0.8
         barrel.position = CGPoint(x: 0.2, y: -14.5)
-        barrel.zPosition = 0.6
+        barrel.zPosition = 2.0 // Above hand
         addChild(barrel)
 
         emitter.fillColor = SKColor.cyan.withAlphaComponent(0.8)
         emitter.strokeColor = SKColor.white.withAlphaComponent(0.6)
         emitter.lineWidth = 0.6
         emitter.position = CGPoint(x: 0.2, y: -21)
-        emitter.zPosition = 0.8
+        emitter.zPosition = 2.5 // Above hand
         addChild(emitter)
 
         beam.anchorPoint = CGPoint(x: 0.5, y: 1.0)
@@ -120,29 +120,36 @@ final class Blaster: SKNode {
         if !useManualRotation {
             zRotation = 0
         }
-        zPosition = 2.4
+        zPosition = -1.0 // Keep low so grip stays behind hand
 
         body.fillColor = SKColor(red: 0.45, green: 0.52, blue: 0.6, alpha: 1)
         gripMount.fillColor = SKColor(red: 0.33, green: 0.4, blue: 0.47, alpha: 1)
         barrel.alpha = 0.9
         var emitterAlpha: CGFloat = 0.8
 
-        var gripPose = orientation
+        grip.isHidden = false // Default: visible (hidden by zPosition for left/right)
+        gripMount.isHidden = false // Default: visible
+
+        let gripPose = orientation
 
         switch orientation {
         case .up:
-            zPosition = 2.5
+            grip.isHidden = true
+            gripMount.isHidden = true
+            zPosition = -0.75
             emitterAlpha = 0.85
         case .down:
-            emitterAlpha = 0.9
+            grip.isHidden = true
+            gripMount.isHidden = true
+            emitterAlpha = 0.75
         case .right:
-            zPosition = 2.3
+            zPosition = -1.1
             body.fillColor = SKColor(red: 0.42, green: 0.5, blue: 0.58, alpha: 1)
             gripMount.fillColor = SKColor(red: 0.37, green: 0.44, blue: 0.52, alpha: 1)
             emitterAlpha = 0.75
         case .left:
             xScale = -1 // Flip blaster horizontally to show left-facing direction
-            zPosition = 2.3
+            zPosition = -1.1
             body.fillColor = SKColor(red: 0.42, green: 0.5, blue: 0.58, alpha: 1)
             gripMount.fillColor = SKColor(red: 0.37, green: 0.44, blue: 0.52, alpha: 1)
             emitterAlpha = 0.75
