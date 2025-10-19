@@ -21,6 +21,7 @@ class Player: SKNode {
     private var facingDirection: FacingDirection = .down
     private var isFiring = false
     private var leftArmWasSwinging = false
+    private var isWalking = false
 
     // Body parts
     private var body: SKShapeNode!
@@ -644,6 +645,24 @@ class Player: SKNode {
         startWalkingAnimation()
     }
 
+    func moveInDirection(direction: CGVector) {
+        // Update facing direction based on movement vector
+        updateFacingDirection(dx: direction.dx, dy: direction.dy)
+
+        // Apply velocity directly to physics body for continuous movement
+        let speed: CGFloat = 55.0 // points per second
+        let velocity = CGVector(dx: direction.dx * speed, dy: direction.dy * speed)
+        physicsBody?.velocity = velocity
+
+        // Ensure rotation stays zero
+        zRotation = 0
+
+        // Start walking animation if not already animating
+        if !isWalking {
+            startWalkingAnimation()
+        }
+    }
+
     func stopMovement() {
         removeAction(forKey: "move")
         physicsBody?.velocity = .zero
@@ -866,6 +885,8 @@ class Player: SKNode {
                 configureLeftArmLowerPose(manageWalkCycle: false, animated: false)
             }
         }
+
+        isWalking = true
     }
 
     private func stopWalkingAnimation() {
@@ -917,5 +938,7 @@ class Player: SKNode {
                 configureLeftArmLowerPose(manageWalkCycle: false, animated: false)
             }
         }
+
+        isWalking = false
     }
 }

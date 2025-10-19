@@ -10,6 +10,9 @@ class Spider: SKNode {
     private let midBackLegsAngle: CGFloat = 25 * .pi / 180
     private let backLegsAngle: CGFloat = 55 * .pi / 180
 
+    // State
+    private var isWalking = false
+
     // Body parts
     private var abdomen: SKShapeNode!
     private var head: SKShapeNode!
@@ -307,6 +310,37 @@ class Spider: SKNode {
         startWalkingAnimation()
     }
 
+    func moveInDirection(direction: CGVector) {
+        // Calculate target angle from direction vector
+        let targetAngle = atan2(direction.dy, direction.dx) - .pi / 2
+
+        // Smoothly rotate toward target angle
+        let currentAngle = zRotation
+        var angleDifference = targetAngle - currentAngle
+
+        // Normalize to [-π, π] range for shortest path
+        while angleDifference > .pi {
+            angleDifference -= 2 * .pi
+        }
+        while angleDifference < -.pi {
+            angleDifference += 2 * .pi
+        }
+
+        // Apply smooth rotation (interpolate toward target)
+        let rotationSpeed: CGFloat = 0.15 // Rotation interpolation factor
+        zRotation += angleDifference * rotationSpeed
+
+        // Apply velocity directly to physics body for continuous movement
+        let speed: CGFloat = 55.0 // points per second
+        let velocity = CGVector(dx: direction.dx * speed, dy: direction.dy * speed)
+        physicsBody?.velocity = velocity
+
+        // Start walking animation if not already animating
+        if !isWalking {
+            startWalkingAnimation()
+        }
+    }
+
     func stopMovement() {
         removeAction(forKey: "move")
         physicsBody?.velocity = .zero
@@ -369,6 +403,8 @@ class Spider: SKNode {
         runLeg(upper: midFrontRightUpperLeg, lower: midFrontRightLowerLeg, phase: 0.5 + rightSideΔ, key: "gait")
         runLeg(upper: midBackLeftUpperLeg, lower: midBackLeftLowerLeg, phase: 0.5 + leftSideΔ, key: "gait")
         runLeg(upper: backRightUpperLeg, lower: backRightLowerLeg, phase: 0.5 + rightSideΔ, key: "gait")
+
+        isWalking = true
     }
 
     private func stopWalkingAnimation() {
@@ -410,5 +446,7 @@ class Spider: SKNode {
         midBackRightLowerLeg?.zRotation = kneeBend
         backLeftLowerLeg?.zRotation = -kneeBend
         backRightLowerLeg?.zRotation = kneeBend
+
+        isWalking = false
     }
 }

@@ -9,6 +9,7 @@ import SpriteKit
 
 fileprivate protocol ControllableEntity: AnyObject {
     func moveTo(position: CGPoint)
+    func moveInDirection(direction: CGVector)
     func stopMovement()
 }
 
@@ -31,6 +32,7 @@ class GameScene: SKScene {
     private var walls: [SKSpriteNode] = []
     private var rockFormations: [RockFormation] = []
     private var boundaryRocks: [RockFormation] = []
+    private var virtualJoystick: VirtualJoystick!
 
     // Debug mode flag
     var showDebugLabels: Bool = false
@@ -40,6 +42,7 @@ class GameScene: SKScene {
         createCharacters()
         loadMapFromJSON()
         setupCamera()
+        setupJoystick()
         updateCameraConstraints() // Apply constraints after view is available
     }
 
@@ -142,6 +145,23 @@ class GameScene: SKScene {
         }
     }
 
+    private func setupJoystick() {
+        guard let view = view else { return }
+
+        virtualJoystick = VirtualJoystick()
+
+        // Position in bottom-left corner (accounting for safe area)
+        let margin: CGFloat = 80
+        let xPosition = -view.bounds.width / 2 + margin
+        let yPosition = -view.bounds.height / 2 + margin
+
+        virtualJoystick.position = CGPoint(x: xPosition, y: yPosition)
+        virtualJoystick.zPosition = 100 // Above game elements
+
+        // Add to camera so it stays fixed on screen
+        gameCamera.addChild(virtualJoystick)
+    }
+
     private func updateCameraConstraints() {
         guard let view = view else { return }
 
@@ -158,14 +178,6 @@ class GameScene: SKScene {
         gameCamera.constraints = [edgeConstraint]
     }
 
-    func touchDown(atPoint pos : CGPoint) {
-        // Конвертуємо координати дотику з екрана в світові координати сцени
-        let worldPos = convertPoint(fromView: pos)
-        activeCharacter?.moveTo(position: worldPos)
-
-        // Show tap indicator
-        showTapIndicator(at: worldPos)
-    }
 
     func toggleCharacterSelection() {
         guard activeCharacter != nil else { return }
@@ -191,36 +203,26 @@ class GameScene: SKScene {
         astronaut.stopFiringBlaster()
     }
 
-    private func showTapIndicator(at position: CGPoint) {
-        let radius: CGFloat = 20.0 // Match player size
-        let circlePath = CGPath(ellipseIn: CGRect(x: -radius, y: -radius, width: radius * 2, height: radius * 2), transform: nil)
-
-        let indicator = SKShapeNode(path: circlePath)
-        indicator.fillColor = .white.withAlphaComponent(0.5)
-        indicator.strokeColor = .clear
-        indicator.position = position
-        indicator.zPosition = 10 // Above most elements
-
-        addChild(indicator)
-
-        // Fade out and remove
-        let fadeOut = SKAction.fadeOut(withDuration: 0.5)
-        let remove = SKAction.removeFromParent()
-        let sequence = SKAction.sequence([fadeOut, remove])
-
-        indicator.run(sequence)
-    }
-
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        for t in touches {
-            if let view = view {
-                self.touchDown(atPoint: t.location(in: view))
-            }
-        }
-    }
 
     override func update(_ currentTime: TimeInterval) {
+        updateCharacterMovement(deltaTime: currentTime)
         updateCamera()
+    }
+
+    private func updateCharacterMovement(deltaTime: TimeInterval) {
+        guard let activeCharacter = activeCharacter else { return }
+        guard let joystick = virtualJoystick else { return }
+
+        let direction = joystick.currentDirection
+
+        // If joystick has a direction, move character continuously
+        if direction != .zero {
+            // Use velocity-based continuous movement
+            activeCharacter.moveInDirection(direction: direction)
+        } else {
+            // No joystick input - stop movement
+            activeCharacter.stopMovement()
+        }
     }
 
     private func updateCamera() {
