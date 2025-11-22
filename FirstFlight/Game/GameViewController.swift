@@ -34,26 +34,26 @@ class GameViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        if let view = self.view as! SKView? {
-            // Load the SKScene from 'GameScene.sks'
-            if let scene = SKScene(fileNamed: "GameScene") {
-                // Set the scale mode to resize to fill (no scaling, 1:1 mapping)
-                scene.scaleMode = .resizeFill
-
-                if let typedScene = scene as? GameScene {
-                    self.gameScene = typedScene
-                }
-
-                // Present the scene
-                view.presentScene(scene)
-            }
-            
-            view.ignoresSiblingOrder = true
-            
-            view.showsFPS = true
-            view.showsNodeCount = true
+        guard let view = self.view as? SKView else { return }
+        
+        // Load the SKScene from 'GameScene.sks'
+        guard let scene = SKScene(fileNamed: "GameScene") else { return }
+        
+        // Set the scale mode to resize to fill (no scaling, 1:1 mapping)
+        scene.scaleMode = .resizeFill
+        
+        if let typedScene = scene as? GameScene {
+            self.gameScene = typedScene
         }
-
+        
+        // Present the scene
+        view.presentScene(scene)
+        
+        view.ignoresSiblingOrder = true
+        
+        view.showsFPS = true
+        view.showsNodeCount = true
+        
         setupFireButton()
     }
 
