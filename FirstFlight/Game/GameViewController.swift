@@ -13,6 +13,10 @@ class GameViewController: UIViewController {
 
     private weak var gameScene: GameScene?
 
+    override func loadView() {
+        self.view = SKView()
+    }
+
     private lazy var fireButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle("⚡︎", for: .normal)
