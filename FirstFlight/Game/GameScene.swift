@@ -14,20 +14,12 @@ fileprivate protocol ControllableEntity: AnyObject {
 }
 
 extension Player: ControllableEntity {}
-extension Spider: ControllableEntity {}
 
 
 class GameScene: SKScene {
 
-    private enum CharacterSelection {
-        case astronaut
-        case spider
-    }
-
     private var astronaut: Player!
-    private var spiderCharacter: Spider!
     private var activeCharacter: (SKNode & ControllableEntity)?
-    private var activeSelection: CharacterSelection = .astronaut
     private var gameCamera: SKCameraNode!
     private var walls: [SKSpriteNode] = []
     private var rockFormations: [RockFormation] = []
@@ -68,11 +60,6 @@ class GameScene: SKScene {
         astronaut.position = CGPoint(x: size.width * 0.25, y: size.height * 0.25)
         addChild(astronaut)
         activeCharacter = astronaut
-        activeSelection = .astronaut
-
-        spiderCharacter = Spider()
-        spiderCharacter.zPosition = astronaut.zPosition
-        spiderCharacter.position = astronaut.position
     }
 
     private func loadMapFromJSON() {
@@ -90,7 +77,6 @@ class GameScene: SKScene {
             // Update player start position
             let startPosition = MapLoader.shared.getPlayerStartPosition(from: mapData)
             astronaut.position = startPosition
-            spiderCharacter.position = startPosition
 
             // Create all rock formations from JSON
             let rocks = MapLoader.shared.createAllRocks(from: mapData)
@@ -179,22 +165,8 @@ class GameScene: SKScene {
     }
 
 
-    func toggleCharacterSelection() {
-        guard activeCharacter != nil else { return }
-        let nextSelection: CharacterSelection = activeSelection == .astronaut ? .spider : .astronaut
-        switchToCharacter(nextSelection)
-    }
-
-    var toggleButtonTitle: String {
-        "⇄"
-    }
-
-    var isBlasterAvailable: Bool {
-        activeSelection == .astronaut
-    }
-
     func beginBlasterBeam() {
-        guard activeSelection == .astronaut, let astronaut else { return }
+        guard let astronaut else { return }
         astronaut.startFiringBlaster()
     }
 
@@ -262,35 +234,6 @@ class GameScene: SKScene {
         gameCamera.position = CGPoint(x: newX, y: newY)
     }
 
-    private func switchToCharacter(_ selection: CharacterSelection) {
-        guard selection != activeSelection else { return }
-        guard let currentCharacter = activeCharacter else { return }
-
-        if activeSelection == .astronaut, let astronaut {
-            astronaut.stopFiringBlaster()
-        }
-
-        let currentPosition = currentCharacter.position
-        currentCharacter.stopMovement()
-        currentCharacter.removeFromParent()
-
-        let newCharacter = character(for: selection)
-        newCharacter.position = currentPosition
-        addChild(newCharacter)
-        activeCharacter = newCharacter
-        activeSelection = selection
-        activeCharacter?.stopMovement()
-        gameCamera?.position = currentPosition
-    }
-
-    private func character(for selection: CharacterSelection) -> (SKNode & ControllableEntity) {
-        switch selection {
-        case .astronaut:
-            return astronaut
-        case .spider:
-            return spiderCharacter
-        }
-    }
 }
 
 extension GameScene: SKPhysicsContactDelegate {

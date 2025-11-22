@@ -13,17 +13,6 @@ class GameViewController: UIViewController {
 
     private weak var gameScene: GameScene?
 
-    private lazy var switchCharacterButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitleColor(.white, for: .normal)
-        button.backgroundColor = UIColor.black.withAlphaComponent(0.55)
-        button.layer.cornerRadius = 18
-        button.contentEdgeInsets = UIEdgeInsets(top: 6, left: 6, bottom: 6, right: 6)
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.addTarget(self, action: #selector(didTapSwitchCharacter), for: .touchUpInside)
-        return button
-    }()
-
     private lazy var fireButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle("⚡︎", for: .normal)
@@ -61,28 +50,7 @@ class GameViewController: UIViewController {
             view.showsNodeCount = true
         }
 
-        setupSwitchCharacterButton()
         setupFireButton()
-        updateSwitchButtonTitle()
-        updateFireButtonAvailability()
-    }
-
-    @objc private func didTapSwitchCharacter() {
-        gameScene?.toggleCharacterSelection()
-        updateSwitchButtonTitle()
-        updateFireButtonAvailability()
-    }
-
-    private func setupSwitchCharacterButton() {
-        guard switchCharacterButton.superview == nil else { return }
-        view.addSubview(switchCharacterButton)
-
-        NSLayoutConstraint.activate([
-            switchCharacterButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 12),
-            switchCharacterButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -12),
-            switchCharacterButton.widthAnchor.constraint(equalToConstant: 36),
-            switchCharacterButton.heightAnchor.constraint(equalToConstant: 36)
-        ])
     }
 
     private func setupFireButton() {
@@ -95,20 +63,6 @@ class GameViewController: UIViewController {
             fireButton.widthAnchor.constraint(equalToConstant: 64),
             fireButton.heightAnchor.constraint(equalTo: fireButton.widthAnchor)
         ])
-    }
-
-    private func updateSwitchButtonTitle() {
-        let title = gameScene?.toggleButtonTitle ?? "⇄"
-        switchCharacterButton.setTitle(title, for: .normal)
-    }
-
-    private func updateFireButtonAvailability() {
-        let isEnabled = gameScene?.isBlasterAvailable ?? false
-        fireButton.isEnabled = isEnabled
-        fireButton.alpha = isEnabled ? 1 : 0.35
-        if !isEnabled {
-            fireButtonTouchUp()
-        }
     }
 
     @objc private func fireButtonTouchDown() {
