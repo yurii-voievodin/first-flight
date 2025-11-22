@@ -414,19 +414,6 @@ class Player: SKNode {
         applyAppearance(for: direction)
     }
 
-    private func updateFacingDirection(dx: CGFloat, dy: CGFloat) {
-        let threshold: CGFloat = 2
-        if abs(dx) < threshold && abs(dy) < threshold {
-            return
-        }
-
-        if abs(dx) > abs(dy) {
-            setFacingDirection(dx > 0 ? .right : .left)
-        } else {
-            setFacingDirection(dy > 0 ? .up : .down)
-        }
-    }
-
     private func applyAppearance(for direction: FacingDirection) {
         // Reset to a neutral front-facing look before applying directional tweaks.
         backpack.isHidden = false
@@ -558,9 +545,6 @@ class Player: SKNode {
             newDirection = .down
         }
 
-        // Store old xScale to detect if it will change
-        let oldXScale = xScale
-
         // Update facing direction (this may change xScale)
         setFacingDirection(newDirection)
 
@@ -578,29 +562,6 @@ class Player: SKNode {
 
     func setBlasterAim(angle: CGFloat) {
         blasterAimAngle = angle
-
-        // Determine facing direction from aim angle
-        // Normalize angle to 0-2π range
-        var normalizedAngle = angle.truncatingRemainder(dividingBy: 2 * .pi)
-        if normalizedAngle < 0 {
-            normalizedAngle += 2 * .pi
-        }
-
-        // Map to cardinal directions
-        // 0° = right, 90° = up, 180° = left, 270° = down
-        let newDirection: FacingDirection
-        if normalizedAngle < .pi / 4 || normalizedAngle >= 7 * .pi / 4 {
-            newDirection = .right
-        } else if normalizedAngle >= .pi / 4 && normalizedAngle < 3 * .pi / 4 {
-            newDirection = .up
-        } else if normalizedAngle >= 3 * .pi / 4 && normalizedAngle < 5 * .pi / 4 {
-            newDirection = .left
-        } else {
-            newDirection = .down
-        }
-
-        // Update facing direction (this will update body appearance)
-        setFacingDirection(newDirection)
 
         // Rotate blaster immediately (so sight shows)
         blaster.rotateToAngle(angle)
@@ -621,12 +582,7 @@ class Player: SKNode {
             leftHand.removeAction(forKey: "walk")
         }
 
-        // Calculate the arm rotation needed
-        // The arm naturally hangs down, so we rotate it to point at the aim angle
-        // Account for player xScale (mirroring)
-        let armAngle = angle
-
-        rotate(leftUpperArm, to: armAngle, duration: duration, key: "aimAngle")
+        rotate(leftUpperArm, to: angle, duration: duration, key: "aimAngle")
         rotate(leftForearm, to: 0, duration: duration, key: "aimFore")
         rotate(leftWrist, to: 0, duration: duration, key: "aimWrist")
         rotate(leftHand, to: 0, duration: duration, key: "aimHand", completion: completion)
@@ -766,8 +722,6 @@ class Player: SKNode {
         // Calculate distance and duration for consistent speed
         let deltaX = position.x - self.position.x
         let deltaY = position.y - self.position.y
-        // DON'T update facing direction - controlled by sight only
-        // updateFacingDirection(dx: deltaX, dy: deltaY) // REMOVED
 
         let distance = hypot(deltaX, deltaY)
         let speed: CGFloat = 55.0 // points per second
@@ -808,10 +762,6 @@ class Player: SKNode {
 
         // Keep sight visible for aiming while moving
         blasterAimAngle = nil
-
-        // DON'T update facing direction based on movement!
-        // Player direction is controlled by aim sight, not movement
-        // updateFacingDirection(dx: direction.dx * 100, dy: direction.dy * 100) // REMOVED
 
         // Apply velocity directly to physics body for continuous movement
         let speed: CGFloat = 55.0 // points per second
