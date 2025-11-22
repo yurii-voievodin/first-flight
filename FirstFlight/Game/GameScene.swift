@@ -7,19 +7,10 @@
 
 import SpriteKit
 
-fileprivate protocol ControllableEntity: AnyObject {
-    func moveTo(position: CGPoint)
-    func moveInDirection(direction: CGVector)
-    func stopMovement()
-}
-
-extension Player: ControllableEntity {}
-
 
 class GameScene: SKScene {
 
-    private var astronaut: Player!
-    private var activeCharacter: (SKNode & ControllableEntity)?
+    private let astronaut = Player()
     private var gameCamera: SKCameraNode!
     private var rockFormations: [RockFormation] = []
     private var boundaryRocks: [RockFormation] = []
@@ -55,10 +46,8 @@ class GameScene: SKScene {
     }
 
     private func createCharacters() {
-        astronaut = Player()
         astronaut.position = CGPoint(x: size.width * 0.25, y: size.height * 0.25)
         addChild(astronaut)
-        activeCharacter = astronaut
     }
 
     private func loadMapFromJSON() {
@@ -124,10 +113,7 @@ class GameScene: SKScene {
         gameCamera = SKCameraNode()
         camera = gameCamera
         addChild(gameCamera)
-
-        if let activeCharacter = activeCharacter {
-            gameCamera.position = activeCharacter.position
-        }
+        gameCamera.position = astronaut.position
     }
 
     private func setupJoystick() {
@@ -165,12 +151,10 @@ class GameScene: SKScene {
 
 
     func beginBlasterBeam() {
-        guard let astronaut else { return }
         astronaut.startFiringBlaster()
     }
 
     func endBlasterBeam() {
-        guard let astronaut else { return }
         astronaut.stopFiringBlaster()
     }
 
@@ -181,45 +165,32 @@ class GameScene: SKScene {
     }
 
     private func updateCharacterMovement(deltaTime: TimeInterval) {
-        guard let activeCharacter = activeCharacter else { return }
-        guard let joystick = virtualJoystick else { return }
-
-        let direction = joystick.currentDirection
-
-        // Special handling for astronaut aiming
-        if let player = activeCharacter as? Player {
-            if let aimAngle = joystick.currentAngle {
-                // Joystick is active - always update sight position
-                player.updateAimSight(angle: aimAngle)
-
-                // If currently firing, continuously update blaster aim to track joystick
-                if player.isCurrentlyFiring {
-                    player.setBlasterAim(angle: aimAngle)
-                }
-
-                // Check joystick magnitude to decide between aiming and moving
-                let magnitude = hypot(direction.dx, direction.dy)
-                let movementThreshold: CGFloat = 0.5 // 50% of max joystick distance
-
-                if magnitude > movementThreshold || player.isCurrentlyWalking {
-                    // Strong joystick push or already walking - move player
-                    activeCharacter.moveInDirection(direction: direction)
-                } else {
-                    // Light joystick touch - just aim, don't move
-                    activeCharacter.stopMovement()
-                }
-            } else {
-                // Joystick released - hide sight and stop
-                activeCharacter.stopMovement()
-            }
+        let direction = virtualJoystick.currentDirection
+        let player = astronaut
+        
+        guard let aimAngle = virtualJoystick.currentAngle else {
+            // Joystick released - hide sight and stop
+            player.stopMovement()
             return
         }
-
-        // Normal movement behavior for non-player characters
-        if direction != .zero {
-            activeCharacter.moveInDirection(direction: direction)
+        // Joystick is active - always update sight position
+        player.updateAimSight(angle: aimAngle)
+        
+        // If currently firing, continuously update blaster aim to track joystick
+        if player.isCurrentlyFiring {
+            player.setBlasterAim(angle: aimAngle)
+        }
+        
+        // Check joystick magnitude to decide between aiming and moving
+        let magnitude = hypot(direction.dx, direction.dy)
+        let movementThreshold: CGFloat = 0.5 // 50% of max joystick distance
+        
+        if magnitude > movementThreshold || player.isCurrentlyWalking {
+            // Strong joystick push or already walking - move player
+            player.moveInDirection(direction: direction)
         } else {
-            activeCharacter.stopMovement()
+            // Light joystick touch - just aim, don't move
+            player.stopMovement()
         }
     }
 
@@ -229,10 +200,8 @@ class GameScene: SKScene {
         let currentY = gameCamera.position.y
         let lerpFactor: CGFloat = 0.1
 
-        guard let activeCharacter = activeCharacter else { return }
-
-        let newX = currentX + (activeCharacter.position.x - currentX) * lerpFactor
-        let newY = currentY + (activeCharacter.position.y - currentY) * lerpFactor
+        let newX = currentX + (astronaut.position.x - currentX) * lerpFactor
+        let newY = currentY + (astronaut.position.y - currentY) * lerpFactor
 
         gameCamera.position = CGPoint(x: newX, y: newY)
     }
@@ -253,7 +222,7 @@ extension GameScene: SKPhysicsContactDelegate {
         if collision == PhysicsCategory.player | PhysicsCategory.wall ||
            collision == PhysicsCategory.player | PhysicsCategory.rock {
             print("  ➡️ Player collision - stopping movement")
-            activeCharacter?.stopMovement()
+            astronaut.stopMovement()
         }
 
         // Check if blaster beam hit a rock

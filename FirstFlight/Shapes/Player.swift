@@ -567,7 +567,7 @@ class Player: SKNode {
         blaster.rotateToAngle(angle)
 
         // Rotate left arm to aim at angle
-        configureLeftArmAimAtAngle(angle, animated: true)
+//        configureLeftArmAimAtAngle(angle, animated: true)
     }
 
     private func configureLeftArmAimAtAngle(_ angle: CGFloat, animated: Bool, completion: (() -> Void)? = nil) {
