@@ -12,8 +12,6 @@ FirstFlight is an iOS SpriteKit game app that targets iPhone devices. The projec
   - `AppDelegate.swift` - Application lifecycle management
   - `GameViewController.swift` - Main view controller that presents the SpriteKit scene
   - `GameScene.swift` - Main game scene with touch interaction and animated shape nodes
-  - `GameScene.sks` - SpriteKit scene file
-  - `Actions.sks` - SpriteKit actions file
   - `Assets.xcassets` - App icons and other visual assets
   - `Base.lproj/` - Storyboard files for UI layout
 - `FirstFlightTests/` - Unit tests
@@ -50,13 +48,13 @@ xcodebuild test -project FirstFlight.xcodeproj -scheme FirstFlight -destination 
 - **Bundle ID**: `io.github.yurii-voievodin.FirstFlight`
 - **Development Team**: M2BF9ZE9NW
 - **App Category**: Adventure Games
-- **Supported Orientations**: Landscape Left/Right (iPhone), All orientations (iPad)
+-  **Supported Orientations**: Landscape Left/Right (iPhone), All orientations (iPad)
 
 ## Architecture Notes
 
 - Uses SpriteKit for game rendering with a single `GameScene`
+- Scene and all game elements are created programmatically.
 - Touch interaction creates animated rotating shapes at touch points
-- Scene loads from `GameScene.sks` file with asset-based configuration
 - Status bar is hidden for immersive game experience
 - Debug mode shows FPS and node count overlays
 - Don't build a project until I ask it directly
