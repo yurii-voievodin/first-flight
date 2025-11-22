@@ -176,11 +176,6 @@ class GameScene: SKScene {
         // Joystick is active - always update sight position
         player.updateAimSight(angle: aimAngle)
         
-        // If currently firing, continuously update blaster aim to track joystick
-        if player.isCurrentlyFiring {
-            player.setBlasterAim(angle: aimAngle)
-        }
-        
         // Check joystick magnitude to decide between aiming and moving
         let magnitude = hypot(direction.dx, direction.dy)
         let movementThreshold: CGFloat = 0.5 // 50% of max joystick distance

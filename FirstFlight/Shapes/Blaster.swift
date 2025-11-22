@@ -19,7 +19,6 @@ final class Blaster: SKNode {
     private var orientation: Orientation = .down
     private var isFiring = false
     private var restingEmitterAlpha: CGFloat = 0.8
-    private var useManualRotation = false
 
     override init() {
         let gripSize = CGSize(width: 4.5, height: 11)
@@ -97,18 +96,6 @@ final class Blaster: SKNode {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func rotateToAngle(_ angle: CGFloat) {
-        // Rotate the entire blaster to aim at the specified angle
-        // Angle is in radians, where 0 points right, π/2 points up
-        // Blaster naturally points down, so we need to add π/2 to align
-        useManualRotation = true
-        zRotation = angle + .pi / 2
-    }
-
-    func resetManualRotation() {
-        useManualRotation = false
-    }
-
     func update(for orientation: Orientation) {
         self.orientation = orientation
 
@@ -116,10 +103,6 @@ final class Blaster: SKNode {
         alpha = 1
         xScale = 1
         yScale = 1
-        // Only reset rotation if not using manual rotation
-        if !useManualRotation {
-            zRotation = 0
-        }
         zPosition = -1.0 // Keep low so grip stays behind hand
 
         body.fillColor = SKColor(red: 0.45, green: 0.52, blue: 0.6, alpha: 1)
