@@ -68,11 +68,11 @@ class GameViewController: UIViewController {
 
     @objc private func fireButtonTouchDown() {
         guard fireButton.isEnabled else { return }
-        gameScene?.beginBlasterBeam()
+        gameScene?.astronaut.startFiringBlaster()
     }
 
     @objc private func fireButtonTouchUp() {
-        gameScene?.endBlasterBeam()
+        gameScene?.astronaut.stopFiringBlaster()
     }
 
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {

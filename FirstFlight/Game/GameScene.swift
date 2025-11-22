@@ -10,7 +10,7 @@ import SpriteKit
 
 class GameScene: SKScene {
 
-    private let astronaut = Player()
+    let astronaut = Player()
     private var gameCamera: SKCameraNode!
     private var rockFormations: [RockFormation] = []
     private var boundaryRocks: [RockFormation] = []
@@ -148,16 +148,6 @@ class GameScene: SKScene {
 
         gameCamera.constraints = [edgeConstraint]
     }
-
-
-    func beginBlasterBeam() {
-        astronaut.startFiringBlaster()
-    }
-
-    func endBlasterBeam() {
-        astronaut.stopFiringBlaster()
-    }
-
 
     override func update(_ currentTime: TimeInterval) {
         updateCharacterMovement(deltaTime: currentTime)
