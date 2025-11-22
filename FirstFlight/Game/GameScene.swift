@@ -21,7 +21,6 @@ class GameScene: SKScene {
     private var astronaut: Player!
     private var activeCharacter: (SKNode & ControllableEntity)?
     private var gameCamera: SKCameraNode!
-    private var walls: [SKSpriteNode] = []
     private var rockFormations: [RockFormation] = []
     private var boundaryRocks: [RockFormation] = []
     private var virtualJoystick: VirtualJoystick!
@@ -44,7 +43,7 @@ class GameScene: SKScene {
         physicsWorld.gravity = CGVector(dx: 0, dy: 0)
         physicsWorld.contactDelegate = self
 
-        // Set background to grey (this will be the color outside map walls)
+        // Set background
         backgroundColor = SKColor.systemGray4
 
         // Create a large grey background that extends beyond scene bounds
@@ -193,6 +192,11 @@ class GameScene: SKScene {
                 // Joystick is active - always update sight position
                 player.updateAimSight(angle: aimAngle)
 
+                // If currently firing, continuously update blaster aim to track joystick
+                if player.isCurrentlyFiring {
+                    player.setBlasterAim(angle: aimAngle)
+                }
+
                 // Check joystick magnitude to decide between aiming and moving
                 let magnitude = hypot(direction.dx, direction.dy)
                 let movementThreshold: CGFloat = 0.5 // 50% of max joystick distance
@@ -206,7 +210,6 @@ class GameScene: SKScene {
                 }
             } else {
                 // Joystick released - hide sight and stop
-                player.hideAimSight()
                 activeCharacter.stopMovement()
             }
             return

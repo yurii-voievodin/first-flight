@@ -238,7 +238,6 @@ final class Blaster: SKNode {
             beam.isHidden = false
             beam.yScale = 1
             beam.position = emitter.position
-            beam.zRotation = 0
             print("  📍 Beam state updated - visible: true, position: \(beam.position)")
 
             if let scene = self.scene {
