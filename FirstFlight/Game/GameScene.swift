@@ -180,7 +180,7 @@ class GameScene: SKScene {
         let magnitude = hypot(direction.dx, direction.dy)
         let movementThreshold: CGFloat = 0.5 // 50% of max joystick distance
         
-        if magnitude > movementThreshold || player.isCurrentlyWalking {
+        if magnitude > movementThreshold || player.isWalking {
             // Strong joystick push or already walking - move player
             player.moveInDirection(direction: direction)
         } else {

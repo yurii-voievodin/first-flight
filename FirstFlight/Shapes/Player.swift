@@ -21,17 +21,9 @@ class Player: SKNode {
     private var facingDirection: FacingDirection = .down
     private var isFiring = false
     private var leftArmWasSwinging = false
-    private var isWalking = false
+    private(set) var isWalking = false
     private var lastWalkingDirection: FacingDirection?
     private var desiredAimAngle: CGFloat = 0
-
-    var isCurrentlyFiring: Bool {
-        return isFiring
-    }
-
-    var isCurrentlyWalking: Bool {
-        return isWalking
-    }
 
     // Body parts
     private var body: SKShapeNode!
@@ -480,31 +472,8 @@ class Player: SKNode {
             // Don't swap arms/legs - keep blaster in left hand and legs natural
             blasterOrientation = .left
         }
-
-        // Only update blaster orientation if not currently aiming or firing
-        // When aiming/firing, the continuous arm rotation controls the blaster direction
-        if !isFiring {
-            blaster.update(for: blasterOrientation)
-        }
-
-        // Only use discrete firing poses if not using continuous angle aiming
-        if isFiring {
-            if direction == .left || direction == .right {
-                configureLeftArmAimPose(manageWalkCycle: false, animated: true) { [weak self] in
-                    self?.blaster.startBeam()
-                }
-            } else if direction == .up {
-                configureLeftArmRaisePose(manageWalkCycle: false, animated: true) { [weak self] in
-                    self?.blaster.startBeam()
-                }
-            } else if direction == .down {
-                configureLeftArmLowerPose(manageWalkCycle: false, animated: true) { [weak self] in
-                    self?.blaster.startBeam()
-                }
-            } else {
-                resetLeftArmPose(manageWalkCycle: false, animated: true)
-            }
-        }
+        
+        blaster.update(for: blasterOrientation)
     }
 
     private func blasterOrientation(for direction: FacingDirection) -> Blaster.Orientation {
@@ -676,11 +645,6 @@ class Player: SKNode {
     }
 
     func moveTo(position: CGPoint) {
-        // Stop firing if currently firing
-        if isFiring {
-            stopFiringBlaster()
-        }
-
         // Stop any current movement
         removeAction(forKey: "move")
 
@@ -723,11 +687,6 @@ class Player: SKNode {
     }
 
     func moveInDirection(direction: CGVector) {
-        // Stop firing if currently firing
-        if isFiring {
-            stopFiringBlaster()
-        }
-
         // Apply velocity directly to physics body for continuous movement
         let speed: CGFloat = 55.0 // points per second
         let velocity = CGVector(dx: direction.dx * speed, dy: direction.dy * speed)
@@ -762,7 +721,7 @@ class Player: SKNode {
         isFiring = true
 
         // Start beam immediately
-        blaster.startBeam()
+//        blaster.startBeam()
     }
 
     func stopFiringBlaster() {
@@ -956,12 +915,10 @@ class Player: SKNode {
         rightAnkle.run(rightAnkleSequence, withKey: "walk")
         rightFoot.run(rightFootSequence, withKey: "walk")
 
-        if !isFiring {
-            leftUpperArm.run(SKAction.repeatForever(leftUpperArmCycle), withKey: "walk")
-            leftForearm.run(SKAction.repeatForever(leftForearmCycle), withKey: "walk")
-            leftWrist.run(SKAction.repeatForever(leftWristCycle), withKey: "walk")
-            leftHand.run(SKAction.repeatForever(leftHandCycle), withKey: "walk")
-        }
+        leftUpperArm.run(SKAction.repeatForever(leftUpperArmCycle), withKey: "walk")
+        leftForearm.run(SKAction.repeatForever(leftForearmCycle), withKey: "walk")
+        leftWrist.run(SKAction.repeatForever(leftWristCycle), withKey: "walk")
+        leftHand.run(SKAction.repeatForever(leftHandCycle), withKey: "walk")
 
         leftThigh.run(leftThighCycle, withKey: "walk")
         leftCalf.run(leftCalfCycle, withKey: "walk")
@@ -972,16 +929,6 @@ class Player: SKNode {
         rightForearm.run(rightForearmCycle, withKey: "walk")
         rightWrist.run(rightWristCycle, withKey: "walk")
         rightHand.run(rightHandCycle, withKey: "walk")
-
-        if isFiring {
-            if facingDirection == .left || facingDirection == .right {
-                configureLeftArmAimPose(manageWalkCycle: false, animated: false)
-            } else if facingDirection == .up {
-                configureLeftArmRaisePose(manageWalkCycle: false, animated: false)
-            } else if facingDirection == .down {
-                configureLeftArmLowerPose(manageWalkCycle: false, animated: false)
-            }
-        }
 
         isWalking = true
     }
@@ -1015,26 +962,14 @@ class Player: SKNode {
         rightCalf.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
         rightAnkle.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
         rightFoot.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
-        if !isFiring {
-            leftUpperArm.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
-            leftForearm.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
-            leftWrist.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
-            leftHand.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
-        }
+        leftUpperArm.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
+        leftForearm.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
+        leftWrist.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
+        leftHand.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
         rightUpperArm.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
         rightForearm.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
         rightWrist.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
         rightHand.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
-
-        if isFiring {
-            if facingDirection == .left || facingDirection == .right {
-                configureLeftArmAimPose(manageWalkCycle: false, animated: false)
-            } else if facingDirection == .up {
-                configureLeftArmRaisePose(manageWalkCycle: false, animated: false)
-            } else if facingDirection == .down {
-                configureLeftArmLowerPose(manageWalkCycle: false, animated: false)
-            }
-        }
 
         isWalking = false
         lastWalkingDirection = nil  // Reset direction tracking
