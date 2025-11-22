@@ -20,7 +20,6 @@ class Player: SKNode {
 
     private var facingDirection: FacingDirection = .down
     private var isFiring = false
-    private var leftArmWasSwinging = false
     private(set) var isWalking = false
     private var lastWalkingDirection: FacingDirection?
     private var desiredAimAngle: CGFloat = 0
@@ -59,6 +58,10 @@ class Player: SKNode {
     private var rightCalf: SKShapeNode!
     private var rightAnkle: SKShapeNode!
     private var rightFoot: SKShapeNode!
+    
+    var leftArm: [SKShapeNode] {
+        [leftUpperArm, leftElbow, leftForearm, leftWrist, leftHand]
+    }
 
     override init() {
         super.init()
@@ -528,89 +531,15 @@ class Player: SKNode {
         aimSight.zRotation = angle
     }
 
-    private func configureLeftArmAimPose(manageWalkCycle: Bool, animated: Bool, completion: (() -> Void)? = nil) {
-        guard facingDirection == .left || facingDirection == .right else {
-            completion?()
-            return
-        }
-
-        if manageWalkCycle {
-            leftArmWasSwinging = leftUpperArm.action(forKey: "walk") != nil
-            if leftArmWasSwinging {
-                leftUpperArm.removeAction(forKey: "walk")
-                leftForearm.removeAction(forKey: "walk")
-                leftWrist.removeAction(forKey: "walk")
-                leftHand.removeAction(forKey: "walk")
-            }
-        }
-
-        let duration: TimeInterval = animated ? 0.12 : 0
-        let parentScaleSign: CGFloat = xScale >= 0 ? 1 : -1
-        let desiredWorldSign: CGFloat = facingDirection == .left ? -1 : 1
-        // Adjust for mirrored player scale so the beam matches the on-screen facing.
-        let directionSign: CGFloat = desiredWorldSign * parentScaleSign
-
-        rotate(leftUpperArm, to: directionSign * (.pi / 2), duration: duration, key: "aimUpper")
-        rotate(leftForearm, to: directionSign * (.pi / 16), duration: duration, key: "aimFore")
-        rotate(leftWrist, to: directionSign * (.pi / 20), duration: duration, key: "aimWrist")
-        rotate(leftHand, to: directionSign * (-.pi / 24), duration: duration, key: "aimHand", completion: completion)
-    }
-
-    private func configureLeftArmRaisePose(manageWalkCycle: Bool, animated: Bool, completion: (() -> Void)? = nil) {
-        guard facingDirection == .up else {
-            completion?()
-            return
-        }
-
-        if manageWalkCycle {
-            leftArmWasSwinging = leftUpperArm.action(forKey: "walk") != nil
-            if leftArmWasSwinging {
-                leftUpperArm.removeAction(forKey: "walk")
-                leftForearm.removeAction(forKey: "walk")
-                leftWrist.removeAction(forKey: "walk")
-                leftHand.removeAction(forKey: "walk")
-            }
-        }
-
-        let duration: TimeInterval = animated ? 0.12 : 0
-        rotate(leftUpperArm, to: .pi, duration: duration, key: "raiseUpper", completion: completion)
-    }
-
-    private func configureLeftArmLowerPose(manageWalkCycle: Bool, animated: Bool, completion: (() -> Void)? = nil) {
-        guard facingDirection == .down else {
-            completion?()
-            return
-        }
-
-        if manageWalkCycle {
-            leftArmWasSwinging = leftUpperArm.action(forKey: "walk") != nil
-            if leftArmWasSwinging {
-                leftUpperArm.removeAction(forKey: "walk")
-                leftForearm.removeAction(forKey: "walk")
-                leftWrist.removeAction(forKey: "walk")
-                leftHand.removeAction(forKey: "walk")
-            }
-        }
-
-        let duration: TimeInterval = animated ? 0.12 : 0
-        rotate(leftUpperArm, to: 0, duration: duration, key: "lowerUpper", completion: completion)
-    }
-
     private func resetLeftArmPose(manageWalkCycle: Bool, animated: Bool) {
         let duration: TimeInterval = animated ? 0.15 : 0
-
-        leftUpperArm.removeAction(forKey: "aimUpper")
-        leftForearm.removeAction(forKey: "aimFore")
-        leftWrist.removeAction(forKey: "aimWrist")
-        leftHand.removeAction(forKey: "aimHand")
 
         rotate(leftUpperArm, to: 0, duration: duration, key: "resetUpper")
         rotate(leftForearm, to: 0, duration: duration, key: "resetFore")
         rotate(leftWrist, to: 0, duration: duration, key: "resetWrist")
         rotate(leftHand, to: 0, duration: duration, key: "resetHand")
 
-        if manageWalkCycle && leftArmWasSwinging {
-            leftArmWasSwinging = false
+        if manageWalkCycle {
             if action(forKey: "move") != nil {
                 startWalkingAnimation()
             }
@@ -910,47 +839,47 @@ class Player: SKNode {
             SKAction.repeatForever(rightFootCycle)
         ])
 
-        rightThigh.run(rightThighSequence, withKey: "walk")
-        rightCalf.run(rightCalfSequence, withKey: "walk")
-        rightAnkle.run(rightAnkleSequence, withKey: "walk")
-        rightFoot.run(rightFootSequence, withKey: "walk")
+        rightThigh.run(rightThighSequence, withKey: .walk)
+        rightCalf.run(rightCalfSequence, withKey: .walk)
+        rightAnkle.run(rightAnkleSequence, withKey: .walk)
+        rightFoot.run(rightFootSequence, withKey: .walk)
 
-        leftUpperArm.run(SKAction.repeatForever(leftUpperArmCycle), withKey: "walk")
-        leftForearm.run(SKAction.repeatForever(leftForearmCycle), withKey: "walk")
-        leftWrist.run(SKAction.repeatForever(leftWristCycle), withKey: "walk")
-        leftHand.run(SKAction.repeatForever(leftHandCycle), withKey: "walk")
+        leftUpperArm.run(SKAction.repeatForever(leftUpperArmCycle), withKey: .walk)
+        leftForearm.run(SKAction.repeatForever(leftForearmCycle), withKey: .walk)
+        leftWrist.run(SKAction.repeatForever(leftWristCycle), withKey: .walk)
+        leftHand.run(SKAction.repeatForever(leftHandCycle), withKey: .walk)
 
-        leftThigh.run(leftThighCycle, withKey: "walk")
-        leftCalf.run(leftCalfCycle, withKey: "walk")
-        leftAnkle.run(leftAnkleCycle, withKey: "walk")
-        leftFoot.run(leftFootCycle, withKey: "walk")
+        leftThigh.run(leftThighCycle, withKey: .walk)
+        leftCalf.run(leftCalfCycle, withKey: .walk)
+        leftAnkle.run(leftAnkleCycle, withKey: .walk)
+        leftFoot.run(leftFootCycle, withKey: .walk)
 
-        rightUpperArm.run(rightUpperArmCycle, withKey: "walk")
-        rightForearm.run(rightForearmCycle, withKey: "walk")
-        rightWrist.run(rightWristCycle, withKey: "walk")
-        rightHand.run(rightHandCycle, withKey: "walk")
+        rightUpperArm.run(rightUpperArmCycle, withKey: .walk)
+        rightForearm.run(rightForearmCycle, withKey: .walk)
+        rightWrist.run(rightWristCycle, withKey: .walk)
+        rightHand.run(rightHandCycle, withKey: .walk)
 
         isWalking = true
     }
 
     private func stopWalkingAnimation() {
         // Stop all limb animations
-        leftThigh.removeAction(forKey: "walk")
-        leftCalf.removeAction(forKey: "walk")
-        leftAnkle.removeAction(forKey: "walk")
-        leftFoot.removeAction(forKey: "walk")
-        rightThigh.removeAction(forKey: "walk")
-        rightCalf.removeAction(forKey: "walk")
-        rightAnkle.removeAction(forKey: "walk")
-        rightFoot.removeAction(forKey: "walk")
-        leftUpperArm.removeAction(forKey: "walk")
-        leftForearm.removeAction(forKey: "walk")
-        leftWrist.removeAction(forKey: "walk")
-        leftHand.removeAction(forKey: "walk")
-        rightUpperArm.removeAction(forKey: "walk")
-        rightForearm.removeAction(forKey: "walk")
-        rightWrist.removeAction(forKey: "walk")
-        rightHand.removeAction(forKey: "walk")
+        leftThigh.removeAction(forKey: .walk)
+        leftCalf.removeAction(forKey: .walk)
+        leftAnkle.removeAction(forKey: .walk)
+        leftFoot.removeAction(forKey: .walk)
+        rightThigh.removeAction(forKey: .walk)
+        rightCalf.removeAction(forKey: .walk)
+        rightAnkle.removeAction(forKey: .walk)
+        rightFoot.removeAction(forKey: .walk)
+        leftUpperArm.removeAction(forKey: .walk)
+        leftForearm.removeAction(forKey: .walk)
+        leftWrist.removeAction(forKey: .walk)
+        leftHand.removeAction(forKey: .walk)
+        rightUpperArm.removeAction(forKey: .walk)
+        rightForearm.removeAction(forKey: .walk)
+        rightWrist.removeAction(forKey: .walk)
+        rightHand.removeAction(forKey: .walk)
 
         // Reset all segments to neutral position
         let resetDuration: TimeInterval = 0.2
@@ -974,4 +903,8 @@ class Player: SKNode {
         isWalking = false
         lastWalkingDirection = nil  // Reset direction tracking
     }
+}
+
+extension String {
+    static var walk: String { "walk" }
 }
