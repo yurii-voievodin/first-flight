@@ -19,6 +19,11 @@ class GameScene: SKScene {
     // Debug mode flag
     var showDebugLabels: Bool = false
 
+    // Beam damage system
+    private var rocksBeingDamaged: Set<RockFormation> = []
+    private var lastUpdateTime: TimeInterval = 0
+    private let beamDamagePerSecond: CGFloat = 100
+
     override func didMove(to view: SKView) {
         setupScene()
         createCharacters()
@@ -96,10 +101,16 @@ class GameScene: SKScene {
                 }
             }
 
+            // Add small decorative rocks
+            let smallRocks = MapLoader.shared.createSmallRocks(from: mapData)
+            for smallRock in smallRocks {
+                addChild(smallRock)
+            }
+
             // Print map info for debugging
             let mapInfo = MapLoader.shared.getMapInfo(from: mapData)
             print("Loaded map: \(mapInfo.name) v\(mapInfo.version) - \(mapInfo.description)")
-            print("Total rocks: \(rocks.boundary.count) boundary, \(rocks.interior.count) interior, \(rocks.signature.count) signature")
+            print("Total rocks: \(rocks.boundary.count) boundary, \(rocks.interior.count) interior, \(rocks.signature.count) signature, \(smallRocks.count) small")
 
         } catch {
             print("ERROR: Failed to load Map1.json: \(error.localizedDescription)")
@@ -158,8 +169,31 @@ class GameScene: SKScene {
     }
 
     override func update(_ currentTime: TimeInterval) {
+        // Calculate delta time
+        let deltaTime = lastUpdateTime == 0 ? 0 : currentTime - lastUpdateTime
+        lastUpdateTime = currentTime
+
         updateCharacterMovement(deltaTime: currentTime)
         updateCamera()
+        updateRockDamage(deltaTime: deltaTime)
+    }
+
+    private func updateRockDamage(deltaTime: TimeInterval) {
+        guard deltaTime > 0, !rocksBeingDamaged.isEmpty else { return }
+
+        let damage = beamDamagePerSecond * CGFloat(deltaTime)
+        var rocksToDestroy: [RockFormation] = []
+
+        for rock in rocksBeingDamaged {
+            if rock.applyDamage(damage) {
+                rocksToDestroy.append(rock)
+            }
+        }
+
+        for rock in rocksToDestroy {
+            rocksBeingDamaged.remove(rock)
+            destroyRock(rock)
+        }
     }
 
     private func updateCharacterMovement(deltaTime: TimeInterval) {
@@ -218,18 +252,30 @@ extension GameScene: SKPhysicsContactDelegate {
             astronaut.stopMovement()
         }
 
-        // Check if blaster beam hit a rock
+        // Check if blaster beam hit a rock - start tracking damage
         if collision == PhysicsCategory.blasterBeam | PhysicsCategory.rock {
             print("  ➡️ Beam-Rock collision detected!")
-            // Determine which body is the rock
             let rockBody = contact.bodyA.categoryBitMask == PhysicsCategory.rock ? contact.bodyA : contact.bodyB
 
-            // Get the rock node
             if let rock = rockBody.node as? RockFormation {
-                print("  ✅ Destroying rock")
-                destroyRock(rock)
+                print("  ✅ Starting damage on rock (strength: \(rock.currentStrength))")
+                rocksBeingDamaged.insert(rock)
             } else {
                 print("  ❌ Rock node not found")
+            }
+        }
+    }
+
+    func didEnd(_ contact: SKPhysicsContact) {
+        let collision = contact.bodyA.categoryBitMask | contact.bodyB.categoryBitMask
+
+        // Check if blaster beam stopped hitting a rock
+        if collision == PhysicsCategory.blasterBeam | PhysicsCategory.rock {
+            let rockBody = contact.bodyA.categoryBitMask == PhysicsCategory.rock ? contact.bodyA : contact.bodyB
+
+            if let rock = rockBody.node as? RockFormation {
+                print("  🛑 Beam stopped hitting rock")
+                rocksBeingDamaged.remove(rock)
             }
         }
     }

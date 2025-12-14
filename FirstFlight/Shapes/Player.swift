@@ -659,10 +659,10 @@ class Player: SKNode {
 
         // Pose arm toward current aim
         poseLeftArmForAiming(angle: currentAimAngle)
+        
+        // Start beam immediately
+        blaster.startBeam()
     }
-    
-//    Start beam immediately
-//    blaster.startBeam()
 
     func stopFiringBlaster() {
         guard isFiring else { return }

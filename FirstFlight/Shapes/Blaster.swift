@@ -28,7 +28,9 @@ final class Blaster: SKNode {
         body = SKShapeNode(rectOf: CGSize(width: 6.5, height: 19), cornerRadius: 3)
         barrel = SKShapeNode(rectOf: CGSize(width: 4.2, height: 12.5), cornerRadius: 1.6)
         emitter = SKShapeNode(circleOfRadius: 2.3)
-        beam = SKSpriteNode(color: SKColor.cyan.withAlphaComponent(0.55), size: CGSize(width: 6, height: 120))
+        let beamSize = CGSize(width: 6, height: 120)
+        let beamTexture = Blaster.createRoundedBeamTexture(size: beamSize, cornerRadius: 3, color: SKColor.cyan.withAlphaComponent(0.5))
+        beam = SKSpriteNode(texture: beamTexture, size: beamSize)
 
         super.init()
 
@@ -254,5 +256,16 @@ final class Blaster: SKNode {
             beam.run(SKAction.sequence([fadeOut, hide]), withKey: "beamFadeOut")
             print("  📍 Beam fading out (animated)")
         }
+    }
+
+    private static func createRoundedBeamTexture(size: CGSize, cornerRadius: CGFloat, color: SKColor) -> SKTexture {
+        let renderer = UIGraphicsImageRenderer(size: size)
+        let image = renderer.image { _ in
+            let rect = CGRect(origin: .zero, size: size)
+            let path = UIBezierPath(roundedRect: rect, cornerRadius: cornerRadius)
+            color.setFill()
+            path.fill()
+        }
+        return SKTexture(image: image)
     }
 }

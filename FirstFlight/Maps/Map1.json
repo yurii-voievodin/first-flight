@@ -573,5 +573,37 @@
         "visibility": "high"
       }
     }
+  ],
+  "smallRocks": [
+    { "position": { "x": 320, "y": 280 }, "variation": 0 },
+    { "position": { "x": 450, "y": 420 }, "variation": 1 },
+    { "position": { "x": 580, "y": 310 }, "variation": 2 },
+    { "position": { "x": 720, "y": 550 }, "variation": 3 },
+    { "position": { "x": 850, "y": 380 }, "variation": 0 },
+    { "position": { "x": 980, "y": 620 }, "variation": 1 },
+    { "position": { "x": 1120, "y": 290 }, "variation": 2 },
+    { "position": { "x": 1280, "y": 510 }, "variation": 3 },
+    { "position": { "x": 1420, "y": 350 }, "variation": 0 },
+    { "position": { "x": 1580, "y": 480 }, "variation": 1 },
+    { "position": { "x": 1720, "y": 320 }, "variation": 2 },
+    { "position": { "x": 280, "y": 780 }, "variation": 3 },
+    { "position": { "x": 520, "y": 920 }, "variation": 0 },
+    { "position": { "x": 680, "y": 1050 }, "variation": 1 },
+    { "position": { "x": 920, "y": 880 }, "variation": 2 },
+    { "position": { "x": 1080, "y": 980 }, "variation": 3 },
+    { "position": { "x": 1320, "y": 1120 }, "variation": 0 },
+    { "position": { "x": 1520, "y": 920 }, "variation": 1 },
+    { "position": { "x": 1780, "y": 1080 }, "variation": 2 },
+    { "position": { "x": 350, "y": 1280 }, "variation": 3 },
+    { "position": { "x": 580, "y": 1420 }, "variation": 0 },
+    { "position": { "x": 780, "y": 1580 }, "variation": 1 },
+    { "position": { "x": 1020, "y": 1320 }, "variation": 2 },
+    { "position": { "x": 1250, "y": 1520 }, "variation": 3 },
+    { "position": { "x": 1480, "y": 1380 }, "variation": 0 },
+    { "position": { "x": 1680, "y": 1620 }, "variation": 1 },
+    { "position": { "x": 1850, "y": 1480 }, "variation": 2 },
+    { "position": { "x": 420, "y": 1720 }, "variation": 3 },
+    { "position": { "x": 880, "y": 1780 }, "variation": 0 },
+    { "position": { "x": 1350, "y": 1720 }, "variation": 1 }
   ]
 }

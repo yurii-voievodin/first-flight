@@ -13,11 +13,19 @@ class RockFormation: SKShapeNode {
     private let rockColor: SKColor = .systemBrown
     private var debugLabel: SKLabelNode?
 
+    // Strength system
+    private let rockSize: CGSize
+    let maxStrength: CGFloat
+    private(set) var currentStrength: CGFloat
+
     // Debug information
     var debugInfo: [String: String] = [:]
 
     init(type: RockFormationType, size: CGSize, position: CGPoint) {
         self.formationType = type
+        self.rockSize = size
+        self.maxStrength = (size.width + size.height) / 2
+        self.currentStrength = (size.width + size.height) / 2
         super.init()
 
         self.position = position
@@ -28,7 +36,20 @@ class RockFormation: SKShapeNode {
 
     required init?(coder aDecoder: NSCoder) {
         self.formationType = .boulder
+        self.rockSize = CGSize(width: 100, height: 100)
+        self.maxStrength = 100
+        self.currentStrength = 100
         super.init(coder: aDecoder)
+    }
+
+    // MARK: - Damage System
+
+    /// Apply damage to the rock
+    /// - Parameter amount: The amount of damage to apply
+    /// - Returns: True if the rock is destroyed (strength <= 0)
+    func applyDamage(_ amount: CGFloat) -> Bool {
+        currentStrength -= amount
+        return currentStrength <= 0
     }
 
     private func createRockShape(size: CGSize) {
