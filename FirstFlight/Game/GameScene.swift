@@ -40,15 +40,7 @@ class GameScene: SKScene {
         physicsWorld.gravity = CGVector(dx: 0, dy: 0)
         physicsWorld.contactDelegate = self
 
-        // Set background
-        backgroundColor = SKColor.systemGray4
-
-        // Create a large grey background that extends beyond scene bounds
-        let largeBackgroundSize = CGSize(width: size.width * 2, height: size.height * 2)
-        let largeBackground = SKSpriteNode(color: .systemGray4, size: largeBackgroundSize)
-        largeBackground.position = CGPoint(x: size.width / 2, y: size.height / 2)
-        largeBackground.zPosition = -100
-        addChild(largeBackground)
+        backgroundColor = SKColor.systemGray
     }
 
     private func createCharacters() {
