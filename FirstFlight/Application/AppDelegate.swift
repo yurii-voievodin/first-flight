@@ -10,17 +10,15 @@ import UIKit
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
-    var window: UIWindow?
-
-
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        
-        window = UIWindow(frame: UIScreen.main.bounds)
-        let viewController = GameViewController()
-        window?.rootViewController = viewController
-        window?.makeKeyAndVisible()
-        
         return true
+    }
+
+    func application(_ application: UIApplication, configurationForConnecting connectingSceneSession: UISceneSession, options: UIScene.ConnectionOptions) -> UISceneConfiguration {
+        // Provide configuration without relying on Info.plist scene manifest.
+        let configuration = UISceneConfiguration(name: nil, sessionRole: connectingSceneSession.role)
+        configuration.delegateClass = SceneDelegate.self
+        return configuration
     }
 
     func applicationWillResignActive(_ application: UIApplication) {
