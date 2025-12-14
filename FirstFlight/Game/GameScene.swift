@@ -117,24 +117,32 @@ class GameScene: SKScene {
     }
 
     private func setupJoystick() {
-        guard let view = view else { return }
-
         virtualJoystick = VirtualJoystick()
+        virtualJoystick.zPosition = 100
+        gameCamera.addChild(virtualJoystick)
+        updateJoystickPosition()
+    }
 
-        // Position in bottom-left corner (accounting for safe area)
-        let margin: CGFloat = 80
-        let xPosition = -view.bounds.width / 2 + margin
-        let yPosition = -view.bounds.height / 2 + margin
+    private func updateJoystickPosition() {
+        guard let view = view, virtualJoystick != nil else { return }
+
+        let safeArea = view.safeAreaInsets
+        let joystickRadius: CGFloat = 40
+        let margin: CGFloat = 20
+
+        let xPosition = -view.bounds.width / 2 + safeArea.left + joystickRadius + margin
+        let yPosition = -view.bounds.height / 2 + safeArea.bottom + joystickRadius + margin
 
         virtualJoystick.position = CGPoint(x: xPosition, y: yPosition)
-        virtualJoystick.zPosition = 100 // Above game elements
+    }
 
-        // Add to camera so it stays fixed on screen
-        gameCamera.addChild(virtualJoystick)
+    override func didChangeSize(_ oldSize: CGSize) {
+        super.didChangeSize(oldSize)
+        updateJoystickPosition()
     }
 
     private func updateCameraConstraints() {
-        guard let view = view else { return }
+        guard let view = view, gameCamera != nil else { return }
 
         // Account for viewport size when constraining camera position
         let viewportWidth = view.bounds.width
