@@ -22,7 +22,7 @@ class Player: SKNode {
     private var isFiring = false
     private(set) var isWalking = false
     private var lastWalkingDirection: FacingDirection?
-    private var desiredAimAngle: CGFloat = 0
+    private var currentAimAngle: CGFloat = 0
 
     // Body parts
     private var body: SKShapeNode!
@@ -493,8 +493,7 @@ class Player: SKNode {
     }
 
     func updateAimSight(angle: CGFloat) {
-        // Store desired aim angle
-        desiredAimAngle = angle
+        currentAimAngle = angle
 
         // Determine facing direction from aim angle (not from movement!)
         // Normalize angle to 0-2π range
@@ -529,6 +528,11 @@ class Player: SKNode {
 
         // Rotate arrows to point away from player (showing direction of movement/aim)
         aimSight.zRotation = angle
+
+        // Update arm pose if firing
+        if isFiring {
+            poseLeftArmForAiming(angle: normalizedAngle)
+        }
     }
 
     private func resetLeftArmPose(manageWalkCycle: Bool, animated: Bool) {
@@ -546,6 +550,22 @@ class Player: SKNode {
         }
     }
 
+    private func poseLeftArmForAiming(angle: CGFloat) {
+        let duration: TimeInterval = 0.08
+
+        // Upper arm rotation - swing toward aim direction
+        // Arm hangs down by default, so add π/2 offset
+        let upperArmRotation = angle + .pi / 2
+
+        // Forearm and wrist stay straight for extension
+        let forearmRotation: CGFloat = 0
+        let wristRotation: CGFloat = 0
+
+        rotateForAiming(leftUpperArm, to: upperArmRotation, duration: duration, key: "aim")
+        rotateForAiming(leftForearm, to: forearmRotation, duration: duration, key: "aim")
+        rotateForAiming(leftWrist, to: wristRotation, duration: duration, key: "aim")
+    }
+
     private func rotate(_ node: SKNode?, to angle: CGFloat, duration: TimeInterval, key: String, completion: (() -> Void)? = nil) {
         guard let node = node else {
             completion?()
@@ -561,6 +581,24 @@ class Player: SKNode {
         }
     }
 
+    private func rotateForAiming(_ node: SKNode?, to targetAngle: CGFloat, duration: TimeInterval, key: String) {
+        guard let node = node else { return }
+        node.removeAction(forKey: key)
+
+        // Adjust target to be within π of current rotation to avoid going the long way
+        var adjustedAngle = targetAngle
+        let currentRotation = node.zRotation
+        while adjustedAngle - currentRotation > .pi {
+            adjustedAngle -= 2 * .pi
+        }
+        while adjustedAngle - currentRotation < -.pi {
+            adjustedAngle += 2 * .pi
+        }
+
+        // Set rotation directly (no animation)
+        node.zRotation = adjustedAngle
+    }
+
     private func setupPhysics() {
         physicsBody = SKPhysicsBody(circleOfRadius: bodyRadius)
         physicsBody?.categoryBitMask = PhysicsCategory.player
@@ -571,48 +609,6 @@ class Player: SKNode {
         physicsBody?.allowsRotation = false
         physicsBody?.friction = 0.3
         physicsBody?.restitution = 0.1
-    }
-
-    func moveTo(position: CGPoint) {
-        // Stop any current movement
-        removeAction(forKey: "move")
-
-        // Reset velocity to prevent inertia
-        physicsBody?.velocity = .zero
-
-        // Calculate distance and duration for consistent speed
-        let deltaX = position.x - self.position.x
-        let deltaY = position.y - self.position.y
-
-        let distance = hypot(deltaX, deltaY)
-        let speed: CGFloat = 55.0 // points per second
-        let duration = max(TimeInterval(distance / speed), 0.05)
-
-        // Avoid needless animation if already at target
-        if distance < 1 {
-            let settle = SKAction.move(to: position, duration: 0.05)
-            let stopAnimation = SKAction.run { [weak self] in
-                self?.stopWalkingAnimation()
-            }
-            run(SKAction.sequence([settle, stopAnimation]), withKey: "move")
-            return
-        }
-
-        // Move directly to position with no overshoot
-        let moveAction = SKAction.move(to: position, duration: duration)
-        moveAction.timingMode = .linear
-
-        // Stop animation when movement completes
-        let stopAnimation = SKAction.run { [weak self] in
-            self?.stopWalkingAnimation()
-        }
-
-        zRotation = 0
-        let sequence = SKAction.sequence([moveAction, stopAnimation])
-        run(sequence, withKey: "move")
-
-        // Start walking animation
-        startWalkingAnimation()
     }
 
     func moveInDirection(direction: CGVector) {
@@ -649,9 +645,24 @@ class Player: SKNode {
 
         isFiring = true
 
-        // Start beam immediately
-//        blaster.startBeam()
+        // Stop walk animation for left arm
+        leftUpperArm.removeAction(forKey: .walk)
+        leftForearm.removeAction(forKey: .walk)
+        leftWrist.removeAction(forKey: .walk)
+        leftHand.removeAction(forKey: .walk)
+
+        // Stop reset actions that may be running
+        leftUpperArm.removeAction(forKey: .reset)
+        leftForearm.removeAction(forKey: .reset)
+        leftWrist.removeAction(forKey: .reset)
+        leftHand.removeAction(forKey: .reset)
+
+        // Pose arm toward current aim
+        poseLeftArmForAiming(angle: currentAimAngle)
     }
+    
+//    Start beam immediately
+//    blaster.startBeam()
 
     func stopFiringBlaster() {
         guard isFiring else { return }
@@ -891,10 +902,10 @@ class Player: SKNode {
         rightCalf.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
         rightAnkle.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
         rightFoot.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
-        leftUpperArm.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
-        leftForearm.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
-        leftWrist.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
-        leftHand.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
+        leftUpperArm.run(SKAction.rotate(toAngle: 0, duration: resetDuration), withKey: .reset)
+        leftForearm.run(SKAction.rotate(toAngle: 0, duration: resetDuration), withKey: .reset)
+        leftWrist.run(SKAction.rotate(toAngle: 0, duration: resetDuration), withKey: .reset)
+        leftHand.run(SKAction.rotate(toAngle: 0, duration: resetDuration), withKey: .reset)
         rightUpperArm.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
         rightForearm.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
         rightWrist.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
@@ -907,4 +918,5 @@ class Player: SKNode {
 
 extension String {
     static var walk: String { "walk" }
+    static var reset: String { "reset" }
 }
