@@ -13,6 +13,7 @@ class GameScene: SKScene {
     let astronaut = Player()
     private var gameCamera: SKCameraNode!
     private var rockFormations: [RockFormation] = []
+    private var lakes: [LakeNode] = []
     private var boundaryRocks: [RockFormation] = []
     private var virtualJoystick: VirtualJoystick!
 
@@ -107,10 +108,16 @@ class GameScene: SKScene {
                 addChild(smallRock)
             }
 
+            lakes = MapLoader.shared.createLakes(from: mapData)
+            for lake in lakes {
+                addChild(lake)
+            }
+
             // Print map info for debugging
             let mapInfo = MapLoader.shared.getMapInfo(from: mapData)
             print("Loaded map: \(mapInfo.name) v\(mapInfo.version) - \(mapInfo.description)")
             print("Total rocks: \(rocks.boundary.count) boundary, \(rocks.interior.count) interior, \(rocks.signature.count) signature, \(smallRocks.count) small")
+            print("  Lakes: \(lakes.count)")
 
         } catch {
             print("ERROR: Failed to load Map1.json: \(error.localizedDescription)")

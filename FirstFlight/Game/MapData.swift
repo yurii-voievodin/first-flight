@@ -7,6 +7,7 @@ struct MapData: Codable {
     let interiorRocks: [InteriorRockData]
     let signatureFormations: [SignatureFormationData]
     let smallRocks: [SmallRockData]?
+    let lakes: [LakeData]?
 }
 
 struct MapMetadata: Codable {
@@ -112,4 +113,13 @@ struct SmallRockData: Codable {
         }
         return rockVariation
     }
+}
+
+struct LakeData: Codable {
+    let name: String?
+    let description: String?
+    let position: Position
+    let size: Size
+    let depth: Double?
+    let shorelineProperties: [String: String]?
 }

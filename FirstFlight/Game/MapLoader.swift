@@ -147,6 +147,23 @@ class MapLoader {
         return rocks
     }
 
+    func createLakes(from mapData: MapData) -> [LakeNode] {
+        guard let lakeData = mapData.lakes else {
+            return []
+        }
+
+        return lakeData.map { data in
+            LakeNode(
+                name: data.name,
+                description: data.description,
+                position: data.position.cgPoint,
+                size: data.size.cgSize,
+                depth: CGFloat(data.depth ?? 1.0),
+                shorelineProperties: data.shorelineProperties
+            )
+        }
+    }
+
     func createAllRocks(from mapData: MapData) -> (boundary: [RockFormation], interior: [RockFormation], signature: [RockFormation]) {
         let boundaryRocks = createBoundaryRocks(from: mapData)
         let interiorRocks = createInteriorRocks(from: mapData)
@@ -229,11 +246,13 @@ class MapLoader {
         try validateRockPositions(mapData.boundaryRocks.map { $0.position }, mapSize: mapSize, context: "boundary")
         try validateRockPositions(mapData.interiorRocks.map { $0.position }, mapSize: mapSize, context: "interior")
         try validateRockPositions(mapData.signatureFormations.map { $0.position }, mapSize: mapSize, context: "signature")
+        try validateLakePositions(mapData.lakes ?? [], mapSize: mapSize)
 
         // Validate rock sizes are positive
         try validateRockSizes(mapData.boundaryRocks.map { $0.size }, context: "boundary")
         try validateRockSizes(mapData.interiorRocks.map { $0.size }, context: "interior")
         try validateRockSizes(mapData.signatureFormations.map { $0.size }, context: "signature")
+        try validateLakeSizes(mapData.lakes ?? [])
     }
 
     private func validateRockPositions(_ positions: [Position], mapSize: MapSize, context: String) throws {
@@ -249,6 +268,23 @@ class MapLoader {
         for (index, size) in sizes.enumerated() {
             guard size.width > 0 && size.height > 0 else {
                 throw MapLoadError.invalidMapData("\(context.capitalized) rock at index \(index) has invalid size")
+            }
+        }
+    }
+
+    private func validateLakePositions(_ lakes: [LakeData], mapSize: MapSize) throws {
+        for (index, lake) in lakes.enumerated() {
+            guard lake.position.x >= 0 && lake.position.x <= mapSize.width &&
+                  lake.position.y >= 0 && lake.position.y <= mapSize.height else {
+                throw MapLoadError.invalidMapData("Lake at index \(index) is outside map bounds")
+            }
+        }
+    }
+
+    private func validateLakeSizes(_ lakes: [LakeData]) throws {
+        for (index, lake) in lakes.enumerated() {
+            guard lake.size.width > 0 && lake.size.height > 0 else {
+                throw MapLoadError.invalidMapData("Lake at index \(index) has invalid size")
             }
         }
     }
@@ -274,5 +310,6 @@ extension MapLoader {
         rocks.boundary.forEach { scene.addChild($0) }
         rocks.interior.forEach { scene.addChild($0) }
         rocks.signature.forEach { scene.addChild($0) }
+        createLakes(from: mapData).forEach { scene.addChild($0) }
     }
 }
