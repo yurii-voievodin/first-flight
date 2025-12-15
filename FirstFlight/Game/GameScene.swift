@@ -25,6 +25,10 @@ class GameScene: SKScene {
     private var lastUpdateTime: TimeInterval = 0
     private let beamDamagePerSecond: CGFloat = 100
 
+    // Particle effect system
+    private var particleSpawnTimer: TimeInterval = 0
+    private let particleSpawnInterval: TimeInterval = 0.04
+
     override func didMove(to view: SKView) {
         setupScene()
         createCharacters()
@@ -193,6 +197,15 @@ class GameScene: SKScene {
             rocksBeingDamaged.remove(rock)
             destroyRock(rock)
         }
+
+        // Spawn impact particles while damaging rocks
+        particleSpawnTimer += deltaTime
+        if particleSpawnTimer >= particleSpawnInterval {
+            particleSpawnTimer = 0
+            for rock in rocksBeingDamaged {
+                spawnImpactParticles(at: rock)
+            }
+        }
     }
 
     private func updateCharacterMovement(deltaTime: TimeInterval) {
@@ -288,6 +301,66 @@ extension GameScene: SKPhysicsContactDelegate {
         case PhysicsCategory.blasterBeam: return "BlasterBeam"
         default: return "Unknown(\(category))"
         }
+    }
+
+    // MARK: - Impact Particle Effects
+
+    private func spawnImpactParticles(at rock: RockFormation) {
+        let impactPoint = rock.position
+
+        // Spawn 2-3 debris particles
+        for _ in 0..<Int.random(in: 2...3) {
+            spawnDebrisParticle(at: impactPoint)
+        }
+
+        // Spawn 1-2 energy particles
+        for _ in 0..<Int.random(in: 1...2) {
+            spawnEnergyParticle(at: impactPoint)
+        }
+    }
+
+    private func spawnDebrisParticle(at position: CGPoint) {
+        let particle = SKShapeNode(circleOfRadius: CGFloat.random(in: 2...4))
+        particle.fillColor = SKColor.brown.withAlphaComponent(0.9)
+        particle.strokeColor = .clear
+        particle.position = position
+        particle.zPosition = 50
+        addChild(particle)
+
+        // Random velocity outward with gravity effect
+        let angle = CGFloat.random(in: 0...(2 * .pi))
+        let speed = CGFloat.random(in: 30...60)
+        let dx = cos(angle) * speed
+        let dy = sin(angle) * speed
+
+        let move = SKAction.move(by: CGVector(dx: dx, dy: dy - 40), duration: 0.4)
+        let fade = SKAction.fadeOut(withDuration: 0.4)
+        let group = SKAction.group([move, fade])
+        let remove = SKAction.removeFromParent()
+        particle.run(SKAction.sequence([group, remove]))
+    }
+
+    private func spawnEnergyParticle(at position: CGPoint) {
+        let particle = SKShapeNode(circleOfRadius: CGFloat.random(in: 1.5...3))
+        particle.fillColor = SKColor.cyan
+        particle.strokeColor = .clear
+        particle.blendMode = .add
+        particle.position = position
+        particle.zPosition = 51
+        addChild(particle)
+
+        // Fast outward movement
+        let angle = CGFloat.random(in: 0...(2 * .pi))
+        let speed = CGFloat.random(in: 50...90)
+        let dx = cos(angle) * speed
+        let dy = sin(angle) * speed
+
+        let move = SKAction.move(by: CGVector(dx: dx, dy: dy), duration: 0.25)
+        let fade = SKAction.fadeOut(withDuration: 0.25)
+        let scale = SKAction.scale(to: 0.3, duration: 0.25)
+        let group = SKAction.group([move, fade, scale])
+        let remove = SKAction.removeFromParent()
+        particle.run(SKAction.sequence([group, remove]))
     }
 
     private func destroyRock(_ rock: RockFormation) {
