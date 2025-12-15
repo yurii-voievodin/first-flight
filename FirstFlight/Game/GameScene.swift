@@ -152,7 +152,7 @@ class GameScene: SKScene {
         let joystickRadius: CGFloat = 40
         let margin: CGFloat = 20
 
-        let xPosition = -view.bounds.width / 2 + safeArea.left + joystickRadius + margin
+        let xPosition: CGFloat = 0
         let yPosition = -view.bounds.height / 2 + safeArea.bottom + joystickRadius + margin
 
         virtualJoystick.position = CGPoint(x: xPosition, y: yPosition)
@@ -161,8 +161,8 @@ class GameScene: SKScene {
     private func setupTargetingSystem() {
         // Create debug circle for sight radius
         let circle = SKShapeNode(circleOfRadius: sightRadius)
-        circle.strokeColor = SKColor.cyan.withAlphaComponent(0.5)
-        circle.lineWidth = 2
+        circle.strokeColor = SKColor.cyan.withAlphaComponent(0.1)
+        circle.lineWidth = 1
         circle.fillColor = .clear
         circle.zPosition = 5
         circle.glowWidth = 1
