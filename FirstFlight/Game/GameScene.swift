@@ -21,7 +21,7 @@ class GameScene: SKScene {
     var showDebugLabels: Bool = false
 
     // Beam damage system
-    private var rocksBeingDamaged: Set<RockFormation> = []
+    private var rocksBeingDamaged: [RockFormation: CGPoint] = [:]
     private var lastUpdateTime: TimeInterval = 0
     private let beamDamagePerSecond: CGFloat = 100
 
@@ -187,14 +187,14 @@ class GameScene: SKScene {
         let damage = beamDamagePerSecond * CGFloat(deltaTime)
         var rocksToDestroy: [RockFormation] = []
 
-        for rock in rocksBeingDamaged {
+        for (rock, _) in rocksBeingDamaged {
             if rock.applyDamage(damage) {
                 rocksToDestroy.append(rock)
             }
         }
 
         for rock in rocksToDestroy {
-            rocksBeingDamaged.remove(rock)
+            rocksBeingDamaged.removeValue(forKey: rock)
             destroyRock(rock)
         }
 
@@ -202,8 +202,8 @@ class GameScene: SKScene {
         particleSpawnTimer += deltaTime
         if particleSpawnTimer >= particleSpawnInterval {
             particleSpawnTimer = 0
-            for rock in rocksBeingDamaged {
-                spawnImpactParticles(at: rock)
+            for (_, impactPoint) in rocksBeingDamaged {
+                spawnImpactParticles(at: impactPoint)
             }
         }
     }
@@ -271,7 +271,8 @@ extension GameScene: SKPhysicsContactDelegate {
 
             if let rock = rockBody.node as? RockFormation {
                 print("  ✅ Starting damage on rock (strength: \(rock.currentStrength))")
-                rocksBeingDamaged.insert(rock)
+                print("  📍 Contact point: \(contact.contactPoint)")
+                rocksBeingDamaged[rock] = contact.contactPoint
             } else {
                 print("  ❌ Rock node not found")
             }
@@ -287,7 +288,7 @@ extension GameScene: SKPhysicsContactDelegate {
 
             if let rock = rockBody.node as? RockFormation {
                 print("  🛑 Beam stopped hitting rock")
-                rocksBeingDamaged.remove(rock)
+                rocksBeingDamaged.removeValue(forKey: rock)
             }
         }
     }
@@ -305,9 +306,7 @@ extension GameScene: SKPhysicsContactDelegate {
 
     // MARK: - Impact Particle Effects
 
-    private func spawnImpactParticles(at rock: RockFormation) {
-        let impactPoint = rock.position
-
+    private func spawnImpactParticles(at impactPoint: CGPoint) {
         // Spawn 2-3 debris particles
         for _ in 0..<Int.random(in: 2...3) {
             spawnDebrisParticle(at: impactPoint)
