@@ -29,12 +29,20 @@ class GameScene: SKScene {
     private var particleSpawnTimer: TimeInterval = 0
     private let particleSpawnInterval: TimeInterval = 0.04
 
+    // Proximity targeting system
+    private let sightRadius: CGFloat = 150
+    private var closestRockInRange: RockFormation?
+    private var currentTarget: RockFormation?
+    private var sightRadiusDebugCircle: SKShapeNode?
+    private var targetButton: SKShapeNode?
+
     override func didMove(to view: SKView) {
         setupScene()
         createCharacters()
         loadMapFromJSON()
         setupCamera()
         setupJoystick()
+        setupTargetingSystem()
         updateCameraConstraints() // Apply constraints after view is available
     }
 
@@ -150,6 +158,137 @@ class GameScene: SKScene {
         virtualJoystick.position = CGPoint(x: xPosition, y: yPosition)
     }
 
+    private func setupTargetingSystem() {
+        // Create debug circle for sight radius
+        let circle = SKShapeNode(circleOfRadius: sightRadius)
+        circle.strokeColor = SKColor.cyan.withAlphaComponent(0.5)
+        circle.lineWidth = 2
+        circle.fillColor = .clear
+        circle.zPosition = 5
+        circle.glowWidth = 1
+        addChild(circle)
+        sightRadiusDebugCircle = circle
+
+        // Create target button (initially hidden)
+        let button = SKShapeNode(circleOfRadius: 20)
+        button.fillColor = SKColor.red.withAlphaComponent(0.7)
+        button.strokeColor = SKColor.white
+        button.lineWidth = 2
+        button.zPosition = 100
+        button.alpha = 0
+        button.name = "targetButton"
+
+        // Add crosshair design
+        let crosshairSize: CGFloat = 12
+        let horizontal = SKShapeNode(rectOf: CGSize(width: crosshairSize, height: 2))
+        horizontal.fillColor = .white
+        horizontal.strokeColor = .clear
+        button.addChild(horizontal)
+
+        let vertical = SKShapeNode(rectOf: CGSize(width: 2, height: crosshairSize))
+        vertical.fillColor = .white
+        vertical.strokeColor = .clear
+        button.addChild(vertical)
+
+        addChild(button)
+        targetButton = button
+    }
+
+    private func updateProximityDetection() {
+        let playerPos = astronaut.position
+
+        // Update debug circle position
+        sightRadiusDebugCircle?.position = playerPos
+
+        // Find closest rock within sight radius
+        var closestRock: RockFormation?
+        var closestDistance: CGFloat = CGFloat.infinity
+
+        for rock in rockFormations {
+            let rockPos = rock.position
+            let dx = rockPos.x - playerPos.x
+            let dy = rockPos.y - playerPos.y
+            let distance = hypot(dx, dy)
+
+            if distance < sightRadius && distance < closestDistance {
+                closestDistance = distance
+                closestRock = rock
+            }
+        }
+
+        // Update closest rock tracking
+        if closestRock !== closestRockInRange {
+            closestRockInRange = closestRock
+            updateTargetButton()
+        }
+
+        // If we have a target and it's destroyed, clear it
+        if let target = currentTarget, target.parent == nil {
+            stopFiringAtTarget()
+        }
+    }
+
+    private func updateTargetButton() {
+        guard let button = targetButton else { return }
+
+        if let rock = closestRockInRange {
+            // Position button above the rock
+            let rockBounds = rock.calculateAccumulatedFrame()
+            let buttonY = rock.position.y + rockBounds.height / 2 + 30
+            button.position = CGPoint(x: rock.position.x, y: buttonY)
+
+            // Show button with animation
+            if button.alpha == 0 {
+                button.run(SKAction.fadeIn(withDuration: 0.2))
+            }
+        } else {
+            // Hide button
+            if button.alpha > 0 {
+                button.run(SKAction.fadeOut(withDuration: 0.15))
+            }
+        }
+    }
+
+    private func startFiringAtTarget(_ rock: RockFormation) {
+        currentTarget = rock
+        astronaut.startFiringBlaster()
+    }
+
+    private func stopFiringAtTarget() {
+        currentTarget = nil
+        astronaut.stopFiringBlaster()
+    }
+
+    private func updateTargetTracking() {
+        guard let target = currentTarget, astronaut.isFiring else { return }
+
+        // Calculate angle from player to target rock
+        let dx = target.position.x - astronaut.position.x
+        let dy = target.position.y - astronaut.position.y
+        let angle = atan2(dy, dx)
+
+        // Update aim to track the target
+        astronaut.updateAimSight(angle: angle)
+    }
+
+    // MARK: - Touch Handling for Target Button
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first else { return }
+        let location = touch.location(in: self)
+
+        // Check if tap hit the target button
+        if let button = targetButton,
+           button.alpha > 0,
+           let rock = closestRockInRange {
+            let buttonFrame = button.frame
+            if buttonFrame.contains(location) {
+                startFiringAtTarget(rock)
+                return
+            }
+        }
+    }
+
     override func didChangeSize(_ oldSize: CGSize) {
         super.didChangeSize(oldSize)
         updateJoystickPosition()
@@ -176,7 +315,9 @@ class GameScene: SKScene {
         let deltaTime = lastUpdateTime == 0 ? 0 : currentTime - lastUpdateTime
         lastUpdateTime = currentTime
 
+        updateProximityDetection()
         updateCharacterMovement(deltaTime: currentTime)
+        updateTargetTracking()
         updateCamera()
         updateRockDamage(deltaTime: deltaTime)
     }
@@ -217,14 +358,22 @@ class GameScene: SKScene {
             player.stopMovement()
             return
         }
-        // Joystick is active - always update sight position
-        player.updateAimSight(angle: aimAngle)
-        
+
+        // Only update aim sight from joystick if not targeting a rock
+        if currentTarget == nil {
+            player.updateAimSight(angle: aimAngle)
+        }
+
         // Check joystick magnitude to decide between aiming and moving
         let magnitude = hypot(direction.dx, direction.dy)
         let movementThreshold: CGFloat = 0.5 // 50% of max joystick distance
         
         if magnitude > movementThreshold || player.isWalking {
+            // Movement detected - stop firing at target if active
+            if currentTarget != nil {
+                stopFiringAtTarget()
+            }
+
             // Strong joystick push or already walking - move player
             player.moveInDirection(direction: direction)
         } else {

@@ -19,7 +19,7 @@ class Player: SKNode {
     }
 
     private var facingDirection: FacingDirection = .down
-    private var isFiring = false
+    private(set) var isFiring = false
     private(set) var isWalking = false
     private var lastWalkingDirection: FacingDirection?
     private var currentAimAngle: CGFloat = 0

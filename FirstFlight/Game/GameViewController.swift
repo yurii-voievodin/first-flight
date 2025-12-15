@@ -17,20 +17,6 @@ class GameViewController: UIViewController {
         self.view = SKView()
     }
 
-    private lazy var fireButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle("⚡︎", for: .normal)
-        button.titleLabel?.font = UIFont.systemFont(ofSize: 26, weight: .bold)
-        button.setTitleColor(.white, for: .normal)
-        button.backgroundColor = UIColor.systemBlue.withAlphaComponent(0.8)
-        button.layer.cornerRadius = 32
-        button.translatesAutoresizingMaskIntoConstraints = false
-        button.addTarget(self, action: #selector(fireButtonTouchDown), for: .touchDown)
-        button.addTarget(self, action: #selector(fireButtonTouchDown), for: .touchDragEnter)
-        button.addTarget(self, action: #selector(fireButtonTouchUp), for: [.touchUpInside, .touchUpOutside, .touchCancel, .touchDragExit])
-        return button
-    }()
-
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -50,29 +36,6 @@ class GameViewController: UIViewController {
         
         view.showsFPS = true
         view.showsNodeCount = true
-        
-        setupFireButton()
-    }
-
-    private func setupFireButton() {
-        guard fireButton.superview == nil else { return }
-        view.addSubview(fireButton)
-
-        NSLayoutConstraint.activate([
-            fireButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20),
-            fireButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -20),
-            fireButton.widthAnchor.constraint(equalToConstant: 64),
-            fireButton.heightAnchor.constraint(equalTo: fireButton.widthAnchor)
-        ])
-    }
-
-    @objc private func fireButtonTouchDown() {
-        guard fireButton.isEnabled else { return }
-        gameScene?.astronaut.startFiringBlaster()
-    }
-
-    @objc private func fireButtonTouchUp() {
-        gameScene?.astronaut.stopFiringBlaster()
     }
 
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
