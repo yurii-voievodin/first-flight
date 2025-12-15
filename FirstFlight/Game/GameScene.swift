@@ -232,8 +232,16 @@ class GameScene: SKScene {
         guard let button = targetButton else { return }
 
         if let rock = closestRockInRange {
-            // Position button at the center of the rock
-            button.position = rock.position
+            // Position button at visual center of rock
+            if let path = rock.path {
+                let boundingBox = path.boundingBox
+                button.position = CGPoint(
+                    x: rock.position.x + boundingBox.midX,
+                    y: rock.position.y + boundingBox.midY
+                )
+            } else {
+                button.position = rock.position
+            }
 
             // Show button with animation
             if button.alpha == 0 {
