@@ -170,23 +170,23 @@ class GameScene: SKScene {
         sightRadiusDebugCircle = circle
 
         // Create target button (initially hidden)
-        let button = SKShapeNode(circleOfRadius: 20)
-        button.fillColor = SKColor.red.withAlphaComponent(0.7)
-        button.strokeColor = SKColor.white
+        let button = SKShapeNode(circleOfRadius: 10)
+        button.fillColor = SKColor.white.withAlphaComponent(0.2)
+        button.strokeColor = SKColor.white.withAlphaComponent(0.2)
         button.lineWidth = 2
         button.zPosition = 100
         button.alpha = 0
         button.name = "targetButton"
 
         // Add crosshair design
-        let crosshairSize: CGFloat = 12
-        let horizontal = SKShapeNode(rectOf: CGSize(width: crosshairSize, height: 2))
-        horizontal.fillColor = .white
+        let crosshairSize: CGFloat = 6
+        let horizontal = SKShapeNode(rectOf: CGSize(width: crosshairSize, height: 1))
+        horizontal.fillColor = SKColor.white.withAlphaComponent(0.2)
         horizontal.strokeColor = .clear
         button.addChild(horizontal)
 
-        let vertical = SKShapeNode(rectOf: CGSize(width: 2, height: crosshairSize))
-        vertical.fillColor = .white
+        let vertical = SKShapeNode(rectOf: CGSize(width: 1, height: crosshairSize))
+        vertical.fillColor = SKColor.white.withAlphaComponent(0.2)
         vertical.strokeColor = .clear
         button.addChild(vertical)
 
@@ -232,10 +232,8 @@ class GameScene: SKScene {
         guard let button = targetButton else { return }
 
         if let rock = closestRockInRange {
-            // Position button above the rock
-            let rockBounds = rock.calculateAccumulatedFrame()
-            let buttonY = rock.position.y + rockBounds.height / 2 + 30
-            button.position = CGPoint(x: rock.position.x, y: buttonY)
+            // Position button at the center of the rock
+            button.position = rock.position
 
             // Show button with animation
             if button.alpha == 0 {
