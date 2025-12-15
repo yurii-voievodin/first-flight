@@ -200,18 +200,30 @@ class GameScene: SKScene {
         // Update debug circle position
         sightRadiusDebugCircle?.position = playerPos
 
-        // Find closest rock within sight radius
+        // Find closest rock within sight radius (check both interior and boundary rocks)
         var closestRock: RockFormation?
         var closestDistance: CGFloat = CGFloat.infinity
 
-        for rock in rockFormations {
+        let allTargetableRocks = rockFormations + boundaryRocks
+
+        for rock in allTargetableRocks {
             let rockPos = rock.position
             let dx = rockPos.x - playerPos.x
             let dy = rockPos.y - playerPos.y
-            let distance = hypot(dx, dy)
+            let distanceToCenter = hypot(dx, dy)
 
-            if distance < sightRadius && distance < closestDistance {
-                closestDistance = distance
+            // Calculate rock's effective radius from its bounding box
+            var rockRadius: CGFloat = 0
+            if let path = rock.path {
+                let boundingBox = path.boundingBox
+                rockRadius = (boundingBox.width + boundingBox.height) / 4
+            }
+
+            // Effective distance = distance to edge, not center
+            let effectiveDistance = distanceToCenter - rockRadius
+
+            if effectiveDistance < sightRadius && effectiveDistance < closestDistance {
+                closestDistance = effectiveDistance
                 closestRock = rock
             }
         }
