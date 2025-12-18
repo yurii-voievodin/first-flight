@@ -272,12 +272,14 @@ class GameScene: SKScene {
 
         // Calculate rock's visual center (same as target button positioning)
         var targetPosition = rock.position
+        var rockRadius: CGFloat = 0
         if let path = rock.path {
             let boundingBox = path.boundingBox
             targetPosition = CGPoint(
                 x: rock.position.x + boundingBox.midX,
                 y: rock.position.y + boundingBox.midY
             )
+            rockRadius = max(boundingBox.width, boundingBox.height) / 2
         }
 
         // Calculate angle from player to rock center
@@ -285,7 +287,11 @@ class GameScene: SKScene {
         let dy = targetPosition.y - astronaut.position.y
         let angle = atan2(dy, dx)
 
-        astronaut.startFiringBlaster(at: angle)
+        // Calculate distance from player to rock edge
+        let distanceToCenter = hypot(dx, dy)
+        let distanceToEdge = distanceToCenter - rockRadius
+
+        astronaut.startFiringBlaster(at: angle, distance: distanceToEdge)
     }
 
     private func stopFiringAtTarget() {

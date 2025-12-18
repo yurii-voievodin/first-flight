@@ -164,13 +164,26 @@ final class Blaster: SKNode {
         }
     }
 
-    func startBeam() {
+    func startBeam(distance: CGFloat) {
         guard !isFiring else { return }
         isFiring = true
         emitter.alpha = 1
 
-        // Create physics body for collision detection
-        let beamCenter = CGPoint(x: 0, y: -beam.size.height / 2)
+        // Calculate beam length based on distance to target
+        let beamLength = max(distance, 10) // Minimum 10 points to ensure visibility
+        let beamWidth: CGFloat = 6
+
+        // Resize beam sprite
+        let newTexture = Blaster.createRoundedBeamTexture(
+            size: CGSize(width: beamWidth, height: beamLength),
+            cornerRadius: 3,
+            color: SKColor.cyan.withAlphaComponent(0.5)
+        )
+        beam.texture = newTexture
+        beam.size = CGSize(width: beamWidth, height: beamLength)
+
+        // Create physics body for collision detection with new size
+        let beamCenter = CGPoint(x: 0, y: -beamLength / 2)
         beam.physicsBody = SKPhysicsBody(rectangleOf: beam.size, center: beamCenter)
         beam.physicsBody?.categoryBitMask = PhysicsCategory.blasterBeam
         beam.physicsBody?.contactTestBitMask = PhysicsCategory.rock

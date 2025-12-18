@@ -592,7 +592,7 @@ class Player: SKNode {
         stopWalkingAnimation()
     }
 
-    func startFiringBlaster(at angle: CGFloat) {
+    func startFiringBlaster(at angle: CGFloat, distance: CGFloat) {
         guard !isFiring else { return }
 
         isFiring = true
@@ -606,7 +606,7 @@ class Player: SKNode {
         }
         
         poseLeftArmForAiming(angle: angle)
-        blaster.startBeam()
+        blaster.startBeam(distance: distance)
     }
 
     func stopFiringBlaster() {
