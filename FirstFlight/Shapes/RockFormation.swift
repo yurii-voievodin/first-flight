@@ -29,6 +29,20 @@ class RockFormation: SKShapeNode {
     // Debug information
     var debugInfo: [String: String] = [:]
 
+    // MARK: - Computed Geometry Properties
+
+    /// Maximum radius (half of the larger dimension) - useful for targeting
+    var maxRadius: CGFloat {
+        max(rockSize.width, rockSize.height) / 2
+    }
+
+    /// Visual center point of the rock in parent coordinates
+    var centerPosition: CGPoint {
+        guard let path = self.path else { return position }
+        let bounds = path.boundingBox
+        return CGPoint(x: position.x + bounds.midX, y: position.y + bounds.midY)
+    }
+
     init(type: RockFormationType, size: CGSize, position: CGPoint) {
         self.formationType = type
         self.rockSize = size
@@ -264,8 +278,7 @@ class RockFormation: SKShapeNode {
     }
 
     private func setupCircleIndicator() {
-        let diameter = (rockSize.width + rockSize.height) / 2
-        let circle = SKShapeNode(circleOfRadius: diameter / 2)
+        let circle = SKShapeNode(circleOfRadius: maxRadius)
         circle.lineWidth = 2
         circle.strokeColor = UIColor.white.withAlphaComponent(0.2)
         circle.fillColor = .clear

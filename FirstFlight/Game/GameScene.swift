@@ -170,15 +170,8 @@ class GameScene: SKScene {
             let dy = rockPos.y - playerPos.y
             let distanceToCenter = hypot(dx, dy)
 
-            // Calculate rock's effective radius from its bounding box
-            var rockRadius: CGFloat = 0
-            if let path = rock.path {
-                let boundingBox = path.boundingBox
-                rockRadius = (boundingBox.width + boundingBox.height) / 4
-            }
-
             // Effective distance = distance to edge, not center
-            let effectiveDistance = distanceToCenter - rockRadius
+            let effectiveDistance = distanceToCenter - rock.maxRadius
 
             if effectiveDistance < sightRadius && effectiveDistance < closestDistance {
                 closestDistance = effectiveDistance
@@ -204,26 +197,15 @@ class GameScene: SKScene {
     private func startFiringAtTarget(_ rock: RockFormation) {
         currentTarget = rock
 
-        // Calculate rock's visual center (same as target button positioning)
-        var targetPosition = rock.position
-        var rockRadius: CGFloat = 0
-        if let path = rock.path {
-            let boundingBox = path.boundingBox
-            targetPosition = CGPoint(
-                x: rock.position.x + boundingBox.midX,
-                y: rock.position.y + boundingBox.midY
-            )
-            rockRadius = max(boundingBox.width, boundingBox.height) / 2
-        }
-
         // Calculate angle from player to rock center
+        let targetPosition = rock.centerPosition
         let dx = targetPosition.x - astronaut.position.x
         let dy = targetPosition.y - astronaut.position.y
         let angle = atan2(dy, dx)
 
         // Calculate distance from player to rock edge
         let distanceToCenter = hypot(dx, dy)
-        let distanceToEdge = distanceToCenter - rockRadius
+        let distanceToEdge = distanceToCenter - rock.maxRadius
 
         astronaut.startFiringBlaster(at: angle, distance: distanceToEdge)
     }
