@@ -657,9 +657,7 @@ class Player: SKNode {
         leftWrist.removeAction(forKey: .reset)
         leftHand.removeAction(forKey: .reset)
 
-        // Pose arm toward current aim
-        poseLeftArmForAiming(angle: currentAimAngle)
-        
+        // Arm is already posed by startAimingAtAngle() before this is called
         // Start beam immediately
         blaster.startBeam()
     }

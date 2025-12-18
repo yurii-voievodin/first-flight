@@ -277,18 +277,6 @@ class GameScene: SKScene {
         astronaut.stopFiringBlaster()
     }
 
-    private func updateTargetTracking() {
-        guard let target = currentTarget, astronaut.isFiring else { return }
-
-        // Calculate angle from player to target rock
-        let dx = target.position.x - astronaut.position.x
-        let dy = target.position.y - astronaut.position.y
-        let angle = atan2(dy, dx)
-
-        // Update aim to track the target
-        astronaut.updateAimSight(angle: angle)
-    }
-
     // MARK: - Touch Handling for Target Button
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -335,7 +323,6 @@ class GameScene: SKScene {
 
         updateProximityDetection()
         updateCharacterMovement(deltaTime: currentTime)
-        updateTargetTracking()
         updateCamera()
         updateRockDamage(deltaTime: deltaTime)
     }
