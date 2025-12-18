@@ -261,8 +261,8 @@ class RockFormation: SKShapeNode {
 
     private func setupVisuals() {
         fillColor = rockColor
-        strokeColor = .brown
-        lineWidth = 2.0
+        strokeColor = .clear
+        lineWidth = 0
 
         // Add some texture variation
         switch formationType {
@@ -377,13 +377,16 @@ class RockFormation: SKShapeNode {
 
         fillTexture = tex
         fillColor = .white          // важливо: інакше tint з’їсть текстуру
-        strokeColor = .brown
-        lineWidth = 2.0
+        strokeColor = .clear
+        lineWidth = 0
 
         // 2) легка “живість” без зламу кольорів
         let roll = CGFloat((seed % 1000)) / 1000.0
         let alphaJitter = 0.92 + roll * 0.08  // 0.92...1.0
         self.alpha = alphaJitter
+
+        // 2.5) окрема тінь/блік поверх базової текстури
+        addShadowAndHighlight(seed: seed)
 
         // 3) мох як оверлей (опційно)
         if shouldHaveMoss(seed: seed) {
@@ -419,6 +422,57 @@ class RockFormation: SKShapeNode {
         moss.zRotation = r * 0.15
 
         addChild(moss)
+    }
+
+    private func addShadowAndHighlight(seed: UInt64) {
+        guard let path = self.path else { return }
+
+        // прибрати старі, якщо метод викликають повторно
+        childNode(withName: "rock-shadow")?.removeFromParent()
+        childNode(withName: "rock-highlight")?.removeFromParent()
+
+        addSoftShadowAndHighlight(path: path)
+    }
+
+    private func addSoftShadowAndHighlight(path: CGPath) {
+        let bounds = path.boundingBox
+        let offset = CGSize(width: bounds.width * 0.04, height: bounds.height * 0.04)
+
+        // М'яка падаюча тінь з blur
+        let shadowShape = SKShapeNode(path: path)
+        shadowShape.fillColor = .black
+        shadowShape.strokeColor = .clear
+        shadowShape.lineWidth = 0
+        shadowShape.alpha = 0.45
+        shadowShape.blendMode = .multiply
+
+        let shadowEffect = SKEffectNode()
+        shadowEffect.name = "rock-shadow"
+        shadowEffect.shouldRasterize = true
+        shadowEffect.filter = CIFilter(name: "CIGaussianBlur", parameters: [kCIInputRadiusKey: 5])
+        shadowEffect.position = CGPoint(x: offset.width, y: -offset.height)
+        shadowEffect.zPosition = 0.2
+        shadowEffect.addChild(shadowShape)
+
+        // Легкий блік, трохи менший за силует і з blur
+        let highlightShape = SKShapeNode(path: path)
+        highlightShape.fillColor = .white
+        highlightShape.strokeColor = .clear
+        highlightShape.lineWidth = 0
+        highlightShape.alpha = 0.18
+        highlightShape.blendMode = .add
+        highlightShape.setScale(0.92)
+
+        let highlightEffect = SKEffectNode()
+        highlightEffect.name = "rock-highlight"
+        highlightEffect.shouldRasterize = true
+        highlightEffect.filter = CIFilter(name: "CIGaussianBlur", parameters: [kCIInputRadiusKey: 4])
+        highlightEffect.position = CGPoint(x: -offset.width * 0.6, y: offset.height * 0.6)
+        highlightEffect.zPosition = 0.25
+        highlightEffect.addChild(highlightShape)
+
+        addChild(shadowEffect)
+        addChild(highlightEffect)
     }
 }
 

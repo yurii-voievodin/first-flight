@@ -29,7 +29,7 @@ final class Blaster: SKNode {
         barrel = SKShapeNode(rectOf: CGSize(width: 4.2, height: 12.5), cornerRadius: 1.6)
         emitter = SKShapeNode(circleOfRadius: 2.3)
         let beamSize = CGSize(width: 6, height: 120)
-        let beamTexture = Blaster.createRoundedBeamTexture(size: beamSize, cornerRadius: 3, color: SKColor.cyan.withAlphaComponent(0.5))
+        let beamTexture = Blaster.createRoundedBeamTexture(size: beamSize, cornerRadius: 3, color: SKColor.purple.withAlphaComponent(0.5))
         beam = SKSpriteNode(texture: beamTexture, size: beamSize)
 
         super.init()
@@ -177,7 +177,7 @@ final class Blaster: SKNode {
         let newTexture = Blaster.createRoundedBeamTexture(
             size: CGSize(width: beamWidth, height: beamLength),
             cornerRadius: 3,
-            color: SKColor.cyan.withAlphaComponent(0.5)
+            color: SKColor.purple.withAlphaComponent(0.5)
         )
         beam.texture = newTexture
         beam.size = CGSize(width: beamWidth, height: beamLength)
