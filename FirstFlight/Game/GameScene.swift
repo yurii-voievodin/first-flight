@@ -28,6 +28,7 @@ class GameScene: SKScene {
     // Particle effect system
     private var particleSpawnTimer: TimeInterval = 0
     private let particleSpawnInterval: TimeInterval = 0.04
+    private let debrisTexture = RockTextures.shared.baseTexture(for: .boulder, seed: 42)
 
     // Proximity targeting system
     private let sightRadius: CGFloat = 150
@@ -402,17 +403,13 @@ extension GameScene: SKPhysicsContactDelegate {
         for _ in 0..<Int.random(in: 2...3) {
             spawnDebrisParticle(at: impactPoint)
         }
-
-        // Spawn 1-2 energy particles
-        for _ in 0..<Int.random(in: 1...2) {
-            spawnEnergyParticle(at: impactPoint)
-        }
     }
 
     private func spawnDebrisParticle(at position: CGPoint) {
-        let particle = SKShapeNode(circleOfRadius: CGFloat.random(in: 2...4))
-        particle.fillColor = SKColor.brown.withAlphaComponent(0.9)
-        particle.strokeColor = .clear
+        let size = CGFloat.random(in: 4...8)
+        let particle = SKSpriteNode(texture: debrisTexture, size: CGSize(width: size, height: size))
+        particle.color = SKColor(white: 0.7, alpha: 1.0)
+        particle.colorBlendFactor = 0.35
         particle.position = position
         particle.zPosition = 50
         addChild(particle)
@@ -426,29 +423,6 @@ extension GameScene: SKPhysicsContactDelegate {
         let move = SKAction.move(by: CGVector(dx: dx, dy: dy - 40), duration: 0.4)
         let fade = SKAction.fadeOut(withDuration: 0.4)
         let group = SKAction.group([move, fade])
-        let remove = SKAction.removeFromParent()
-        particle.run(SKAction.sequence([group, remove]))
-    }
-
-    private func spawnEnergyParticle(at position: CGPoint) {
-        let particle = SKShapeNode(circleOfRadius: CGFloat.random(in: 1.5...3))
-        particle.fillColor = SKColor.cyan
-        particle.strokeColor = .clear
-        particle.blendMode = .add
-        particle.position = position
-        particle.zPosition = 51
-        addChild(particle)
-
-        // Fast outward movement
-        let angle = CGFloat.random(in: 0...(2 * .pi))
-        let speed = CGFloat.random(in: 50...90)
-        let dx = cos(angle) * speed
-        let dy = sin(angle) * speed
-
-        let move = SKAction.move(by: CGVector(dx: dx, dy: dy), duration: 0.25)
-        let fade = SKAction.fadeOut(withDuration: 0.25)
-        let scale = SKAction.scale(to: 0.3, duration: 0.25)
-        let group = SKAction.group([move, fade, scale])
         let remove = SKAction.removeFromParent()
         particle.run(SKAction.sequence([group, remove]))
     }
