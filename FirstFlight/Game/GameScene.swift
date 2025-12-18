@@ -382,7 +382,7 @@ class GameScene: SKScene {
 
         // Only update aim sight from joystick if not targeting a rock
         if currentTarget == nil {
-            player.updateAimSight(angle: aimAngle)
+            player.updatePlayerDirection(angle: aimAngle)
         }
 
         // Check joystick magnitude to decide between aiming and moving

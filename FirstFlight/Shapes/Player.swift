@@ -22,7 +22,6 @@ class Player: SKNode {
     private(set) var isFiring = false
     private(set) var isWalking = false
     private var lastWalkingDirection: FacingDirection?
-    private var currentAimAngle: CGFloat = 0
 
     // Body parts
     private var body: SKShapeNode!
@@ -33,7 +32,6 @@ class Player: SKNode {
 
     // Equipment
     private let blaster = Blaster()
-    private var aimSight: SKShapeNode!
 
     // Arms (multi-segment)
     private var leftUpperArm: SKShapeNode!
@@ -367,34 +365,6 @@ class Player: SKNode {
         rightFoot.zPosition = 0.2
         rightAnkle.addChild(rightFoot)
 
-        // Create aim sight (double arrow ">>" design)
-        let sightPath = CGMutablePath()
-
-        // First arrow ">" (larger)
-        let arrowSize: CGFloat = 6
-        let arrowSpacing: CGFloat = 3
-        sightPath.move(to: CGPoint(x: 0, y: arrowSize))
-        sightPath.addLine(to: CGPoint(x: arrowSize, y: 0))
-        sightPath.addLine(to: CGPoint(x: 0, y: -arrowSize))
-
-        // Second arrow ">" (slightly smaller, positioned after the first)
-        let smallArrowSize: CGFloat = 5
-        let offset = arrowSize + arrowSpacing
-        sightPath.move(to: CGPoint(x: offset, y: smallArrowSize))
-        sightPath.addLine(to: CGPoint(x: offset + smallArrowSize, y: 0))
-        sightPath.addLine(to: CGPoint(x: offset, y: -smallArrowSize))
-
-        aimSight = SKShapeNode(path: sightPath)
-        aimSight.strokeColor = SKColor.cyan.withAlphaComponent(0.5)
-        aimSight.lineWidth = 2
-        aimSight.lineCap = .round
-        aimSight.lineJoin = .round
-        aimSight.zPosition = 1000 // Always on top of everything
-        aimSight.isHidden = false // Always visible for debugging
-        // Default position - will be adjusted by xScale automatically
-        aimSight.position = CGPoint(x: 120 * xScale, y: 0)
-        addChild(aimSight)
-
         applyAppearance(for: facingDirection)
     }
 
@@ -492,9 +462,7 @@ class Player: SKNode {
         }
     }
 
-    func updateAimSight(angle: CGFloat) {
-        currentAimAngle = angle
-
+    func updatePlayerDirection(angle: CGFloat) {
         // Determine facing direction from aim angle (not from movement!)
         // Normalize angle to 0-2π range
         var normalizedAngle = angle.truncatingRemainder(dividingBy: 2 * .pi)
@@ -517,17 +485,6 @@ class Player: SKNode {
 
         // Update facing direction (this may change xScale)
         setFacingDirection(newDirection)
-
-        // Show and position sight at 120 units from player center
-        let sightDistance: CGFloat = 120
-        let sightX = cos(angle) * sightDistance
-        let sightY = sin(angle) * sightDistance
-
-        // Position sight in world space (no mirroring compensation needed)
-        aimSight.position = CGPoint(x: sightX, y: sightY)
-
-        // Rotate arrows to point away from player (showing direction of movement/aim)
-        aimSight.zRotation = angle
     }
 
     private func resetLeftArmPose(manageWalkCycle: Bool, animated: Bool) {
