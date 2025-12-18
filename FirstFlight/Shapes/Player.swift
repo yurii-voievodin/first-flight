@@ -528,11 +528,6 @@ class Player: SKNode {
 
         // Rotate arrows to point away from player (showing direction of movement/aim)
         aimSight.zRotation = angle
-
-        // Update arm pose if firing
-        if isFiring {
-            poseLeftArmForAiming(angle: normalizedAngle)
-        }
     }
 
     private func resetLeftArmPose(manageWalkCycle: Bool, animated: Bool) {
@@ -640,25 +635,20 @@ class Player: SKNode {
         stopWalkingAnimation()
     }
 
-    func startFiringBlaster() {
+    func startFiringBlaster(at angle: CGFloat) {
         guard !isFiring else { return }
 
         isFiring = true
 
-        // Stop walk animation for left arm
-        leftUpperArm.removeAction(forKey: .walk)
-        leftForearm.removeAction(forKey: .walk)
-        leftWrist.removeAction(forKey: .walk)
-        leftHand.removeAction(forKey: .walk)
-
-        // Stop reset actions that may be running
-        leftUpperArm.removeAction(forKey: .reset)
-        leftForearm.removeAction(forKey: .reset)
-        leftWrist.removeAction(forKey: .reset)
-        leftHand.removeAction(forKey: .reset)
-
-        // Arm is already posed by startAimingAtAngle() before this is called
-        // Start beam immediately
+        leftArm.forEach { node in
+            // Stop walk animation for left arm
+            node.removeAction(forKey: .walk)
+            
+            // Stop reset actions that may be running
+            node.removeAction(forKey: .reset)
+        }
+        
+        poseLeftArmForAiming(angle: angle)
         blaster.startBeam()
     }
 

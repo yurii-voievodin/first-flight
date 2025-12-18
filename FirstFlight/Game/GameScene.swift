@@ -269,7 +269,23 @@ class GameScene: SKScene {
 
     private func startFiringAtTarget(_ rock: RockFormation) {
         currentTarget = rock
-        astronaut.startFiringBlaster()
+
+        // Calculate rock's visual center (same as target button positioning)
+        var targetPosition = rock.position
+        if let path = rock.path {
+            let boundingBox = path.boundingBox
+            targetPosition = CGPoint(
+                x: rock.position.x + boundingBox.midX,
+                y: rock.position.y + boundingBox.midY
+            )
+        }
+
+        // Calculate angle from player to rock center
+        let dx = targetPosition.x - astronaut.position.x
+        let dy = targetPosition.y - astronaut.position.y
+        let angle = atan2(dy, dx)
+
+        astronaut.startFiringBlaster(at: angle)
     }
 
     private func stopFiringAtTarget() {
@@ -441,7 +457,6 @@ extension GameScene: SKPhysicsContactDelegate {
             let rockBody = contact.bodyA.categoryBitMask == PhysicsCategory.rock ? contact.bodyA : contact.bodyB
 
             if let rock = rockBody.node as? RockFormation {
-                print("  🛑 Beam stopped hitting rock")
                 rocksBeingDamaged.removeValue(forKey: rock)
             }
         }
