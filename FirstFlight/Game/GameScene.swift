@@ -33,7 +33,6 @@ class GameScene: SKScene {
     private let sightRadius: CGFloat = 150
     private var closestRockInRange: RockFormation?
     private var currentTarget: RockFormation?
-    private var sightRadiusDebugCircle: SKShapeNode?
 
     override func didMove(to view: SKView) {
         setupScene()
@@ -41,7 +40,6 @@ class GameScene: SKScene {
         loadMapFromJSON()
         setupCamera()
         setupJoystick()
-        setupTargetingSystem()
         updateCameraConstraints() // Apply constraints after view is available
     }
 
@@ -157,23 +155,8 @@ class GameScene: SKScene {
         virtualJoystick.position = CGPoint(x: xPosition, y: yPosition)
     }
 
-    private func setupTargetingSystem() {
-        // Create debug circle for sight radius
-        let circle = SKShapeNode(circleOfRadius: sightRadius)
-        circle.strokeColor = SKColor.cyan.withAlphaComponent(0.1)
-        circle.lineWidth = 1
-        circle.fillColor = .clear
-        circle.zPosition = 5
-        circle.glowWidth = 1
-        addChild(circle)
-        sightRadiusDebugCircle = circle
-    }
-
     private func updateProximityDetection() {
         let playerPos = astronaut.position
-
-        // Update debug circle position
-        sightRadiusDebugCircle?.position = playerPos
 
         // Find closest rock within sight radius (check both interior and boundary rocks)
         var closestRock: RockFormation?
