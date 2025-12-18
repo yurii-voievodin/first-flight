@@ -34,7 +34,6 @@ class GameScene: SKScene {
     private var closestRockInRange: RockFormation?
     private var currentTarget: RockFormation?
     private var sightRadiusDebugCircle: SKShapeNode?
-    private var targetButton: SKShapeNode?
 
     override func didMove(to view: SKView) {
         setupScene()
@@ -168,30 +167,6 @@ class GameScene: SKScene {
         circle.glowWidth = 1
         addChild(circle)
         sightRadiusDebugCircle = circle
-
-        // Create target button (initially hidden)
-        let button = SKShapeNode(circleOfRadius: 10)
-        button.fillColor = SKColor.white.withAlphaComponent(0.2)
-        button.strokeColor = SKColor.white.withAlphaComponent(0.2)
-        button.lineWidth = 2
-        button.zPosition = 100
-        button.alpha = 0
-        button.name = "targetButton"
-
-        // Add crosshair design
-        let crosshairSize: CGFloat = 6
-        let horizontal = SKShapeNode(rectOf: CGSize(width: crosshairSize, height: 1))
-        horizontal.fillColor = SKColor.white.withAlphaComponent(0.2)
-        horizontal.strokeColor = .clear
-        button.addChild(horizontal)
-
-        let vertical = SKShapeNode(rectOf: CGSize(width: 1, height: crosshairSize))
-        vertical.fillColor = SKColor.white.withAlphaComponent(0.2)
-        vertical.strokeColor = .clear
-        button.addChild(vertical)
-
-        addChild(button)
-        targetButton = button
     }
 
     private func updateProximityDetection() {
@@ -230,40 +205,16 @@ class GameScene: SKScene {
 
         // Update closest rock tracking
         if closestRock !== closestRockInRange {
+            // Hide indicator on previous rock
+            closestRockInRange?.isCircleIndicatorVisible = false
+            // Show indicator on new closest rock
+            closestRock?.isCircleIndicatorVisible = true
             closestRockInRange = closestRock
-            updateTargetButton()
         }
 
         // If we have a target and it's destroyed, clear it
         if let target = currentTarget, target.parent == nil {
             stopFiringAtTarget()
-        }
-    }
-
-    private func updateTargetButton() {
-        guard let button = targetButton else { return }
-
-        if let rock = closestRockInRange {
-            // Position button at visual center of rock
-            if let path = rock.path {
-                let boundingBox = path.boundingBox
-                button.position = CGPoint(
-                    x: rock.position.x + boundingBox.midX,
-                    y: rock.position.y + boundingBox.midY
-                )
-            } else {
-                button.position = rock.position
-            }
-
-            // Show button with animation
-            if button.alpha == 0 {
-                button.run(SKAction.fadeIn(withDuration: 0.2))
-            }
-        } else {
-            // Hide button
-            if button.alpha > 0 {
-                button.run(SKAction.fadeOut(withDuration: 0.15))
-            }
         }
     }
 
@@ -299,18 +250,17 @@ class GameScene: SKScene {
         astronaut.stopFiringBlaster()
     }
 
-    // MARK: - Touch Handling for Target Button
+    // MARK: - Touch Handling
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
         let location = touch.location(in: self)
 
-        // Check if tap hit the target button
-        if let button = targetButton,
-           button.alpha > 0,
-           let rock = closestRockInRange {
-            let buttonFrame = button.frame
-            if buttonFrame.contains(location) {
+        // Check if tap hit a highlighted rock
+        let tappedNodes = nodes(at: location)
+        for node in tappedNodes {
+            if let rock = node as? RockFormation,
+               rock.isCircleIndicatorVisible {
                 startFiringAtTarget(rock)
                 return
             }

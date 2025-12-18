@@ -12,6 +12,14 @@ class RockFormation: SKShapeNode {
     private let formationType: RockFormationType
     private let rockColor: SKColor = .systemBrown
     private var debugLabel: SKLabelNode?
+    private var circleIndicator: SKShapeNode?
+
+    // Circle indicator visibility
+    var isCircleIndicatorVisible: Bool = false {
+        didSet {
+            circleIndicator?.isHidden = !isCircleIndicatorVisible
+        }
+    }
 
     // Strength system
     private let rockSize: CGSize
@@ -32,6 +40,7 @@ class RockFormation: SKShapeNode {
         createRockShape(size: size)
         setupPhysics()
         setupVisuals()
+        setupCircleIndicator()
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -252,6 +261,25 @@ class RockFormation: SKShapeNode {
         case .spire:
             fillColor = .systemGray2
         }
+    }
+
+    private func setupCircleIndicator() {
+        let diameter = (rockSize.width + rockSize.height) / 2
+        let circle = SKShapeNode(circleOfRadius: diameter / 2)
+        circle.lineWidth = 2
+        circle.strokeColor = UIColor.white.withAlphaComponent(0.2)
+        circle.fillColor = .clear
+        circle.isHidden = true
+        circle.zPosition = self.zPosition - 1
+
+        // Center on rock's bounding box
+        if let path = self.path {
+            let bounds = path.boundingBox
+            circle.position = CGPoint(x: bounds.midX, y: bounds.midY)
+        }
+
+        addChild(circle)
+        circleIndicator = circle
     }
 
     // Special handling for cave formations
