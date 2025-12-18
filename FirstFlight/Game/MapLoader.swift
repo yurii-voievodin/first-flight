@@ -58,6 +58,9 @@ class MapLoader {
                 size: boundaryRock.size.cgSize,
                 position: boundaryRock.position.cgPoint
             )
+            
+            let seed = rockSeed(x: boundaryRock.position.x, y: boundaryRock.position.y, extra: 1)
+            rock.applyProceduralTextures(seed: seed)
 
             // Add debug info
             rock.debugInfo["type"] = boundaryRock.type
@@ -86,6 +89,9 @@ class MapLoader {
             if let rotation = interiorRock.rotation {
                 rock.zRotation = CGFloat(rotation * .pi / 180) // Convert degrees to radians
             }
+            
+            let seed = rockSeed(x: interiorRock.position.x, y: interiorRock.position.y, extra: 2)
+            rock.applyProceduralTextures(seed: seed)
 
             // Add debug info
             rock.debugInfo["type"] = interiorRock.type
@@ -117,6 +123,9 @@ class MapLoader {
                     rock.userData?[key] = value
                 }
             }
+            
+            let seed = rockSeed(x: signatureFormation.position.x, y: signatureFormation.position.y, extra: 3)
+            rock.applyProceduralTextures(seed: seed)
 
             // Add debug info
             rock.debugInfo["type"] = signatureFormation.type
@@ -311,5 +320,18 @@ extension MapLoader {
         rocks.interior.forEach { scene.addChild($0) }
         rocks.signature.forEach { scene.addChild($0) }
         createLakes(from: mapData).forEach { scene.addChild($0) }
+    }
+}
+
+extension MapLoader {
+    
+    func rockSeed(x: Double, y: Double, extra: UInt64 = 0) -> UInt64 {
+        let xi = UInt64(max(0, Int(x)))
+        let yi = UInt64(max(0, Int(y)))
+        var h = xi &* 73856093 ^ yi &* 19349663 ^ extra &* 83492791
+        h ^= (h >> 33); h &*= 0xff51afd7ed558ccd
+        h ^= (h >> 33); h &*= 0xc4ceb9fe1a85ec53
+        h ^= (h >> 33)
+        return h
     }
 }

@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "rock_layered.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
