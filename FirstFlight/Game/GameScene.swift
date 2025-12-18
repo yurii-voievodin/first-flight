@@ -212,6 +212,7 @@ class GameScene: SKScene {
 
     private func stopFiringAtTarget() {
         currentTarget = nil
+        rocksBeingDamaged.removeAll()
         astronaut.stopFiringBlaster()
     }
 
