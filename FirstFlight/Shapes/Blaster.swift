@@ -171,7 +171,7 @@ final class Blaster: SKNode {
 
         // Calculate beam length based on distance to target
         let beamLength = max(distance, 10) // Minimum 10 points to ensure visibility
-        let beamWidth: CGFloat = 6
+        let beamWidth: CGFloat = 4
 
         // Resize beam sprite
         let newTexture = Blaster.createRoundedBeamTexture(

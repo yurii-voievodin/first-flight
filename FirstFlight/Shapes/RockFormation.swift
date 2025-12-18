@@ -371,14 +371,8 @@ class RockFormation: SKShapeNode {
     }
     
     func applyProceduralTextures(seed: UInt64) {
-        // 1) базова текстура в заливку shape
-        let tex = RockTextures.shared.baseTexture(for: formationType, seed: seed)
-        tex.filteringMode = .linear
-
-        fillTexture = tex
-        fillColor = .white          // важливо: інакше tint з’їсть текстуру
-        strokeColor = .clear
-        lineWidth = 0
+        // 1) базова текстура через окремий спрайт (щоб не тайлилась)
+        addBaseTexture(seed: seed)
 
         // 2) легка “живість” без зламу кольорів
         let roll = CGFloat((seed % 1000)) / 1000.0
@@ -387,11 +381,6 @@ class RockFormation: SKShapeNode {
 
         // 2.5) окрема тінь/блік поверх базової текстури
         addShadowAndHighlight(seed: seed)
-
-        // 3) мох як оверлей (опційно)
-        if shouldHaveMoss(seed: seed) {
-            addMossOverlay(seed: seed)
-        }
     }
 
     private func shouldHaveMoss(seed: UInt64) -> Bool {
@@ -422,6 +411,45 @@ class RockFormation: SKShapeNode {
         moss.zRotation = r * 0.15
 
         addChild(moss)
+    }
+
+    private func addBaseTexture(seed: UInt64) {
+        guard let path = self.path else { return }
+
+        // прибрати попередню базу, якщо є
+        childNode(withName: "rock-base")?.removeFromParent()
+
+        let tex = RockTextures.shared.baseTexture(for: formationType, seed: seed)
+        tex.filteringMode = .linear
+
+        let bounds = path.boundingBox
+
+        // спрайт розтягнутий під розмір каменя
+        let sprite = SKSpriteNode(texture: tex)
+        sprite.name = "rock-base-sprite"
+        sprite.anchorPoint = CGPoint(x: 0.5, y: 0.5)
+        sprite.position = CGPoint(x: bounds.midX, y: bounds.midY)
+        sprite.size = bounds.size
+        sprite.zPosition = 0
+
+        // маска під форму
+        let mask = SKShapeNode(path: path)
+        mask.fillColor = .white
+        mask.strokeColor = .clear
+        mask.lineWidth = 0
+
+        let crop = SKCropNode()
+        crop.name = "rock-base"
+        crop.maskNode = mask
+        crop.addChild(sprite)
+        crop.zPosition = 0
+
+        // вимикаємо заливку шейпа, щоб не дублювати
+        fillTexture = nil
+        fillColor = .clear
+        strokeColor = .clear
+
+        addChild(crop)
     }
 
     private func addShadowAndHighlight(seed: UInt64) {
