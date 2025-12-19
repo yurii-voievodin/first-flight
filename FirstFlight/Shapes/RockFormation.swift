@@ -9,8 +9,9 @@ enum RockFormationType {
 }
 
 class RockFormation: SKShapeNode {
+    /// Extra collision padding so the player can't get too close (helps avoid head/rock z-overlap issues)
+    private static let collisionPadding: CGFloat = 16
     private let formationType: RockFormationType
-    private let rockColor: SKColor = .systemBrown
     private var debugLabel: SKLabelNode?
     private var circleIndicator: SKShapeNode?
 
@@ -306,8 +307,31 @@ class RockFormation: SKShapeNode {
     private func setupPhysics() {
         guard let path = self.path else { return }
 
-        // Create physics body from the shape path
-        physicsBody = SKPhysicsBody(polygonFrom: path)
+        // Inflate the collision shape so the player is kept a bit farther from the visual rock.
+        // This is a cheap way to avoid situations where the head gets visually occluded by rocks.
+        let bounds = path.boundingBox
+        let center = CGPoint(x: bounds.midX, y: bounds.midY)
+
+        let padding = Self.collisionPadding
+
+        // Inflate "like an outline": grow the path by ~padding on each side using bounding-box scaling.
+        // This keeps the silhouette similar while adding roughly a constant margin.
+        let oldW = max(bounds.width, 0.001)
+        let oldH = max(bounds.height, 0.001)
+        let newW = oldW + 2 * padding
+        let newH = oldH + 2 * padding
+
+        let sx = newW / oldW
+        let sy = newH / oldH
+
+        var t = CGAffineTransform(translationX: center.x, y: center.y)
+        t = t.scaledBy(x: sx, y: sy)
+        t = t.translatedBy(x: -center.x, y: -center.y)
+
+        let inflatedPath = path.copy(using: &t) ?? path
+
+        // Create physics body from the (inflated) shape path
+        physicsBody = SKPhysicsBody(polygonFrom: inflatedPath)
         physicsBody?.categoryBitMask = PhysicsCategory.rock
         physicsBody?.contactTestBitMask = PhysicsCategory.player | PhysicsCategory.blasterBeam
         physicsBody?.collisionBitMask = PhysicsCategory.player
@@ -317,23 +341,8 @@ class RockFormation: SKShapeNode {
     }
 
     private func setupVisuals() {
-        fillColor = rockColor
         strokeColor = .clear
         lineWidth = 0
-
-        // Add some texture variation
-        switch formationType {
-        case .boulder:
-            fillColor = .systemBrown
-        case .cave:
-            fillColor = .brown
-        case .overhang:
-            fillColor = .systemGray
-        case .cluster:
-            fillColor = .systemBrown
-        case .spire:
-            fillColor = .systemGray2
-        }
     }
 
     private func setupCircleIndicator() {
@@ -352,23 +361,6 @@ class RockFormation: SKShapeNode {
 
         addChild(circle)
         circleIndicator = circle
-    }
-
-    // Special handling for cave formations
-    func createCavePhysics() -> [SKPhysicsBody] {
-        guard formationType == .cave else { return [] }
-
-        // For caves, we need to create separate physics bodies for the rock walls
-        // leaving the cave opening as a passable area
-        var bodies: [SKPhysicsBody] = []
-
-        // This would create multiple physics bodies around the cave opening
-        // For now, we'll use the default single body but this could be expanded
-        if let mainBody = physicsBody {
-            bodies.append(mainBody)
-        }
-
-        return bodies
     }
 
     // MARK: - Debug Functionality
