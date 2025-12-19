@@ -67,20 +67,37 @@ final class GameScene: SKScene {
     
     private func generateTerrainTextures() {
         let factory = TerrainTextureFactory()
-        
+
+        // One tile group per tile coordinate so we can pass fieldOffset (removes visible seams)
         var groups: [SKTileGroup] = []
-        
-        for _ in 0..<12 {
-            let texture = factory.makeRockWithDustTexture(
-                TerrainTextureFactory.Params(size: Int(tileSize), dustAmount: Float.random(in: 0.3...0.7))
-            )
-            
-            let def = SKTileDefinition(texture: texture)
-            let rule = SKTileGroupRule(adjacency: .adjacencyAll, tileDefinitions: [def])
-            let group = SKTileGroup(rules: [rule])
-            groups.append(group)
+        groups.reserveCapacity(tileColumns * tileRows)
+
+        let seed: UInt32 = 42
+
+        for r in 0..<tileRows {
+            for c in 0..<tileColumns {
+                // Deterministic variation (no runtime randomness): 0.30 ... 0.70
+                let n = fbmNoise(x: c, y: r, seed: seed)
+                let dustAmount = Float(0.30 + (0.40 * n))
+
+                var p = TerrainTextureFactory.Params(size: Int(tileSize))
+                p.dustAmount = dustAmount
+
+                // Critical: offset into the infinite CI random field so tiles line up seamlessly
+                p.fieldOffset = CGPoint(
+                    x: CGFloat(c) * tileSize,
+                    y: CGFloat(r) * tileSize
+                )
+
+                let texture = factory.makeRockWithDustTexture(p)
+
+                let def = SKTileDefinition(texture: texture)
+                let rule = SKTileGroupRule(adjacency: .adjacencyAll, tileDefinitions: [def])
+                let group = SKTileGroup(rules: [rule])
+                groups.append(group)
+            }
         }
-        
+
         tileSet = SKTileSet(tileGroups: groups)
     }
     
@@ -100,9 +117,10 @@ final class GameScene: SKScene {
         tileMap.position = .zero
 
         let groups = tileSet.tileGroups
-        for c in 0..<tileColumns {
-            for r in 0..<tileRows {
-                tileMap.setTileGroup(groups.randomElement(), forColumn: c, row: r)
+        for r in 0..<tileRows {
+            for c in 0..<tileColumns {
+                let idx = (r * tileColumns) + c
+                tileMap.setTileGroup(groups[idx], forColumn: c, row: r)
             }
         }
 
