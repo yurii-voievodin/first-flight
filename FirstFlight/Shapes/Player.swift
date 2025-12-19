@@ -11,6 +11,40 @@ class Player: SKNode {
     private let rightHipBasePosition = CGPoint(x: 8, y: -16)
     private let baseZPosition: CGFloat = -10
 
+    // MARK: - Textures
+
+    private enum TextureName {
+        static let body = "body"
+        static let backpack = "backpack"
+        static let shoulderArmor = "shoulder_armor"
+        static let head = "head"
+        static let helmetGlass = "helmet_glass"
+
+        static let upperArm = "upper_arm"
+        static let forearm = "forearm"
+        static let hand = "hand"
+        static let elbowJoint = "elbow_joint"
+        static let wristJoint = "wrist_joint"
+
+        static let thigh = "thigh"
+        static let calf = "calf"
+        static let kneeJoint = "knee_joint"
+        static let ankleJoint = "ankle_joint"
+        static let foot = "foot"
+    }
+
+    private func makeTexture(named name: String) -> SKTexture {
+        let texture = SKTexture(imageNamed: name)
+        texture.filteringMode = .nearest
+        return texture
+    }
+
+    private func makeSprite(named name: String, size: CGSize, anchorPoint: CGPoint = CGPoint(x: 0.5, y: 0.5)) -> SKSpriteNode {
+        let sprite = SKSpriteNode(texture: makeTexture(named: name), size: size)
+        sprite.anchorPoint = anchorPoint
+        return sprite
+    }
+
     private enum FacingDirection {
         case up
         case down
@@ -24,40 +58,40 @@ class Player: SKNode {
     private var lastWalkingDirection: FacingDirection?
 
     // Body parts
-    private var body: SKShapeNode!
-    private var backpack: SKShapeNode!
+    private var body: SKSpriteNode!
+    private var backpack: SKSpriteNode!
     private var shoulderArmor: SKShapeNode!
-    private var head: SKShapeNode!
-    private var helmetGlass: SKShapeNode!
+    private var head: SKSpriteNode!
+    private var helmetGlass: SKSpriteNode!
 
     // Equipment
     private let blaster = Blaster()
 
     // Arms (multi-segment)
-    private var leftUpperArm: SKShapeNode!
-    private var leftElbow: SKShapeNode!
-    private var leftForearm: SKShapeNode!
-    private var leftWrist: SKShapeNode!
-    private var leftHand: SKShapeNode!
-    private var rightUpperArm: SKShapeNode!
-    private var rightElbow: SKShapeNode!
-    private var rightForearm: SKShapeNode!
-    private var rightWrist: SKShapeNode!
-    private var rightHand: SKShapeNode!
+    private var leftUpperArm: SKSpriteNode!
+    private var leftElbow: SKSpriteNode!
+    private var leftForearm: SKSpriteNode!
+    private var leftWrist: SKSpriteNode!
+    private var leftHand: SKSpriteNode!
+    private var rightUpperArm: SKSpriteNode!
+    private var rightElbow: SKSpriteNode!
+    private var rightForearm: SKSpriteNode!
+    private var rightWrist: SKSpriteNode!
+    private var rightHand: SKSpriteNode!
 
     // Legs (multi-segment)
-    private var leftThigh: SKShapeNode!
-    private var leftKnee: SKShapeNode!
-    private var leftCalf: SKShapeNode!
-    private var leftAnkle: SKShapeNode!
-    private var leftFoot: SKShapeNode!
-    private var rightThigh: SKShapeNode!
-    private var rightKnee: SKShapeNode!
-    private var rightCalf: SKShapeNode!
-    private var rightAnkle: SKShapeNode!
-    private var rightFoot: SKShapeNode!
+    private var leftThigh: SKSpriteNode!
+    private var leftKnee: SKSpriteNode!
+    private var leftCalf: SKSpriteNode!
+    private var leftAnkle: SKSpriteNode!
+    private var leftFoot: SKSpriteNode!
+    private var rightThigh: SKSpriteNode!
+    private var rightKnee: SKSpriteNode!
+    private var rightCalf: SKSpriteNode!
+    private var rightAnkle: SKSpriteNode!
+    private var rightFoot: SKSpriteNode!
     
-    var leftArm: [SKShapeNode] {
+    var leftArm: [SKNode] {
         [leftUpperArm, leftElbow, leftForearm, leftWrist, leftHand]
     }
 
@@ -99,17 +133,12 @@ class Player: SKNode {
             cornerHeight: 8,
             transform: nil
         )
-        backpack = SKShapeNode(path: backpackPath)
-        backpack.fillColor = SKColor(red: 0.27, green: 0.31, blue: 0.36, alpha: 1)
-        backpack.strokeColor = SKColor.black.withAlphaComponent(0.25)
-        backpack.lineWidth = 1.5
+        backpack = makeSprite(named: TextureName.backpack, size: backpackSize)
         backpack.position = backpackBasePosition
         backpack.zPosition = 0.2
         addChild(backpack)
 
-        body = SKShapeNode(path: bodyPath)
-        body.fillColor = .lightGray
-        body.strokeColor = .clear
+        body = makeSprite(named: TextureName.body, size: bodySize)
         body.position = CGPoint(x: 0, y: 0)
         body.zPosition = 1
         addChild(body)
@@ -144,119 +173,68 @@ class Player: SKNode {
             cornerHeight: 6,
             transform: nil
         )
-        head = SKShapeNode(path: headPath)
-        head.fillColor = .white
-        head.strokeColor = .clear
+        head = makeSprite(named: TextureName.head, size: headSize)
         head.position = CGPoint(x: 0, y: 26) // Above body
         head.zPosition = 2
         addChild(head)
 
-        helmetGlass = SKShapeNode(rectOf: CGSize(width: 14, height: 12), cornerRadius: 5)
-        helmetGlass.fillColor = SKColor.cyan.withAlphaComponent(0.35)
-        helmetGlass.strokeColor = SKColor.white.withAlphaComponent(0.45)
-        helmetGlass.lineWidth = 1.2
+        let helmetGlassSize = CGSize(width: 14, height: 12)
+        helmetGlass = makeSprite(named: TextureName.helmetGlass, size: helmetGlassSize)
         helmetGlass.position = helmetGlassBasePosition
         helmetGlass.zPosition = 0.5
+        helmetGlass.alpha = 1
         head.addChild(helmetGlass)
 
         // Left Upper Arm - anchor at shoulder
         let upperArmSize = CGSize(width: 8, height: 14)
-        let leftUpperArmPath = CGPath(
-            roundedRect: CGRect(x: -upperArmSize.width / 2, y: -upperArmSize.height * 0.85, width: upperArmSize.width, height: upperArmSize.height),
-            cornerWidth: 3,
-            cornerHeight: 3,
-            transform: nil
-        )
-        leftUpperArm = SKShapeNode(path: leftUpperArmPath)
-        leftUpperArm.fillColor = .white
-        leftUpperArm.strokeColor = .clear
+        leftUpperArm = makeSprite(named: TextureName.upperArm, size: upperArmSize, anchorPoint: CGPoint(x: 0.5, y: 0.85))
         leftUpperArm.position = leftShoulderBasePosition // Left shoulder
         leftUpperArm.zPosition = 2
         addChild(leftUpperArm)
 
-        // Left Elbow - joint circle (child of upper arm)
-        leftElbow = SKShapeNode(circleOfRadius: 3)
-        leftElbow.fillColor = .systemGray
-        leftElbow.strokeColor = .clear
+        leftElbow = makeSprite(named: TextureName.elbowJoint, size: CGSize(width: 6, height: 6))
         leftElbow.position = CGPoint(x: 0, y: -12) // Bottom of upper arm
         leftElbow.zPosition = 0.5
         leftUpperArm.addChild(leftElbow)
 
-        // Left Forearm - child of upper arm, positioned at elbow
         let forearmSize = CGSize(width: 7, height: 12)
-        let leftForearmPath = CGPath(
-            roundedRect: CGRect(x: -forearmSize.width / 2, y: -forearmSize.height * 0.85, width: forearmSize.width, height: forearmSize.height),
-            cornerWidth: 3,
-            cornerHeight: 3,
-            transform: nil
-        )
-        leftForearm = SKShapeNode(path: leftForearmPath)
-        leftForearm.fillColor = .white
-        leftForearm.strokeColor = .clear
+        leftForearm = makeSprite(named: TextureName.forearm, size: forearmSize, anchorPoint: CGPoint(x: 0.5, y: 0.85))
         leftForearm.position = CGPoint(x: 0, y: -12) // At elbow joint
         leftForearm.zPosition = 0.2
         leftUpperArm.addChild(leftForearm)
 
-        leftWrist = SKShapeNode(circleOfRadius: 2.5)
-        leftWrist.fillColor = .systemGray
-        leftWrist.strokeColor = .clear
+        leftWrist = makeSprite(named: TextureName.wristJoint, size: CGSize(width: 5, height: 5))
         leftWrist.position = CGPoint(x: 0, y: -9)
         leftWrist.zPosition = 0.3
         leftForearm.addChild(leftWrist)
 
-        leftHand = SKShapeNode(rectOf: CGSize(width: 6, height: 8), cornerRadius: 2)
-        leftHand.fillColor = .white
-        leftHand.strokeColor = .clear
+        leftHand = makeSprite(named: TextureName.hand, size: CGSize(width: 6, height: 8))
         leftHand.position = CGPoint(x: 0, y: -5)
         leftHand.zPosition = 0.4
         leftWrist.addChild(leftHand)
 
         // Right Upper Arm - anchor at shoulder
-        let rightUpperArmPath = CGPath(
-            roundedRect: CGRect(x: -upperArmSize.width / 2, y: -upperArmSize.height * 0.85, width: upperArmSize.width, height: upperArmSize.height),
-            cornerWidth: 3,
-            cornerHeight: 3,
-            transform: nil
-        )
-        rightUpperArm = SKShapeNode(path: rightUpperArmPath)
-        rightUpperArm.fillColor = .white
-        rightUpperArm.strokeColor = .clear
+        rightUpperArm = makeSprite(named: TextureName.upperArm, size: upperArmSize, anchorPoint: CGPoint(x: 0.5, y: 0.85))
         rightUpperArm.position = rightShoulderBasePosition // Right shoulder
         rightUpperArm.zPosition = 2
         addChild(rightUpperArm)
 
-        // Right Elbow - joint circle (child of upper arm)
-        rightElbow = SKShapeNode(circleOfRadius: 3)
-        rightElbow.fillColor = .systemGray
-        rightElbow.strokeColor = .clear
+        rightElbow = makeSprite(named: TextureName.elbowJoint, size: CGSize(width: 6, height: 6))
         rightElbow.position = CGPoint(x: 0, y: -12) // Bottom of upper arm
         rightElbow.zPosition = 0.5
         rightUpperArm.addChild(rightElbow)
 
-        // Right Forearm - child of upper arm, positioned at elbow
-        let rightForearmPath = CGPath(
-            roundedRect: CGRect(x: -forearmSize.width / 2, y: -forearmSize.height * 0.85, width: forearmSize.width, height: forearmSize.height),
-            cornerWidth: 3,
-            cornerHeight: 3,
-            transform: nil
-        )
-        rightForearm = SKShapeNode(path: rightForearmPath)
-        rightForearm.fillColor = .white
-        rightForearm.strokeColor = .clear
+        rightForearm = makeSprite(named: TextureName.forearm, size: forearmSize, anchorPoint: CGPoint(x: 0.5, y: 0.85))
         rightForearm.position = CGPoint(x: 0, y: -12) // At elbow joint
         rightForearm.zPosition = 0.2
         rightUpperArm.addChild(rightForearm)
 
-        rightWrist = SKShapeNode(circleOfRadius: 2.5)
-        rightWrist.fillColor = .systemGray
-        rightWrist.strokeColor = .clear
+        rightWrist = makeSprite(named: TextureName.wristJoint, size: CGSize(width: 5, height: 5))
         rightWrist.position = CGPoint(x: 0, y: -9)
         rightWrist.zPosition = 0.3
         rightForearm.addChild(rightWrist)
 
-        rightHand = SKShapeNode(rectOf: CGSize(width: 6, height: 8), cornerRadius: 2)
-        rightHand.fillColor = .white
-        rightHand.strokeColor = .clear
+        rightHand = makeSprite(named: TextureName.hand, size: CGSize(width: 6, height: 8))
         rightHand.position = CGPoint(x: 0, y: -5)
         rightHand.zPosition = 0.4
         rightWrist.addChild(rightHand)
@@ -265,102 +243,54 @@ class Player: SKNode {
 
         // Left Thigh - anchor at hip
         let thighSize = CGSize(width: 10, height: 16)
-        let leftThighPath = CGPath(
-            roundedRect: CGRect(x: -thighSize.width / 2, y: -thighSize.height * 0.9, width: thighSize.width, height: thighSize.height),
-            cornerWidth: 4,
-            cornerHeight: 4,
-            transform: nil
-        )
-        leftThigh = SKShapeNode(path: leftThighPath)
-        leftThigh.fillColor = .white
-        leftThigh.strokeColor = .clear
+        leftThigh = makeSprite(named: TextureName.thigh, size: thighSize, anchorPoint: CGPoint(x: 0.5, y: 0.9))
         leftThigh.position = leftHipBasePosition // Left hip
         leftThigh.zPosition = 0
         addChild(leftThigh)
 
-        // Left Knee - joint circle (child of thigh)
-        leftKnee = SKShapeNode(circleOfRadius: 4)
-        leftKnee.fillColor = .systemGray
-        leftKnee.strokeColor = .clear
+        leftKnee = makeSprite(named: TextureName.kneeJoint, size: CGSize(width: 8, height: 8))
         leftKnee.position = CGPoint(x: 0, y: -14) // Bottom of thigh
         leftKnee.zPosition = 0.5
         leftThigh.addChild(leftKnee)
 
-        // Left Calf - child of thigh, positioned at knee
         let calfSize = CGSize(width: 9, height: 14)
-        let leftCalfPath = CGPath(
-            roundedRect: CGRect(x: -calfSize.width / 2, y: -calfSize.height * 0.9, width: calfSize.width, height: calfSize.height),
-            cornerWidth: 4,
-            cornerHeight: 4,
-            transform: nil
-        )
-        leftCalf = SKShapeNode(path: leftCalfPath)
-        leftCalf.fillColor = .white
-        leftCalf.strokeColor = .clear
+        leftCalf = makeSprite(named: TextureName.calf, size: calfSize, anchorPoint: CGPoint(x: 0.5, y: 0.9))
         leftCalf.position = CGPoint(x: 0, y: -14) // At knee joint
         leftCalf.zPosition = 0
         leftThigh.addChild(leftCalf)
 
-        leftAnkle = SKShapeNode(circleOfRadius: 3)
-        leftAnkle.fillColor = .systemGray
-        leftAnkle.strokeColor = .clear
+        leftAnkle = makeSprite(named: TextureName.ankleJoint, size: CGSize(width: 6, height: 6))
         leftAnkle.position = CGPoint(x: 0, y: -12)
         leftAnkle.zPosition = 0.6
         leftCalf.addChild(leftAnkle)
 
-        leftFoot = SKShapeNode(rectOf: CGSize(width: 12, height: 6), cornerRadius: 2)
-        leftFoot.fillColor = .white
-        leftFoot.strokeColor = .clear
+        leftFoot = makeSprite(named: TextureName.foot, size: CGSize(width: 12, height: 6))
         leftFoot.position = CGPoint(x: 0, y: -5)
         leftFoot.zPosition = 0.2
         leftAnkle.addChild(leftFoot)
 
         // Right Thigh - anchor at hip
-        let rightThighPath = CGPath(
-            roundedRect: CGRect(x: -thighSize.width / 2, y: -thighSize.height * 0.9, width: thighSize.width, height: thighSize.height),
-            cornerWidth: 4,
-            cornerHeight: 4,
-            transform: nil
-        )
-        rightThigh = SKShapeNode(path: rightThighPath)
-        rightThigh.fillColor = .white
-        rightThigh.strokeColor = .clear
+        rightThigh = makeSprite(named: TextureName.thigh, size: thighSize, anchorPoint: CGPoint(x: 0.5, y: 0.9))
         rightThigh.position = rightHipBasePosition // Right hip
         rightThigh.zPosition = 0
         addChild(rightThigh)
 
-        // Right Knee - joint circle (child of thigh)
-        rightKnee = SKShapeNode(circleOfRadius: 4)
-        rightKnee.fillColor = .systemGray
-        rightKnee.strokeColor = .clear
+        rightKnee = makeSprite(named: TextureName.kneeJoint, size: CGSize(width: 8, height: 8))
         rightKnee.position = CGPoint(x: 0, y: -14) // Bottom of thigh
         rightKnee.zPosition = 0.5
         rightThigh.addChild(rightKnee)
 
-        // Right Calf - child of thigh, positioned at knee
-        let rightCalfPath = CGPath(
-            roundedRect: CGRect(x: -calfSize.width / 2, y: -calfSize.height * 0.9, width: calfSize.width, height: calfSize.height),
-            cornerWidth: 4,
-            cornerHeight: 4,
-            transform: nil
-        )
-        rightCalf = SKShapeNode(path: rightCalfPath)
-        rightCalf.fillColor = .white
-        rightCalf.strokeColor = .clear
+        rightCalf = makeSprite(named: TextureName.calf, size: calfSize, anchorPoint: CGPoint(x: 0.5, y: 0.9))
         rightCalf.position = CGPoint(x: 0, y: -14) // At knee joint
         rightCalf.zPosition = 0
         rightThigh.addChild(rightCalf)
 
-        rightAnkle = SKShapeNode(circleOfRadius: 3)
-        rightAnkle.fillColor = .systemGray
-        rightAnkle.strokeColor = .clear
+        rightAnkle = makeSprite(named: TextureName.ankleJoint, size: CGSize(width: 6, height: 6))
         rightAnkle.position = CGPoint(x: 0, y: -12)
         rightAnkle.zPosition = 0.6
         rightCalf.addChild(rightAnkle)
 
-        rightFoot = SKShapeNode(rectOf: CGSize(width: 12, height: 6), cornerRadius: 2)
-        rightFoot.fillColor = .white
-        rightFoot.strokeColor = .clear
+        rightFoot = makeSprite(named: TextureName.foot, size: CGSize(width: 12, height: 6))
         rightFoot.position = CGPoint(x: 0, y: -5)
         rightFoot.zPosition = 0.2
         rightAnkle.addChild(rightFoot)
