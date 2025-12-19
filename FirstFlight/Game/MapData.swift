@@ -138,5 +138,4 @@ struct LakeData: Codable {
     let position: Position
     let size: Size
     let depth: Double?
-    let shorelineProperties: [String: String]?
 }

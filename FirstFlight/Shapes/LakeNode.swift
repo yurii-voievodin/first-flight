@@ -3,7 +3,6 @@ import GameplayKit
 
 class LakeNode: SKShapeNode {
     private let lakeDepth: CGFloat
-    private let shorelineProperties: [String: String]?
     private let lakeName: String?
     private let lakeDescription: String?
     private let randomSource: GKLinearCongruentialRandomSource
@@ -22,12 +21,10 @@ class LakeNode: SKShapeNode {
         description: String?,
         position: CGPoint,
         size: CGSize,
-        depth: CGFloat = 1.0,
-        shorelineProperties: [String: String]? = nil
+        depth: CGFloat = 1.0
     ) {
         self.lakeName = name
         self.lakeDescription = description
-        self.shorelineProperties = shorelineProperties
         self.lakeDepth = max(depth, 0.0)
         let seed = LakeNode.computeSeed(from: position)
         self.randomSource = GKLinearCongruentialRandomSource(seed: seed)
@@ -42,7 +39,6 @@ class LakeNode: SKShapeNode {
 
     required init?(coder aDecoder: NSCoder) {
         self.lakeDepth = 1.0
-        self.shorelineProperties = nil
         self.lakeName = nil
         self.lakeDescription = nil
         self.randomSource = GKLinearCongruentialRandomSource()
@@ -98,11 +94,6 @@ class LakeNode: SKShapeNode {
         }
         if let description = lakeDescription {
             data["description"] = description
-        }
-        if let properties = shorelineProperties {
-            for (key, value) in properties {
-                data[key] = value
-            }
         }
         if data.count > 0 {
             userData = data

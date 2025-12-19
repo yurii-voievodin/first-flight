@@ -586,61 +586,42 @@
       "description": "A deep blue lake surrounded by polished stones.",
       "position": { "x": 980, "y": 1330 },
       "size": { "width": 360, "height": 210 },
-      "depth": 35,
-      "shorelineProperties": {
-        "shallowGradient": "true",
-        "boulderRim": "true"
-      }
+      "depth": 35
     },
     {
       "name": "Whispering Fen",
       "description": "Low marsh lake with misty edges near driftwood piles.",
       "position": { "x": 520, "y": 900 },
       "size": { "width": 260, "height": 160 },
-      "depth": 18,
-      "shorelineProperties": {
-        "shallowGradient": "true"
-      }
+      "depth": 18
     },
     {
       "name": "Eastern Springlet",
       "description": "Small hidden spring tucked into rock clusters.",
       "position": { "x": 1550, "y": 550 },
       "size": { "width": 180, "height": 120 },
-      "depth": 12,
-      "shorelineProperties": {
-        "boulderRim": "true"
-      }
+      "depth": 12
     },
     {
       "name": "Northern Tarn",
       "description": "Cloud-fed tarn tucked behind the spires.",
       "position": { "x": 620, "y": 1700 },
       "size": { "width": 240, "height": 130 },
-      "depth": 22,
-      "shorelineProperties": {
-        "shallowGradient": "true"
-      }
+      "depth": 22
     },
     {
       "name": "Southern Reflection Pond",
       "description": "Calm pool reflecting the southern cliffs.",
       "position": { "x": 1350, "y": 320 },
       "size": { "width": 210, "height": 130 },
-      "depth": 16,
-      "shorelineProperties": {
-        "boulderRim": "true"
-      }
+      "depth": 16
     },
     {
       "name": "Mossy Delta",
       "description": "A shallow, moss-dotted delta edge near the western overhang.",
       "position": { "x": 320, "y": 1030 },
       "size": { "width": 200, "height": 140 },
-      "depth": 10,
-      "shorelineProperties": {
-        "shallowGradient": "true"
-      }
+      "depth": 10
     }
   ],
   "smallRocks": [

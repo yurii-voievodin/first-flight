@@ -167,8 +167,7 @@ class MapLoader {
                 description: data.description,
                 position: data.position.cgPoint,
                 size: data.size.cgSize,
-                depth: CGFloat(data.depth ?? 1.0),
-                shorelineProperties: data.shorelineProperties
+                depth: CGFloat(data.depth ?? 1.0)
             )
         }
     }
