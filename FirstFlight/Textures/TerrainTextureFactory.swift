@@ -12,6 +12,15 @@ final class TerrainTextureFactory {
         ])
     }
 
+    /// Applies a Gaussian blur but prevents edge darkening/light seams by clamping pixels beyond the image bounds
+    /// (a practical Core Image equivalent of "bleed/extrude" for tile textures).
+    private func gaussianBlurWithBleed(_ image: CIImage, radius: CGFloat, extent: CGRect) -> CIImage {
+        // Clamp extends edge pixels outward infinitely, so the blur doesn't sample transparent black outside bounds.
+        let clamped = image.clampedToExtent()
+        let blurred = clamped.applyingFilter("CIGaussianBlur", parameters: [kCIInputRadiusKey: radius])
+        return blurred.cropped(to: extent)
+    }
+
     struct Params {
         var size: Int = 128
 
@@ -37,24 +46,26 @@ final class TerrainTextureFactory {
             .cropped(to: extent)
 
         // Зерно каменю: blur → підняти контраст
-        let rockGrain = baseNoise
-            .applyingFilter("CIGaussianBlur", parameters: [kCIInputRadiusKey: 1.2])
+        let rockGrain = gaussianBlurWithBleed(baseNoise, radius: 1.5, extent: extent)
             .applyingFilter("CISharpenLuminance", parameters: [kCIInputSharpnessKey: p.rockSharpness])
             .applyingFilter("CIColorControls", parameters: [
                 kCIInputContrastKey: p.rockContrast,
-                kCIInputBrightnessKey: p.rockBrightness,
+                kCIInputBrightnessKey: p.rockBrightness - 0.06,
                 kCIInputSaturationKey: 0.0
             ])
 
         // 2) “Craters”: великі м’які плями як маска
-        let craterNoise = CIFilter.randomGenerator().outputImage!
-            .cropped(to: extent)
-            .applyingFilter("CIGaussianBlur", parameters: [kCIInputRadiusKey: 6.0])
-            .applyingFilter("CIColorControls", parameters: [
-                kCIInputContrastKey: 2.0,
-                kCIInputBrightnessKey: -0.2,
-                kCIInputSaturationKey: 0.0
-            ])
+        let craterNoise = gaussianBlurWithBleed(
+            CIFilter.randomGenerator().outputImage!
+                .cropped(to: extent),
+            radius: 6.0,
+            extent: extent
+        )
+        .applyingFilter("CIColorControls", parameters: [
+            kCIInputContrastKey: 2.0,
+            kCIInputBrightnessKey: -0.2,
+            kCIInputSaturationKey: 0.0
+        ])
 
         // Легко затемнимо “впадини”
         let darkened = rockGrain.applyingFilter("CIMultiplyCompositing", parameters: [
@@ -62,12 +73,13 @@ final class TerrainTextureFactory {
         ])
 
         // 3) Dust mask (великі плями)
-        let dustMask = CIFilter.randomGenerator().outputImage!
+        let dustMaskSource = CIFilter.randomGenerator().outputImage!
             .cropped(to: extent)
             .transformed(by: CGAffineTransform(scaleX: 1.0 / CGFloat(p.dustPatchScale),
                                                y: 1.0 / CGFloat(p.dustPatchScale)))
             .cropped(to: extent)
-            .applyingFilter("CIGaussianBlur", parameters: [kCIInputRadiusKey: 5.0])
+
+        let dustMask = gaussianBlurWithBleed(dustMaskSource, radius: 5.0, extent: extent)
             .applyingFilter("CIColorControls", parameters: [
                 kCIInputContrastKey: 2.0,
                 kCIInputBrightnessKey: -0.15,
@@ -84,20 +96,26 @@ final class TerrainTextureFactory {
             kCIInputContrastKey: 1.4
         ])
 
-        let dusted = dustColorImage.applyingFilter("CIBlendWithAlphaMask", parameters: [
-            kCIInputBackgroundImageKey: darkened,
-            kCIInputMaskImageKey: tunedMask
-        ])
+        let dusted = dustColorImage
+            .applyingFilter("CIBlendWithAlphaMask", parameters: [
+                kCIInputBackgroundImageKey: darkened,
+                kCIInputMaskImageKey: tunedMask
+            ])
+            .applyingFilter("CIColorControls", parameters: [
+                kCIInputBrightnessKey: -0.05,
+                kCIInputContrastKey: 1.0
+            ])
 
         // 6) Micro speckles (дрібний шум поверх)
-        let speckles = CIFilter.randomGenerator().outputImage!
+        let specklesSource = CIFilter.randomGenerator().outputImage!
             .cropped(to: extent)
             .applyingFilter("CIColorControls", parameters: [
                 kCIInputContrastKey: 1.1,
                 kCIInputBrightnessKey: -0.45,
                 kCIInputSaturationKey: 0.0
             ])
-            .applyingFilter("CIGaussianBlur", parameters: [kCIInputRadiusKey: 0.6])
+
+        let speckles = gaussianBlurWithBleed(specklesSource, radius: 0.6, extent: extent)
 
         let final = speckles.applyingFilter("CIScreenBlendMode", parameters: [
             kCIInputBackgroundImageKey: dusted
@@ -108,7 +126,7 @@ final class TerrainTextureFactory {
             return SKTexture()
         }
         let tex = SKTexture(cgImage: cg)
-        tex.filteringMode = .nearest // або .linear (залежить від стилю)
+        tex.filteringMode = .linear
         return tex
     }
 
@@ -116,17 +134,22 @@ final class TerrainTextureFactory {
         let extent = CGRect(x: 0, y: 0, width: p.size, height: p.size)
 
         // 1) Dust mask (великі плями)
-        let dustMask = CIFilter.randomGenerator().outputImage!
+        let dustMaskSource = CIFilter.randomGenerator().outputImage!
             .cropped(to: extent)
             .transformed(by: CGAffineTransform(scaleX: 1.0 / CGFloat(p.dustPatchScale),
                                                y: 1.0 / CGFloat(p.dustPatchScale)))
             .cropped(to: extent)
-            .applyingFilter("CIGaussianBlur", parameters: [kCIInputRadiusKey: 5.0 * CGFloat(p.dustOverlaySoftness)])
-            .applyingFilter("CIColorControls", parameters: [
-                kCIInputContrastKey: 2.0,
-                kCIInputBrightnessKey: -0.15,
-                kCIInputSaturationKey: 0.0
-            ])
+
+        let dustMask = gaussianBlurWithBleed(
+            dustMaskSource,
+            radius: 5.0 * CGFloat(p.dustOverlaySoftness),
+            extent: extent
+        )
+        .applyingFilter("CIColorControls", parameters: [
+            kCIInputContrastKey: 2.0,
+            kCIInputBrightnessKey: -0.15,
+            kCIInputSaturationKey: 0.0
+        ])
 
         // 2) Dust tint layer
         let dustColorImage = CIImage(color: p.dustColor).cropped(to: extent)
@@ -137,10 +160,15 @@ final class TerrainTextureFactory {
             kCIInputContrastKey: 1.4
         ])
 
-        let dusted = dustColorImage.applyingFilter("CIBlendWithAlphaMask", parameters: [
-            kCIInputBackgroundImageKey: CIImage(color: CIColor(red: 0, green: 0, blue: 0, alpha: 0)).cropped(to: extent),
-            kCIInputMaskImageKey: tunedMask
-        ])
+        let dusted = dustColorImage
+            .applyingFilter("CIBlendWithAlphaMask", parameters: [
+                kCIInputBackgroundImageKey: CIImage(color: CIColor(red: 0, green: 0, blue: 0, alpha: 0)).cropped(to: extent),
+                kCIInputMaskImageKey: tunedMask
+            ])
+            .applyingFilter("CIColorControls", parameters: [
+                kCIInputBrightnessKey: -0.05,
+                kCIInputContrastKey: 1.0
+            ])
 
         // 4) Apply opacity
         let opacityFilter = CIFilter.colorMatrix()
@@ -155,7 +183,7 @@ final class TerrainTextureFactory {
             return SKTexture()
         }
         let tex = SKTexture(cgImage: cg)
-        tex.filteringMode = .nearest
+        tex.filteringMode = .linear
         return tex
     }
 }
