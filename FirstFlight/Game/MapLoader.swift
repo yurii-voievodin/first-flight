@@ -183,6 +183,31 @@ class MapLoader {
 
     // MARK: - Map Information
 
+    // MARK: - Tile Grid (grid-first maps)
+
+    /// Returns the tile-grid configuration for the map.
+    ///
+    /// Notes:
+    /// - If the model/JSON provides `metadata.tileGrid`, you can later wire it here.
+    /// - For now, this derives the grid from `metadata.mapSize` using a fixed tile size.
+    func getTileGrid(from mapData: MapData, defaultTileSize: Int = 128) -> TileGrid {
+        let tileSize = max(1, defaultTileSize)
+        let width = max(0, Int(mapData.metadata.mapSize.width))
+        let height = max(0, Int(mapData.metadata.mapSize.height))
+
+        // Derive columns/rows from pixel mapSize.
+        // Use rounding to tolerate minor mismatches (e.g. 2000px with 128px tiles).
+        let columns = max(1, Int((Double(width) / Double(tileSize)).rounded()))
+        let rows = max(1, Int((Double(height) / Double(tileSize)).rounded()))
+
+        return TileGrid(
+            tileSize: tileSize,
+            columns: columns,
+            rows: rows,
+            origin: "bottom_left"
+        )
+    }
+
     func getPlayerStartPosition(from mapData: MapData) -> CGPoint {
         return mapData.metadata.playerStartPosition.cgPoint
     }

@@ -14,8 +14,25 @@ struct MapMetadata: Codable {
     let name: String
     let version: String
     let description: String
+
+    /// Grid-first tile configuration (preferred). Optional for backward compatibility.
+    let tileGrid: TileGrid?
+
+    /// Pixel map size (legacy). If `tileGrid` is present, this can be derived.
     let mapSize: MapSize
+
     let playerStartPosition: Position
+}
+
+struct TileGrid: Codable {
+    let tileSize: Int
+    let columns: Int
+    let rows: Int
+    let origin: String?
+
+    var mapSize: CGSize {
+        CGSize(width: CGFloat(columns * tileSize), height: CGFloat(rows * tileSize))
+    }
 }
 
 struct MapSize: Codable {

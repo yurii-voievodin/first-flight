@@ -3,9 +3,15 @@
     "name": "Map1",
     "version": "1.0",
     "description": "First custom map with organic boundaries and diverse rock formations",
+    "tileGrid": {
+      "tileSize": 128,
+      "columns": 16,
+      "rows": 16,
+      "origin": "bottom_left"
+    },
     "mapSize": {
-      "width": 2000,
-      "height": 2000
+      "width": 2048,
+      "height": 2048
     },
     "playerStartPosition": {
       "x": 500,
