@@ -16,7 +16,6 @@ class Player: SKNode {
     private enum TextureName {
         static let body = "body"
         static let backpack = "backpack"
-        static let shoulderArmor = "shoulder_armor"
         static let head = "head"
         static let helmetGlass = "helmet_glass"
 
