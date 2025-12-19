@@ -551,6 +551,147 @@ class RockFormation: SKShapeNode {
         addChild(shadowEffect)
         addChild(highlightEffect)
     }
+
+    // MARK: - Destruction Effects
+
+    /// Spawns rock chips and dust particles for destruction effect
+    func spawnDestructionParticles(in scene: SKScene) {
+        let debrisTexture = RockTextures.shared.baseTexture(for: .boulder, seed: 42)
+        let position = centerPosition
+
+        // Chips
+        let chipCount = Int.random(in: 14...22)
+        for _ in 0..<chipCount {
+            let size = CGFloat.random(in: 5...12)
+            let chip = SKSpriteNode(texture: debrisTexture, size: CGSize(width: size, height: size))
+            chip.color = SKColor(white: CGFloat.random(in: 0.55...0.8), alpha: 1.0)
+            chip.colorBlendFactor = 0.35
+
+            // Spawn from within the rock radius
+            let a = CGFloat.random(in: 0...(2 * .pi))
+            let d = CGFloat.random(in: 0...(max(6, maxRadius) * 0.35))
+            chip.position = CGPoint(x: position.x + cos(a) * d, y: position.y + sin(a) * d)
+
+            chip.zPosition = 60
+            scene.addChild(chip)
+
+            // Ballistic pop outward + small drop
+            let outAngle = CGFloat.random(in: 0...(2 * .pi))
+            let outSpeed = CGFloat.random(in: 40...90)
+            let dx = cos(outAngle) * outSpeed
+            let dy = sin(outAngle) * outSpeed
+
+            let drift = SKAction.move(by: CGVector(
+                dx: dx * 0.18,
+                dy: dy * 0.18 - CGFloat.random(in: 15...35)
+            ), duration: 0.30)
+            drift.timingMode = .easeOut
+
+            let spin = SKAction.rotate(byAngle: CGFloat.random(in: -2...2), duration: 0.30)
+            let fade = SKAction.fadeOut(withDuration: 0.30)
+            let shrink = SKAction.scale(to: 0.35, duration: 0.30)
+
+            chip.run(.sequence([
+                .group([drift, spin, fade, shrink]),
+                .removeFromParent()
+            ]))
+        }
+
+        // Dust puff (cheap emitter)
+        let dust = SKEmitterNode()
+        dust.particleTexture = debrisTexture
+        dust.particleBirthRate = 0
+        dust.numParticlesToEmit = 65
+        dust.particleLifetime = 0.35
+        dust.particleLifetimeRange = 0.15
+        dust.emissionAngleRange = 2 * .pi
+        dust.particleSpeed = 60
+        dust.particleSpeedRange = 35
+        dust.particleAlpha = 0.35
+        dust.particleAlphaRange = 0.15
+        dust.particleAlphaSpeed = -0.9
+        dust.particleScale = 0.18
+        dust.particleScaleRange = 0.10
+        dust.particleScaleSpeed = -0.35
+        dust.particleColor = SKColor(white: 0.7, alpha: 1.0)
+        dust.particleColorBlendFactor = 1.0
+        dust.position = position
+        dust.zPosition = 55
+        scene.addChild(dust)
+        dust.run(.sequence([.wait(forDuration: 0.6), .removeFromParent()]))
+
+        // Secondary small puff a moment later to sell the "dissolve"
+        let dust2 = SKEmitterNode()
+        dust2.particleTexture = debrisTexture
+        dust2.particleBirthRate = 0
+        dust2.numParticlesToEmit = 35
+        dust2.particleLifetime = 0.30
+        dust2.particleLifetimeRange = 0.12
+        dust2.emissionAngleRange = 2 * .pi
+        dust2.particleSpeed = 35
+        dust2.particleSpeedRange = 20
+        dust2.particleAlpha = 0.22
+        dust2.particleAlphaRange = 0.10
+        dust2.particleAlphaSpeed = -0.9
+        dust2.particleScale = 0.14
+        dust2.particleScaleRange = 0.08
+        dust2.particleScaleSpeed = -0.30
+        dust2.particleColor = SKColor(white: 0.7, alpha: 1.0)
+        dust2.particleColorBlendFactor = 1.0
+        dust2.position = position
+        dust2.zPosition = 56
+
+        scene.addChild(dust2)
+        dust2.run(.sequence([.wait(forDuration: 0.45), .removeFromParent()]))
+    }
+
+    /// Performs shake/dissolve destruction animation and removes node
+    func performDestructionAnimation(completion: @escaping () -> Void) {
+        // Stop physics interactions immediately
+        physicsBody = nil
+        removeAllActions()
+
+        let basePos = position
+
+        // Crumble: short shake + slight squash, then fade/rotate/scale down
+        let shake = SKAction.customAction(withDuration: 0.18) { node, t in
+            let k = 1.0 - (t / 0.18)
+            let jx = CGFloat.random(in: -2...2) * k
+            let jy = CGFloat.random(in: -2...2) * k
+            node.position = CGPoint(x: basePos.x + jx, y: basePos.y + jy)
+        }
+
+        let squash = SKAction.scaleX(to: 1.08, y: 0.92, duration: 0.10)
+        let unsquash = SKAction.scale(to: 1.0, duration: 0.08)
+        let preCrumble = SKAction.group([shake, .sequence([squash, unsquash])])
+
+        // Dissolve instead of shrinking
+        let duration: TimeInterval = 0.35
+        let rotate = SKAction.rotate(byAngle: CGFloat.random(in: -0.35...0.35), duration: duration)
+
+        let dissolve = SKAction.customAction(withDuration: duration) { node, t in
+            guard let shape = node as? SKShapeNode else { return }
+            let p = max(0, min(1, t / duration))
+
+            // Ease-out fade
+            let a = CGFloat(1.0 - p * p)
+            shape.alpha = a
+
+            // Soften the outline as it dissolves
+            if shape.lineWidth > 0 {
+                shape.lineWidth = max(0.0, shape.lineWidth * (1.0 - 0.85 * CGFloat(p)))
+            }
+        }
+
+        let resetPosition = SKAction.run { [weak self] in
+            self?.position = basePos
+        }
+
+        let remove = SKAction.removeFromParent()
+        let callCompletion = SKAction.run { completion() }
+
+        run(.sequence([preCrumble, resetPosition, .group([rotate, dissolve]), remove, callCompletion]))
+    }
 }
 
 final class RockTextures {

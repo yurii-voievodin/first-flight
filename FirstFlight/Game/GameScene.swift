@@ -542,13 +542,28 @@ extension GameScene: SKPhysicsContactDelegate {
             rockFormations.remove(at: index)
         }
 
-        // Create destruction animation
-        let fadeOut = SKAction.fadeOut(withDuration: 0.3)
-        let scaleDown = SKAction.scale(to: 0.1, duration: 0.3)
-        let group = SKAction.group([fadeOut, scaleDown])
-        let remove = SKAction.removeFromParent()
-        let sequence = SKAction.sequence([group, remove])
+        // Clear target/indicator state if needed
+        if currentTarget === rock {
+            stopFiringAtTarget()
+        }
+        rock.isCircleIndicatorVisible = false
 
-        rock.run(sequence)
+        // Spawn destruction particles
+        rock.spawnDestructionParticles(in: self)
+
+        // Camera shake if near the player
+        let center = rock.centerPosition
+        if hypot(center.x - astronaut.position.x, center.y - astronaut.position.y) < 220 {
+            let camShake = SKAction.customAction(withDuration: 0.15) { [weak self] _, t in
+                guard let self, let cam = self.gameCamera else { return }
+                let k = 1.0 - (t / 0.15)
+                cam.position.x += CGFloat.random(in: -2...2) * k
+                cam.position.y += CGFloat.random(in: -2...2) * k
+            }
+            gameCamera.run(camShake)
+        }
+
+        // Perform destruction animation
+        rock.performDestructionAnimation { }
     }
 }
