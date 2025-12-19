@@ -558,7 +558,7 @@
     {
       "name": "Northern Spire",
       "description": "Tall spire serving as navigation landmark",
-      "position": { "x": 600, "y": 1600 },
+      "position": { "x": 850, "y": 1650 },
       "size": { "width": 80, "height": 300 },
       "type": "spire",
       "properties": {

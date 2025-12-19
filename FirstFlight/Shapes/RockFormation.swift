@@ -143,22 +143,63 @@ class RockFormation: SKShapeNode {
     private func createOverhangPath(size: CGSize) -> CGPath {
         let path = CGMutablePath()
 
-        // Create L-shaped overhang
-        path.move(to: CGPoint(x: 0, y: 0))
-        path.addLine(to: CGPoint(x: size.width * 0.7, y: 0))
-        path.addCurve(to: CGPoint(x: size.width, y: size.height * 0.3),
-                     control1: CGPoint(x: size.width * 0.9, y: size.height * 0.1),
-                     control2: CGPoint(x: size.width, y: size.height * 0.2))
-        path.addLine(to: CGPoint(x: size.width, y: size.height))
-        path.addLine(to: CGPoint(x: size.width * 0.4, y: size.height))
-        path.addCurve(to: CGPoint(x: size.width * 0.3, y: size.height * 0.6),
-                     control1: CGPoint(x: size.width * 0.35, y: size.height * 0.8),
-                     control2: CGPoint(x: size.width * 0.3, y: size.height * 0.7))
-        path.addCurve(to: CGPoint(x: 0, y: size.height * 0.4),
-                     control1: CGPoint(x: size.width * 0.2, y: size.height * 0.5),
-                     control2: CGPoint(x: size.width * 0.1, y: size.height * 0.4))
-        path.closeSubpath()
+        // More organic overhang: rounded corners + subtle bulges (avoid straight edges)
+        let w = size.width
+        let h = size.height
 
+        // Start near bottom-left, slightly inset
+        path.move(to: CGPoint(x: w * 0.06, y: h * 0.08))
+
+        // Bottom edge with a gentle bulge
+        path.addCurve(
+            to: CGPoint(x: w * 0.70, y: h * 0.06),
+            control1: CGPoint(x: w * 0.22, y: h * 0.00),
+            control2: CGPoint(x: w * 0.48, y: h * 0.02)
+        )
+
+        // Bottom-right turn into the "leg" of the overhang (rounded)
+        path.addCurve(
+            to: CGPoint(x: w * 0.94, y: h * 0.26),
+            control1: CGPoint(x: w * 0.84, y: h * 0.08),
+            control2: CGPoint(x: w * 0.95, y: h * 0.14)
+        )
+
+        // Right side up with a slight inward bend (less rectangular)
+        path.addCurve(
+            to: CGPoint(x: w * 0.92, y: h * 0.92),
+            control1: CGPoint(x: w * 0.98, y: h * 0.46),
+            control2: CGPoint(x: w * 0.96, y: h * 0.78)
+        )
+
+        // Top edge drifting left (subtle sag)
+        path.addCurve(
+            to: CGPoint(x: w * 0.42, y: h * 0.95),
+            control1: CGPoint(x: w * 0.82, y: h * 1.02),
+            control2: CGPoint(x: w * 0.60, y: h * 1.02)
+        )
+
+        // Inner notch of the overhang (the "L" cut) with rounded corner
+        path.addCurve(
+            to: CGPoint(x: w * 0.30, y: h * 0.72),
+            control1: CGPoint(x: w * 0.36, y: h * 0.90),
+            control2: CGPoint(x: w * 0.30, y: h * 0.83)
+        )
+
+        // Left inner drop (irregular)
+        path.addCurve(
+            to: CGPoint(x: w * 0.12, y: h * 0.56),
+            control1: CGPoint(x: w * 0.28, y: h * 0.62),
+            control2: CGPoint(x: w * 0.20, y: h * 0.58)
+        )
+
+        // Outer left contour back to start (rounded)
+        path.addCurve(
+            to: CGPoint(x: w * 0.06, y: h * 0.08),
+            control1: CGPoint(x: w * 0.02, y: h * 0.52),
+            control2: CGPoint(x: w * 0.00, y: h * 0.22)
+        )
+
+        path.closeSubpath()
         return path
     }
 
@@ -227,22 +268,38 @@ class RockFormation: SKShapeNode {
         let path = CGMutablePath()
         let centerX = size.width / 2
 
-        // Create tall, narrow spire
-        path.move(to: CGPoint(x: centerX * 0.8, y: 0))
-        path.addCurve(to: CGPoint(x: centerX * 0.4, y: size.height * 0.9),
-                     control1: CGPoint(x: centerX * 0.2, y: size.height * 0.3),
-                     control2: CGPoint(x: centerX * 0.1, y: size.height * 0.7))
-        path.addCurve(to: CGPoint(x: centerX * 1.2, y: size.height * 0.8),
-                     control1: CGPoint(x: centerX * 0.7, y: size.height * 0.95),
-                     control2: CGPoint(x: centerX * 1.0, y: size.height * 0.9))
-        path.addCurve(to: CGPoint(x: centerX * 1.6, y: size.height * 0.2),
-                     control1: CGPoint(x: centerX * 1.4, y: size.height * 0.6),
-                     control2: CGPoint(x: centerX * 1.8, y: size.height * 0.4))
-        path.addCurve(to: CGPoint(x: centerX * 0.8, y: 0),
-                     control1: CGPoint(x: centerX * 1.3, y: size.height * 0.1),
-                     control2: CGPoint(x: centerX * 1.1, y: -size.height * 0.1))
-        path.closeSubpath()
+        // ~20% shorter + ~20% wider (avoid the "arrow" silhouette)
+        path.move(to: CGPoint(x: centerX * 0.72, y: 0))
 
+        // Left side up to a lower peak
+        path.addCurve(
+            to: CGPoint(x: centerX * 0.50, y: size.height * 0.62),
+            control1: CGPoint(x: centerX * 0.22, y: size.height * 0.24),
+            control2: CGPoint(x: centerX * 0.12, y: size.height * 0.50)
+        )
+
+        // Across the top (rounder cap, lower)
+        path.addCurve(
+            to: CGPoint(x: centerX * 1.50, y: size.height * 0.58),
+            control1: CGPoint(x: centerX * 0.86, y: size.height * 0.76),
+            control2: CGPoint(x: centerX * 1.18, y: size.height * 0.74)
+        )
+
+        // Right side down (wider shoulder)
+        path.addCurve(
+            to: CGPoint(x: centerX * 1.70, y: size.height * 0.18),
+            control1: CGPoint(x: centerX * 1.82, y: size.height * 0.46),
+            control2: CGPoint(x: centerX * 1.92, y: size.height * 0.30)
+        )
+
+        // Close back to base with a softer bottom curvature
+        path.addCurve(
+            to: CGPoint(x: centerX * 0.72, y: 0),
+            control1: CGPoint(x: centerX * 1.34, y: size.height * 0.07),
+            control2: CGPoint(x: centerX * 1.06, y: -size.height * 0.05)
+        )
+
+        path.closeSubpath()
         return path
     }
 
