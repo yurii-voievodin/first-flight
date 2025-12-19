@@ -5,10 +5,10 @@ class Player: SKNode {
     private let bodyRadius: CGFloat = 20.0
     private let backpackBasePosition = CGPoint(x: 0, y: -2)
     private let helmetGlassBasePosition = CGPoint(x: 0, y: 2)
-    private let leftShoulderBasePosition = CGPoint(x: -16, y: 8)
-    private let rightShoulderBasePosition = CGPoint(x: 16, y: 8)
-    private let leftHipBasePosition = CGPoint(x: -8, y: -16)
-    private let rightHipBasePosition = CGPoint(x: 8, y: -16)
+    private let leftShoulderBasePosition = CGPoint(x: -13, y: 10)
+    private let rightShoulderBasePosition = CGPoint(x: 13, y: 10)
+    private let leftHipBasePosition = CGPoint(x: -6, y: -14)
+    private let rightHipBasePosition = CGPoint(x: 6, y: -14)
     private let baseZPosition: CGFloat = -10
 
     // MARK: - Textures
@@ -60,7 +60,6 @@ class Player: SKNode {
     // Body parts
     private var body: SKSpriteNode!
     private var backpack: SKSpriteNode!
-    private var shoulderArmor: SKShapeNode!
     private var head: SKSpriteNode!
     private var helmetGlass: SKSpriteNode!
 
@@ -120,8 +119,8 @@ class Player: SKNode {
             transform: nil
         )
 
-        // Backpack - rounded capsule sitting behind the torso
-        let backpackSize = CGSize(width: bodySize.width + 6, height: bodySize.height - 4)
+        // Backpack is intentionally narrower than the torso
+        let backpackSize = CGSize(width: bodySize.width - 2, height: bodySize.height - 6)
         let backpackPath = CGPath(
             roundedRect: CGRect(
                 x: -backpackSize.width / 2,
@@ -143,27 +142,6 @@ class Player: SKNode {
         body.zPosition = 1
         addChild(body)
 
-        // Shoulder armor - half circle arc on shoulders
-        let shoulderPath = CGMutablePath()
-        let shoulderRadius: CGFloat = 14
-        let shoulderCenter = CGPoint(x: 0, y: 10) // Top of body
-
-        // Create arc from left to right (semicircle on top)
-        shoulderPath.addArc(
-            center: shoulderCenter,
-            radius: shoulderRadius,
-            startAngle: .pi, // Left (180 degrees)
-            endAngle: 0,     // Right (0 degrees)
-            clockwise: false
-        )
-
-        shoulderArmor = SKShapeNode(path: shoulderPath)
-        shoulderArmor.strokeColor = .systemGray
-        shoulderArmor.lineWidth = 6
-        shoulderArmor.lineCap = .round // Rounded ends
-        shoulderArmor.position = CGPoint(x: 0, y: 0)
-        shoulderArmor.zPosition = 1.5 // Between body and head, above arms
-        addChild(shoulderArmor)
 
         // Head (helmet) - rounded for smooth look
         let headSize = CGSize(width: 20, height: 20)
@@ -174,7 +152,8 @@ class Player: SKNode {
             transform: nil
         )
         head = makeSprite(named: TextureName.head, size: headSize)
-        head.position = CGPoint(x: 0, y: 26) // Above body
+        // Slight overlap to compensate for transparent padding inside the texture
+        head.position = CGPoint(x: 0, y: 22) // Above body
         head.zPosition = 2
         addChild(head)
 
