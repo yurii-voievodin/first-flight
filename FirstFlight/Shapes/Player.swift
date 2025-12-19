@@ -565,7 +565,7 @@ class Player: SKNode {
 
     func moveInDirection(direction: CGVector) {
         // Apply velocity directly to physics body for continuous movement
-        let speed: CGFloat = 55.0 // points per second
+        let speed: CGFloat = 75.0 // points per second
         let velocity = CGVector(dx: direction.dx * speed, dy: direction.dy * speed)
         physicsBody?.velocity = velocity
 
