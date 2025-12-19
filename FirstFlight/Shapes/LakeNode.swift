@@ -6,6 +6,8 @@ class LakeNode: SKShapeNode {
     private let lakeName: String?
     private let lakeDescription: String?
     private let randomSource: GKLinearCongruentialRandomSource
+    private let debugShowDepth: Bool
+    private var depthLabel: SKLabelNode?
 
     // Layer nodes used when rendering cropped layers
     private var cropNode: SKCropNode?
@@ -21,13 +23,15 @@ class LakeNode: SKShapeNode {
         description: String?,
         position: CGPoint,
         size: CGSize,
-        depth: CGFloat = 1.0
+        depth: CGFloat = 1.0,
+        debugShowDepth: Bool = false
     ) {
         self.lakeName = name
         self.lakeDescription = description
         self.lakeDepth = max(depth, 0.0)
         let seed = LakeNode.computeSeed(from: position)
         self.randomSource = GKLinearCongruentialRandomSource(seed: seed)
+        self.debugShowDepth = debugShowDepth
         super.init()
 
         self.position = position
@@ -42,6 +46,7 @@ class LakeNode: SKShapeNode {
         self.lakeName = nil
         self.lakeDescription = nil
         self.randomSource = GKLinearCongruentialRandomSource()
+        self.debugShowDepth = false
         super.init(coder: aDecoder)
     }
 
@@ -51,6 +56,7 @@ class LakeNode: SKShapeNode {
     }
 
     private func setupVisuals(size: CGSize) {
+        // Expanded visual range: depth 0...60 gives more perceivable steps
         let depthFactor = min(lakeDepth / 60.0, 1.0)
         let deepBlue = CGFloat(0.5 + depthFactor * 0.3)
         let greenComponent = CGFloat(0.4 + depthFactor * 0.2)
@@ -66,7 +72,8 @@ class LakeNode: SKShapeNode {
             red: 0.0,
             green: greenComponent,
             blue: deepBlue,
-            alpha: 0.55 + depthFactor * 0.25
+            // Deeper lakes appear darker and denser
+            alpha: 0.50 + depthFactor * 0.35
         )
 
         // Always render using cropped layers (depth gradient + ripples)
@@ -74,6 +81,25 @@ class LakeNode: SKShapeNode {
         fillColor = .clear
 
         buildOrUpdateCroppedLayers(size: size, tint: tint, depthFactor: depthFactor)
+        if debugShowDepth {
+            if depthLabel == nil {
+                let label = SKLabelNode(fontNamed: "Menlo")
+                label.fontSize = 14
+                label.horizontalAlignmentMode = .center
+                label.verticalAlignmentMode = .center
+                label.zPosition = 100
+                addChild(label)
+                depthLabel = label
+            }
+
+            depthLabel?.text = String(format: "depth=%.1f  factor=%.2f", lakeDepth, depthFactor)
+            depthLabel?.position = .zero
+            depthLabel?.fontColor = .white
+            depthLabel?.alpha = 0.85
+        } else {
+            depthLabel?.removeFromParent()
+            depthLabel = nil
+        }
     }
 
     private func setupPhysics() {
@@ -177,7 +203,8 @@ class LakeNode: SKShapeNode {
             gradient.size = size
             gradient.position = .zero
             gradient.zPosition = 0
-            gradient.alpha = 0.65 + depthFactor * 0.2
+            // Stronger depth contrast
+            gradient.alpha = 0.45 + depthFactor * 0.55
             gradient.color = tint
             gradient.colorBlendFactor = 0.85
 
@@ -187,7 +214,8 @@ class LakeNode: SKShapeNode {
             ripples.size = size
             ripples.position = .zero
             ripples.zPosition = 1
-            ripples.alpha = 0.18 + depthFactor * 0.10
+            // Deep water is calmer, shallow water shows more surface detail
+            ripples.alpha = 0.08 + (1.0 - depthFactor) * 0.25
             ripples.color = tint
             ripples.colorBlendFactor = 0.25
 
@@ -214,12 +242,12 @@ class LakeNode: SKShapeNode {
         gradientSprite?.size = size
         gradientSprite?.position = .zero
         gradientSprite?.color = tint
-        gradientSprite?.alpha = 0.65 + depthFactor * 0.2
+        gradientSprite?.alpha = 0.45 + depthFactor * 0.55
 
         ripplesSprite?.size = size
         ripplesSprite?.position = .zero
         ripplesSprite?.color = tint
-        ripplesSprite?.alpha = 0.18 + depthFactor * 0.10
+        ripplesSprite?.alpha = 0.08 + (1.0 - depthFactor) * 0.25
 
         // Ensure mask follows current path.
         if let mask = cropNode?.maskNode as? SKShapeNode {
