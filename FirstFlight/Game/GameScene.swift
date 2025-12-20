@@ -506,7 +506,6 @@ extension GameScene: SKPhysicsContactDelegate {
         if currentTarget === rock {
             stopFiringAtTarget()
         }
-        rock.isCircleIndicatorVisible = false
 
         // Spawn destruction particles
         rock.spawnDestructionParticles(in: self)

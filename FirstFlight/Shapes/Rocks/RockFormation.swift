@@ -13,14 +13,6 @@ class RockFormation: SKShapeNode {
     private static let collisionPadding: CGFloat = 16
     private let formationType: RockFormationType
     private var debugLabel: SKLabelNode?
-    private var circleIndicator: SKShapeNode?
-
-    // Circle indicator visibility
-    var isCircleIndicatorVisible: Bool = false {
-        didSet {
-            circleIndicator?.isHidden = !isCircleIndicatorVisible
-        }
-    }
     
     var type: RockFormationType { formationType }
 
@@ -57,7 +49,6 @@ class RockFormation: SKShapeNode {
         createRockShape(size: size)
         setupPhysics()
         setupVisuals()
-        setupCircleIndicator()
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -343,24 +334,6 @@ class RockFormation: SKShapeNode {
     private func setupVisuals() {
         strokeColor = .clear
         lineWidth = 0
-    }
-
-    private func setupCircleIndicator() {
-        let circle = SKShapeNode(circleOfRadius: maxRadius)
-        circle.lineWidth = 2
-        circle.strokeColor = UIColor.white.withAlphaComponent(0.2)
-        circle.fillColor = .clear
-        circle.isHidden = true
-        circle.zPosition = self.zPosition - 1
-
-        // Center on rock's bounding box
-        if let path = self.path {
-            let bounds = path.boundingBox
-            circle.position = CGPoint(x: bounds.midX, y: bounds.midY)
-        }
-
-        addChild(circle)
-        circleIndicator = circle
     }
 
     // MARK: - Debug Functionality
