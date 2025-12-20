@@ -6,7 +6,6 @@ struct MapData: Codable {
     let boundaryRocks: [BoundaryRockData]
     let interiorRocks: [InteriorRockData]
     let signatureFormations: [SignatureFormationData]
-    let smallRocks: [SmallRockData]?
     let lakes: [LakeData]?
 }
 
@@ -109,19 +108,6 @@ struct SignatureFormationData: Codable {
         case "spire": return .spire
         default: return .boulder
         }
-    }
-}
-
-struct SmallRockData: Codable {
-    let position: Position
-    let variation: Int?
-
-    var smallRockVariation: SmallRockVariation {
-        guard let variation = variation,
-              let rockVariation = SmallRockVariation(rawValue: variation) else {
-            return .pebble
-        }
-        return rockVariation
     }
 }
 

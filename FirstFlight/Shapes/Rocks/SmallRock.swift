@@ -108,16 +108,16 @@ class SmallRock: SKShapeNode {
         switch variation {
         case .pebble:
             fillColor = .systemGray2
-            strokeColor = .systemGray
+            strokeColor = .systemGray2
         case .stone:
             fillColor = .systemGray3
-            strokeColor = .systemGray2
+            strokeColor = .systemGray3
         case .chip:
             fillColor = .systemBrown.withAlphaComponent(0.8)
-            strokeColor = .brown
+            strokeColor = .systemBrown.withAlphaComponent(0.8)
         case .fragment:
             fillColor = .systemGray
-            strokeColor = .darkGray
+            strokeColor = .systemGray
         }
 
         lineWidth = 1.0

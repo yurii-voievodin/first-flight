@@ -123,24 +123,6 @@ class MapLoader {
         return rocks
     }
 
-    func createSmallRocks(from mapData: MapData) -> [SmallRock] {
-        guard let smallRocksData = mapData.smallRocks else {
-            return []
-        }
-
-        var rocks: [SmallRock] = []
-
-        for smallRockData in smallRocksData {
-            let rock = SmallRock(
-                position: smallRockData.position.cgPoint,
-                variation: smallRockData.smallRockVariation
-            )
-            rocks.append(rock)
-        }
-
-        return rocks
-    }
-
     func createLakes(from mapData: MapData) -> [LakeNode] {
         guard let lakeData = mapData.lakes else {
             return []
