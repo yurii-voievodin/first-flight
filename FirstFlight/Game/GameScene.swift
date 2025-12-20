@@ -31,6 +31,8 @@ final class GameScene: SKScene {
 
     // Targeting system
     private var currentTarget: RockFormation?
+    private let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+    private var hapticTimer: Timer?
     
     private var tileSet: SKTileSet!
 
@@ -53,7 +55,6 @@ final class GameScene: SKScene {
     private func setupScene() {
         physicsWorld.gravity = CGVector(dx: 0, dy: 0)
         physicsWorld.contactDelegate = self
-        backgroundColor = SKColor.systemGray
     }
 
     private func createCharacters() {
@@ -264,6 +265,12 @@ final class GameScene: SKScene {
     private func startFiringAtTarget(_ rock: RockFormation) {
         currentTarget = rock
 
+        // Start haptic feedback
+        impactFeedback.prepare()
+        hapticTimer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
+            self?.impactFeedback.impactOccurred()
+        }
+
         // Calculate angle from player to rock center
         let targetPosition = rock.centerPosition
         let dx = targetPosition.x - astronaut.position.x
@@ -278,6 +285,10 @@ final class GameScene: SKScene {
     }
 
     private func stopFiringAtTarget() {
+        // Stop haptic feedback
+        hapticTimer?.invalidate()
+        hapticTimer = nil
+
         currentTarget = nil
         rocksBeingDamaged.removeAll()
         astronaut.stopFiringBlaster()
