@@ -111,26 +111,9 @@ class Player: SKNode {
     private func setupBodyParts() {
         // Body (torso) - main body part with rounded corners
         let bodySize = CGSize(width: 24, height: 32)
-        let bodyPath = CGPath(
-            roundedRect: CGRect(x: -bodySize.width / 2, y: -bodySize.height / 2, width: bodySize.width, height: bodySize.height),
-            cornerWidth: 6,
-            cornerHeight: 6,
-            transform: nil
-        )
 
         // Backpack is intentionally narrower than the torso
         let backpackSize = CGSize(width: bodySize.width - 2, height: bodySize.height - 6)
-        let backpackPath = CGPath(
-            roundedRect: CGRect(
-                x: -backpackSize.width / 2,
-                y: -backpackSize.height / 2,
-                width: backpackSize.width,
-                height: backpackSize.height
-            ),
-            cornerWidth: 8,
-            cornerHeight: 8,
-            transform: nil
-        )
         backpack = makeSprite(named: TextureName.backpack, size: backpackSize)
         backpack.position = backpackBasePosition
         backpack.zPosition = 0.2
@@ -141,15 +124,8 @@ class Player: SKNode {
         body.zPosition = 1
         addChild(body)
 
-
         // Head (helmet) - rounded for smooth look
         let headSize = CGSize(width: 20, height: 20)
-        let headPath = CGPath(
-            roundedRect: CGRect(x: -headSize.width / 2, y: -headSize.height / 2, width: headSize.width, height: headSize.height),
-            cornerWidth: 6,
-            cornerHeight: 6,
-            transform: nil
-        )
         head = makeSprite(named: TextureName.head, size: headSize)
         // Slight overlap to compensate for transparent padding inside the texture
         head.position = CGPoint(x: 0, y: 22) // Above body

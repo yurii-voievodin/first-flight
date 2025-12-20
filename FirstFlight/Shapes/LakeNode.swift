@@ -3,8 +3,6 @@ import GameplayKit
 
 class LakeNode: SKShapeNode {
     private let lakeDepth: CGFloat
-    private let lakeName: String?
-    private let lakeDescription: String?
     private let randomSource: GKLinearCongruentialRandomSource
     private let debugShowDepth: Bool
     private var depthLabel: SKLabelNode?
@@ -19,15 +17,11 @@ class LakeNode: SKShapeNode {
     private static let waterRipplesTextureName = "water_ripples_tile"
 
     init(
-        name: String?,
-        description: String?,
         position: CGPoint,
         size: CGSize,
         depth: CGFloat = 1.0,
         debugShowDepth: Bool = false
     ) {
-        self.lakeName = name
-        self.lakeDescription = description
         self.lakeDepth = max(depth, 0.0)
         let seed = LakeNode.computeSeed(from: position)
         self.randomSource = GKLinearCongruentialRandomSource(seed: seed)
@@ -38,13 +32,10 @@ class LakeNode: SKShapeNode {
         createLakeShape(size: size)
         setupVisuals(size: size)
         setupPhysics()
-        populateUserData()
     }
 
     required init?(coder aDecoder: NSCoder) {
         self.lakeDepth = 1.0
-        self.lakeName = nil
-        self.lakeDescription = nil
         self.randomSource = GKLinearCongruentialRandomSource()
         self.debugShowDepth = false
         super.init(coder: aDecoder)
@@ -65,7 +56,6 @@ class LakeNode: SKShapeNode {
         strokeColor = .clear
         lineWidth = 2.5
         zPosition = -20
-        name = lakeName ?? "Lake"
 
         // Common tint used by both rendering modes.
         let tint = SKColor(
@@ -111,19 +101,6 @@ class LakeNode: SKShapeNode {
         physicsBody?.isDynamic = false
         physicsBody?.friction = 0.2
         physicsBody?.restitution = 0.0
-    }
-
-    private func populateUserData() {
-        let data = NSMutableDictionary()
-        if let name = lakeName {
-            data["name"] = name
-        }
-        if let description = lakeDescription {
-            data["description"] = description
-        }
-        if data.count > 0 {
-            userData = data
-        }
     }
 
     private func randomCGFloat(in range: ClosedRange<CGFloat>) -> CGFloat {
@@ -172,13 +149,6 @@ class LakeNode: SKShapeNode {
         let texture = SKTexture(imageNamed: name)
         texture.filteringMode = .linear
         return texture
-    }
-
-    private func removeCroppedLayersIfNeeded() {
-        cropNode?.removeFromParent()
-        cropNode = nil
-        gradientSprite = nil
-        ripplesSprite = nil
     }
 
     private func buildOrUpdateCroppedLayers(size: CGSize, tint: SKColor, depthFactor: CGFloat) {

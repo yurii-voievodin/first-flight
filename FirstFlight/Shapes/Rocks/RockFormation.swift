@@ -413,11 +413,6 @@ class RockFormation: SKShapeNode {
         addChild(background)
         debugLabel = label
     }
-
-    func removeDebugLabel() {
-        debugLabel?.parent?.removeFromParent()
-        debugLabel = nil
-    }
     
     func applyProceduralTextures(seed: UInt64) {
         // 1) базова текстура через окремий спрайт (щоб не тайлилась)
@@ -430,36 +425,6 @@ class RockFormation: SKShapeNode {
 
         // 2.5) окрема тінь/блік поверх базової текстури
         addShadowAndHighlight(seed: seed)
-    }
-
-    private func shouldHaveMoss(seed: UInt64) -> Bool {
-        // мінімальна логіка: більше моху на cluster/overhang
-        let roll = Int(seed % 100)
-        switch formationType {
-        case .overhang, .cluster: return roll < 45
-        case .boulder:            return roll < 15
-        case .spire:              return roll < 10
-        case .cave:               return roll < 5
-        }
-    }
-
-    private func addMossOverlay(seed: UInt64) {
-        guard let p = self.path else { return }
-
-        let moss = SKShapeNode(path: p)
-        moss.fillTexture = RockTextures.shared.mossOverlay()
-        moss.fillColor = .white
-        moss.strokeColor = .clear
-        moss.lineWidth = 0
-        moss.alpha = 0.65
-        moss.blendMode = .multiply
-        moss.zPosition = self.zPosition + 1
-
-        // невелика різниця в “орієнтації” для різноманіття
-        let r = CGFloat((seed % 628)) / 100.0 // ~0..6.28
-        moss.zRotation = r * 0.15
-
-        addChild(moss)
     }
 
     private func addBaseTexture(seed: UInt64) {
@@ -692,39 +657,4 @@ class RockFormation: SKShapeNode {
 
         run(.sequence([preCrumble, resetPosition, .group([rotate, dissolve]), remove, callCompletion]))
     }
-}
-
-final class RockTextures {
-    static let shared = RockTextures()
-    private init() {}
-
-    private let atlas = SKTextureAtlas(named: "Rocks")
-
-    private lazy var base    = atlas.textureNamed("rock_base")
-    private lazy var rough   = atlas.textureNamed("rock_rough")
-    private lazy var smooth  = atlas.textureNamed("rock_smooth")
-    private lazy var layered = atlas.textureNamed("rock_layered")
-    private lazy var dark    = atlas.textureNamed("rock_dark")
-    private lazy var moss    = atlas.textureNamed("rock_moss_overlay")
-
-    func baseTexture(for type: RockFormationType, seed: UInt64) -> SKTexture {
-        let roll = Int(seed % 100)
-
-        switch type {
-        case .spire:
-            return layered
-        case .overhang:
-            return roll < 70 ? layered : rough
-        case .cluster:
-            return roll < 55 ? rough : base
-        case .cave:
-            return dark
-        case .boulder:
-            if roll < 20 { return smooth }
-            if roll < 70 { return base }
-            return rough
-        }
-    }
-
-    func mossOverlay() -> SKTexture { moss }
 }

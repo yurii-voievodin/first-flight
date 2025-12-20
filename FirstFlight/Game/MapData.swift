@@ -100,12 +100,9 @@ struct InteriorRockData: Codable {
 }
 
 struct SignatureFormationData: Codable {
-    let name: String
-    let description: String
     let position: Position
     let size: Size
     let type: String
-    let properties: [String: String]?
 
     var rockFormationType: RockFormationType {
         switch type.lowercased() {
@@ -133,8 +130,6 @@ struct SmallRockData: Codable {
 }
 
 struct LakeData: Codable {
-    let name: String?
-    let description: String?
     let position: Position
     let size: Size
     let depth: Double?

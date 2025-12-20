@@ -112,24 +112,12 @@ class MapLoader {
                 size: signatureFormation.size.cgSize,
                 position: signatureFormation.position.cgPoint
             )
-
-            // Store additional properties in userData for later use
-            rock.userData = NSMutableDictionary()
-            rock.userData?["name"] = signatureFormation.name
-            rock.userData?["description"] = signatureFormation.description
-
-            if let properties = signatureFormation.properties {
-                for (key, value) in properties {
-                    rock.userData?[key] = value
-                }
-            }
             
             let seed = rockSeed(x: signatureFormation.position.x, y: signatureFormation.position.y, extra: 3)
             rock.applyProceduralTextures(seed: seed)
 
             // Add debug info
             rock.debugInfo["type"] = signatureFormation.type
-            rock.debugInfo["name"] = signatureFormation.name
             rock.debugInfo["position"] = "(\(Int(signatureFormation.position.x)), \(Int(signatureFormation.position.y)))"
 
             rocks.append(rock)
@@ -163,8 +151,6 @@ class MapLoader {
 
         return lakeData.map { data in
             LakeNode(
-                name: data.name,
-                description: data.description,
                 position: data.position.cgPoint,
                 size: data.size.cgSize,
                 depth: CGFloat(data.depth ?? 1.0)
