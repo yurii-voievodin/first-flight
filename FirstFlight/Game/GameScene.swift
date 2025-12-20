@@ -298,8 +298,8 @@ final class GameScene: SKScene {
         particleSpawnTimer += deltaTime
         if particleSpawnTimer >= particleSpawnInterval {
             particleSpawnTimer = 0
-            for (_, impactPoint) in rocksBeingDamaged {
-                spawnImpactParticles(at: impactPoint)
+            for _ in rocksBeingDamaged {
+                spawnImpactParticles()
             }
         }
     }
@@ -561,11 +561,9 @@ extension GameScene: SKPhysicsContactDelegate {
 
     // MARK: - Impact Particle Effects
 
-    private func spawnImpactParticles(at impactPoint: CGPoint) {
-        // Spawn 2-3 debris particles
-        for _ in 0..<Int.random(in: 2...3) {
-            spawnDebrisParticle(at: impactPoint)
-        }
+    private func spawnImpactParticles() {
+        // Spawn 2-3 debris particles at the current beam tip
+        astronaut.spawnBeamDebris(in: self, count: Int.random(in: 2...3))
     }
 
     private func destroyRock(_ rock: RockFormation) {

@@ -501,6 +501,10 @@ class Player: SKNode {
         resetLeftArmPose(manageWalkCycle: true, animated: true)
     }
 
+    func spawnBeamDebris(in scene: SKScene, count: Int) {
+        blaster.spawnBeamDebris(in: scene, count: count)
+    }
+
     // MARK: - Animation
 
     private func startWalkingAnimation() {
