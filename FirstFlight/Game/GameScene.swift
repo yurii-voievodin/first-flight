@@ -118,10 +118,10 @@ final class GameScene: SKScene {
             }
 
             // Add small decorative rocks (generated fully in code, not from JSON)
-            let decorativeSmallRockCount = 100 // <- change this number to control how many you want
+            let decorativeSmallRockCount = 150 // <- change this number to control how many you want
             let smallRocks = generateDecorativeSmallRocks(
                 totalCount: decorativeSmallRockCount,
-                anchoredFraction: 0.5,
+                anchoredFraction: 0.8,
                 interiorRocks: rocks.interior,
                 lakes: lakes
             )
