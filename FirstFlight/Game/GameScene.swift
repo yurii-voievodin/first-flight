@@ -33,23 +33,14 @@ final class GameScene: SKScene {
     private var currentTarget: RockFormation?
     private let impactFeedback = UIImpactFeedbackGenerator(style: .light)
     private var hapticTimer: Timer?
-    
-    private var tileSet: SKTileSet!
-
-    // Tile grid configuration (source of truth)
-    private var tileSize: CGFloat = 128
-    private var tileColumns: Int = 0
-    private var tileRows: Int = 0
 
     override func didMove(to view: SKView) {
         setupScene()
-        loadMapFromJSON()          // reads tileGrid and sets scene size
-        generateTerrainTextures()  // uses fixed tileSize
-        setupTileMap()             // uses columns/rows from JSON
+        loadMapFromJSON()
         createCharacters()
         setupCamera()
         setupJoystick()
-        updateCameraConstraints() // Apply constraints after view is available
+        updateCameraConstraints()
     }
 
     private func setupScene() {
@@ -64,118 +55,27 @@ final class GameScene: SKScene {
         }
     }
     
-    private func generateTerrainTextures() {
-        let factory = TerrainTextureFactory()
-
-        // One tile group per tile coordinate so we can pass fieldOffset (removes visible seams)
-        var groups: [SKTileGroup] = []
-        groups.reserveCapacity(tileColumns * tileRows)
-
-        let seed: UInt32 = 42
-
-        for r in 0..<tileRows {
-            for c in 0..<tileColumns {
-                // Deterministic variation (no runtime randomness): 0.30 ... 0.70
-                let n = fbmNoise(x: c, y: r, seed: seed)
-                let dustAmount = Float(0.30 + (0.40 * n))
-
-                var p = TerrainTextureFactory.Params(size: Int(tileSize))
-                p.dustAmount = dustAmount
-
-                // Critical: offset into the infinite CI random field so tiles line up seamlessly
-                p.fieldOffset = CGPoint(
-                    x: CGFloat(c) * tileSize,
-                    y: CGFloat(r) * tileSize
-                )
-
-                let texture = factory.makeRockWithDustTexture(p)
-
-                let def = SKTileDefinition(texture: texture)
-                let rule = SKTileGroupRule(adjacency: .adjacencyAll, tileDefinitions: [def])
-                let group = SKTileGroup(rules: [rule])
-                groups.append(group)
-            }
-        }
-
-        tileSet = SKTileSet(tileGroups: groups)
-    }
-    
-    private func setupTileMap() {
-        guard tileSet != nil, tileColumns > 0, tileRows > 0 else { return }
-
-        let tileMap = SKTileMapNode(
-            tileSet: tileSet,
-            columns: tileColumns,
-            rows: tileRows,
-            tileSize: CGSize(width: tileSize, height: tileSize)
-        )
-
-        tileMap.name = "ground"
-        tileMap.zPosition = -100
-        tileMap.anchorPoint = CGPoint(x: 0, y: 0)
-        tileMap.position = .zero
-
-        let groups = tileSet.tileGroups
-        for r in 0..<tileRows {
-            for c in 0..<tileColumns {
-                let idx = (r * tileColumns) + c
-                tileMap.setTileGroup(groups[idx], forColumn: c, row: r)
-            }
-        }
-
-        addChild(tileMap)
-    }
-
-
-    /// Deterministic, cheap fBm-ish noise in [0, 1].
-    private func fbmNoise(x: Int, y: Int, seed: UInt32) -> CGFloat {
-        // 3 octaves of value noise
-        let n1 = valueNoise(x: x, y: y, seed: seed, scale: 1)
-        let n2 = valueNoise(x: x, y: y, seed: seed &+ 101, scale: 2)
-        let n3 = valueNoise(x: x, y: y, seed: seed &+ 202, scale: 4)
-
-        // Weighted sum (normalized)
-        let v = (0.55 * n1) + (0.30 * n2) + (0.15 * n3)
-        return min(1, max(0, v))
-    }
-
-    /// Deterministic value noise sampled on a grid (nearest, with implicit clustering via scale).
-    private func valueNoise(x: Int, y: Int, seed: UInt32, scale: Int) -> CGFloat {
-        let sx = x / max(1, scale)
-        let sy = y / max(1, scale)
-
-        let ux = UInt32(truncatingIfNeeded: sx)
-        let uy = UInt32(truncatingIfNeeded: sy)
-
-        // Hash (sx, sy, seed) -> [0,1) using wrapping 32-bit arithmetic
-        var h = (ux &* 374761393) &+ (uy &* 668265263)
-        h = h &+ seed &* 1442695041
-        h ^= h >> 13
-        h &*= 1274126177
-        h ^= h >> 16
-
-        return CGFloat(Double(h % 10_000) / 10_000.0)
-    }
-
     private func loadMapFromJSON() {
         do {
             // Try to load Map1.json
             let mapData = try MapLoader.shared.loadMap(named: "Map1")
 
-            // Read tile grid configuration (fixed tile size, grid defines map size)
+            // Create tile map from grid configuration
             let grid = MapLoader.shared.getTileGrid(from: mapData)
-            tileSize = CGFloat(grid.tileSize)
-            tileColumns = grid.columns
-            tileRows = grid.rows
+            let tileMap = TileMap(grid: grid)
 
-            // Scene size is derived strictly from the tile grid
+            // Scene size is derived from the tile map
             size = CGSize(
-                width: CGFloat(tileColumns) * tileSize,
-                height: CGFloat(tileRows) * tileSize
+                width: CGFloat(tileMap.tileColumns) * tileMap.tileSize,
+                height: CGFloat(tileMap.tileRows) * tileMap.tileSize
             )
-            print("🗺️ TileGrid loaded:")
-            print("  tileSize: \(tileSize)")
-            print("  columns: \(tileColumns), rows: \(tileRows)")
+
+            // Add tile map node to scene
+            addChild(tileMap.createNode())
+
+            print("Loaded:")
+            print("  tileSize: \(tileMap.tileSize)")
+            print("  columns: \(tileMap.tileColumns), rows: \(tileMap.tileRows)")
             print("  scene.size: \(size)")
 
             // Update player start position

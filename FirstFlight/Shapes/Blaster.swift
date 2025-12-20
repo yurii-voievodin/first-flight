@@ -85,7 +85,7 @@ final class Blaster: SKNode {
 
         beam.anchorPoint = CGPoint(x: 0.5, y: 1.0)
         beam.position = emitter.position
-        beam.zPosition = 3.5
+        beam.zPosition = 50
         beam.isHidden = true
         beam.alpha = 0
         beam.blendMode = .add

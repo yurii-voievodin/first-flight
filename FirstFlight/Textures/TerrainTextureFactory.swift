@@ -196,3 +196,41 @@ final class TerrainTextureFactory {
         return tex
     }
 }
+
+extension TerrainTextureFactory {
+    static func generateTerrainTextures(tileColumns: Int, tileRows: Int, tileSize: CGFloat) -> SKTileSet {
+        let factory = TerrainTextureFactory()
+        
+        // One tile group per tile coordinate so we can pass fieldOffset (removes visible seams)
+        var groups: [SKTileGroup] = []
+        groups.reserveCapacity(tileColumns * tileRows)
+        
+        let seed: UInt32 = 42
+        
+        for r in 0..<tileRows {
+            for c in 0..<tileColumns {
+                // Deterministic variation (no runtime randomness): 0.30 ... 0.70
+                let n  = CGFloat.fbmNoise(x: c, y: r, seed: seed)
+                let dustAmount = Float(0.30 + (0.40 * n))
+                
+                var p = TerrainTextureFactory.Params(size: Int(tileSize))
+                p.dustAmount = dustAmount
+                
+                // Critical: offset into the infinite CI random field so tiles line up seamlessly
+                p.fieldOffset = CGPoint(
+                    x: CGFloat(c) * tileSize,
+                    y: CGFloat(r) * tileSize
+                )
+                
+                let texture = factory.makeRockWithDustTexture(p)
+                
+                let def = SKTileDefinition(texture: texture)
+                let rule = SKTileGroupRule(adjacency: .adjacencyAll, tileDefinitions: [def])
+                let group = SKTileGroup(rules: [rule])
+                groups.append(group)
+            }
+        }
+        
+        return SKTileSet(tileGroups: groups)
+    }
+}
