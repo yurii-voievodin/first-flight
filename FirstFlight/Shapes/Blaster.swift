@@ -205,7 +205,7 @@ final class Blaster: SKNode {
         // Remove physics body to stop collision detection
         beam.physicsBody = nil
 
-        updateBeamState(animated: true)
+        updateBeamState()
     }
 
     private func updateBeamState(animated: Bool = false) {
