@@ -17,7 +17,7 @@ class RockFormation: SKShapeNode {
     var type: RockFormationType { formationType }
 
     // Strength system
-    private let rockSize: CGSize
+    let rockSize: CGSize
     let maxStrength: CGFloat
     private(set) var currentStrength: CGFloat
 

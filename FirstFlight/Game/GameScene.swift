@@ -27,7 +27,6 @@ final class GameScene: SKScene {
     // Particle effect system
     private var particleSpawnTimer: TimeInterval = 0
     private let particleSpawnInterval: TimeInterval = 0.04
-    private let debrisTexture = RockTextures.shared.baseTexture(for: .boulder, seed: 42)
 
     // Targeting system
     private var currentTarget: RockFormation?
@@ -168,6 +167,25 @@ final class GameScene: SKScene {
         virtualJoystick.position = CGPoint(x: xPosition, y: yPosition)
     }
 
+    private func beamEndPoint(towards rock: RockFormation) -> CGPoint {
+        // Use accumulated frame to get a stable center in scene coordinates
+        let rockFrame = rock.calculateAccumulatedFrame()
+        let targetPosition = CGPoint(x: rockFrame.midX, y: rockFrame.midY)
+
+        let dx = targetPosition.x - astronaut.position.x
+        let dy = targetPosition.y - astronaut.position.y
+        let angle = atan2(dy, dx)
+
+        let distanceToCenter = hypot(dx, dy)
+        let radius = max(rockFrame.width, rockFrame.height) * 0.5
+        let distanceToEdge = max(0, distanceToCenter - radius)
+
+        return CGPoint(
+            x: astronaut.position.x + cos(angle) * distanceToEdge,
+            y: astronaut.position.y + sin(angle) * distanceToEdge
+        )
+    }
+
     private func startFiringAtTarget(_ rock: RockFormation) {
         // Reset previous haptic feedback if any
         hapticTimer?.invalidate()
@@ -180,15 +198,19 @@ final class GameScene: SKScene {
             self?.impactFeedback.impactOccurred()
         }
 
-        // Calculate angle from player to rock center
-        let targetPosition = rock.centerPosition
+        // Calculate rock center in *scene* coordinates (more robust than relying on a custom centerPosition)
+        let rockFrame = rock.calculateAccumulatedFrame()
+        let targetPosition = CGPoint(x: rockFrame.midX, y: rockFrame.midY)
+
         let dx = targetPosition.x - astronaut.position.x
         let dy = targetPosition.y - astronaut.position.y
         let angle = atan2(dy, dx)
 
-        // Calculate distance from player to rock edge
+        // Approximate distance from player to rock edge using the rock's bounding circle.
+        // (Using /2 for radius; /4 underestimates and makes the beam look like it stops short.)
         let distanceToCenter = hypot(dx, dy)
-        let distanceToEdge = distanceToCenter - rock.radius
+        let radius = max(rockFrame.width, rockFrame.height) * 0.5
+        let distanceToEdge = max(0, distanceToCenter - radius)
 
         astronaut.startFiringBlaster(at: angle, distance: distanceToEdge)
     }
@@ -504,8 +526,9 @@ extension GameScene: SKPhysicsContactDelegate {
 
             if let rock = rockBody.node as? RockFormation {
                 print("  ✅ Starting damage on rock (strength: \(rock.currentStrength))")
-                print("  📍 Contact point: \(contact.contactPoint)")
-                rocksBeingDamaged[rock] = contact.contactPoint
+                let endPoint = beamEndPoint(towards: rock)
+                print("  📍 Beam end point: \(endPoint)")
+                rocksBeingDamaged[rock] = endPoint
             } else {
                 print("  ❌ Rock node not found")
             }
@@ -541,7 +564,7 @@ extension GameScene: SKPhysicsContactDelegate {
     private func spawnImpactParticles(at impactPoint: CGPoint) {
         // Spawn 2-3 debris particles
         for _ in 0..<Int.random(in: 2...3) {
-            spawnDebrisParticle(at: impactPoint, texture: debrisTexture)
+            spawnDebrisParticle(at: impactPoint)
         }
     }
 
