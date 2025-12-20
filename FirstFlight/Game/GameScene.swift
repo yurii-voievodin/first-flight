@@ -225,8 +225,6 @@ final class GameScene: SKScene {
             }
 
             // Print map info for debugging
-            let mapInfo = MapLoader.shared.getMapInfo(from: mapData)
-            print("Loaded map: \(mapInfo.name) v\(mapInfo.version) - \(mapInfo.description)")
             print("Total rocks: \(rocks.boundary.count) boundary, \(rocks.interior.count) interior, \(rocks.signature.count) signature, \(smallRocks.count) small")
             print("  Lakes: \(lakes.count)")
 

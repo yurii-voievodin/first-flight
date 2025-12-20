@@ -1,5 +1,3 @@
-
-
 struct PhysicsCategory {
     static let none: UInt32 = 0
     static let player: UInt32 = 0b1

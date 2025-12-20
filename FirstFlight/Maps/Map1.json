@@ -1,8 +1,6 @@
 {
   "metadata": {
-    "name": "Map1",
     "version": "1.0",
-    "description": "First custom map with organic boundaries and diverse rock formations",
     "tileGrid": {
       "tileSize": 128,
       "columns": 16,
@@ -22,176 +20,147 @@
     {
       "position": { "x": 250, "y": 350 },
       "size": { "width": 150, "height": 120 },
-      "type": "boulder",
-      "thickness": 120
+      "type": "boulder"
     },
     {
       "position": { "x": 780, "y": 620 },
       "size": { "width": 180, "height": 140 },
-      "type": "cluster",
-      "thickness": 140
+      "type": "cluster"
     },
     {
       "position": { "x": 1350, "y": 180 },
       "size": { "width": 160, "height": 110 },
-      "type": "boulder",
-      "thickness": 130
+      "type": "boulder"
     },
     {
       "position": { "x": 450, "y": 1250 },
       "size": { "width": 200, "height": 160 },
-      "type": "overhang",
-      "thickness": 150
+      "type": "overhang"
     },
     {
       "position": { "x": 1620, "y": 1420 },
       "size": { "width": 140, "height": 100 },
-      "type": "boulder",
-      "thickness": 110
+      "type": "boulder"
     },
     {
       "position": { "x": 920, "y": 280 },
       "size": { "width": 170, "height": 130 },
-      "type": "cluster",
-      "thickness": 135
+      "type": "cluster"
     },
     {
       "position": { "x": 1750, "y": 950 },
       "size": { "width": 160, "height": 120 },
-      "type": "boulder",
-      "thickness": 125
+      "type": "boulder"
     },
     {
       "position": { "x": 320, "y": 1680 },
       "size": { "width": 180, "height": 140 },
-      "type": "spire",
-      "thickness": 140
+      "type": "spire"
     },
     {
       "position": { "x": 1480, "y": 620 },
       "size": { "width": 150, "height": 110 },
-      "type": "boulder",
-      "thickness": 115
+      "type": "boulder"
     },
     {
       "position": { "x": 580, "y": 700 },
       "size": { "width": 140, "height": 160 },
-      "type": "cluster",
-      "thickness": 130
+      "type": "cluster"
     },
     {
       "position": { "x": 1120, "y": 1580 },
       "size": { "width": 160, "height": 140 },
-      "type": "boulder",
-      "thickness": 135
+      "type": "boulder"
     },
     {
       "position": { "x": 1850, "y": 380 },
       "size": { "width": 170, "height": 150 },
-      "type": "overhang",
-      "thickness": 145
+      "type": "overhang"
     },
     {
       "position": { "x": 280, "y": 750 },
       "size": { "width": 150, "height": 120 },
-      "type": "boulder",
-      "thickness": 120
+      "type": "boulder"
     },
     {
       "position": { "x": 1580, "y": 1780 },
       "size": { "width": 180, "height": 140 },
-      "type": "cluster",
-      "thickness": 140
+      "type": "cluster"
     },
     {
       "position": { "x": 820, "y": 1445 },
       "size": { "width": 160, "height": 130 },
-      "type": "boulder",
-      "thickness": 130
+      "type": "boulder"
     },
     {
       "position": { "x": 1320, "y": 820 },
       "size": { "width": 140, "height": 110 },
-      "type": "spire",
-      "thickness": 115
+      "type": "spire"
     },
     {
       "position": { "x": 1680, "y": 280 },
       "size": { "width": 160, "height": 120 },
-      "type": "cluster",
-      "thickness": 125
+      "type": "cluster"
     },
     {
       "position": { "x": 950, "y": 1720 },
       "size": { "width": 180, "height": 150 },
-      "type": "overhang",
-      "thickness": 145
+      "type": "overhang"
     },
     {
       "position": { "x": 220, "y": 1180 },
       "size": { "width": 150, "height": 120 },
-      "type": "boulder",
-      "thickness": 120
+      "type": "boulder"
     },
     {
       "position": { "x": 1420, "y": 1250 },
       "size": { "width": 170, "height": 130 },
-      "type": "cluster",
-      "thickness": 130
+      "type": "cluster"
     },
     {
       "position": { "x": 720, "y": 180 },
       "size": { "width": 160, "height": 140 },
-      "type": "boulder",
-      "thickness": 135
+      "type": "boulder"
     },
     {
       "position": { "x": 1180, "y": 420 },
       "size": { "width": 140, "height": 110 },
-      "type": "spire",
-      "thickness": 115
+      "type": "spire"
     },
     {
       "position": { "x": 380, "y": 1520 },
       "size": { "width": 160, "height": 150 },
-      "type": "boulder",
-      "thickness": 140
+      "type": "boulder"
     },
     {
       "position": { "x": 1780, "y": 1580 },
       "size": { "width": 170, "height": 130 },
-      "type": "cluster",
-      "thickness": 135
+      "type": "cluster"
     },
     {
       "position": { "x": 620, "y": 1080 },
       "size": { "width": 150, "height": 140 },
-      "type": "overhang",
-      "thickness": 140
+      "type": "overhang"
     },
     {
       "position": { "x": 1520, "y": 720 },
       "size": { "width": 180, "height": 120 },
-      "type": "boulder",
-      "thickness": 125
+      "type": "boulder"
     },
     {
       "position": { "x": 880, "y": 1180 },
       "size": { "width": 160, "height": 160 },
-      "type": "cluster",
-      "thickness": 145
+      "type": "cluster"
     },
     {
       "position": { "x": 1280, "y": 1650 },
       "size": { "width": 150, "height": 130 },
-      "type": "boulder",
-      "thickness": 130
+      "type": "boulder"
     },
     {
       "position": { "x": 180, "y": 580 },
       "size": { "width": 140, "height": 180 },
-      "type": "cluster",
-      "thickness": 140
+      "type": "cluster"
     }
   ],
   "interiorRocks": [

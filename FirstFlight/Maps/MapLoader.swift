@@ -65,9 +65,6 @@ class MapLoader {
             // Add debug info
             rock.debugInfo["type"] = boundaryRock.type
             rock.debugInfo["position"] = "(\(Int(boundaryRock.position.x)), \(Int(boundaryRock.position.y)))"
-            if let isGap = boundaryRock.isGap {
-                rock.debugInfo["isGap"] = String(isGap)
-            }
 
             rocks.append(rock)
         }
@@ -201,14 +198,6 @@ class MapLoader {
         return mapData.metadata.mapSize.cgSize
     }
 
-    func getMapInfo(from mapData: MapData) -> (name: String, description: String, version: String) {
-        return (
-            name: mapData.metadata.name,
-            description: mapData.metadata.description,
-            version: mapData.metadata.version
-        )
-    }
-
     // MARK: - Available Maps
 
     func getAvailableMaps() -> [String] {
@@ -310,28 +299,6 @@ class MapLoader {
 }
 
 // MARK: - Convenience Extensions
-
-extension MapLoader {
-
-    func loadMapQuietly(named mapName: String) -> MapData? {
-        do {
-            return try loadMap(named: mapName)
-        } catch {
-            print("Warning: Failed to load map '\(mapName)': \(error.localizedDescription)")
-            return nil
-        }
-    }
-
-    func createCompleteMap(from mapData: MapData, in scene: SKScene) {
-        let rocks = createAllRocks(from: mapData)
-
-        // Add all rocks to the scene
-        rocks.boundary.forEach { scene.addChild($0) }
-        rocks.interior.forEach { scene.addChild($0) }
-        rocks.signature.forEach { scene.addChild($0) }
-        createLakes(from: mapData).forEach { scene.addChild($0) }
-    }
-}
 
 extension MapLoader {
     

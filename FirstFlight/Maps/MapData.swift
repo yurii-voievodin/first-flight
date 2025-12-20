@@ -11,9 +11,7 @@ struct MapData: Codable {
 }
 
 struct MapMetadata: Codable {
-    let name: String
     let version: String
-    let description: String
 
     /// Grid-first tile configuration (preferred). Optional for backward compatibility.
     let tileGrid: TileGrid?
@@ -66,8 +64,6 @@ struct BoundaryRockData: Codable {
     let position: Position
     let size: Size
     let type: String
-    let thickness: Double?
-    let isGap: Bool?
 
     var rockFormationType: RockFormationType {
         switch type.lowercased() {
