@@ -9,7 +9,7 @@ import SpriteKit
 
 final class GameScene: SKScene {
 
-    let astronaut = Player()
+    private let astronaut = Player()
     private var gameCamera: SKCameraNode!
     private var rockFormations: [RockFormation] = []
     private var lakes: [LakeNode] = []
@@ -29,9 +29,7 @@ final class GameScene: SKScene {
     private let particleSpawnInterval: TimeInterval = 0.04
     private let debrisTexture = RockTextures.shared.baseTexture(for: .boulder, seed: 42)
 
-    // Proximity targeting system
-    private let sightRadius: CGFloat = 150
-    private var closestRockInRange: RockFormation?
+    // Targeting system
     private var currentTarget: RockFormation?
     
     private var tileSet: SKTileSet!
@@ -263,45 +261,6 @@ final class GameScene: SKScene {
         virtualJoystick.position = CGPoint(x: xPosition, y: yPosition)
     }
 
-    private func updateProximityDetection() {
-        let playerPos = astronaut.position
-
-        // Find closest rock within sight radius (check both interior and boundary rocks)
-        var closestRock: RockFormation?
-        var closestDistance: CGFloat = CGFloat.infinity
-
-        let allTargetableRocks = rockFormations + boundaryRocks
-
-        for rock in allTargetableRocks {
-            let rockPos = rock.position
-            let dx = rockPos.x - playerPos.x
-            let dy = rockPos.y - playerPos.y
-            let distanceToCenter = hypot(dx, dy)
-
-            // Effective distance = distance to edge, not center
-            let effectiveDistance = distanceToCenter - rock.maxRadius
-
-            if effectiveDistance < sightRadius && effectiveDistance < closestDistance {
-                closestDistance = effectiveDistance
-                closestRock = rock
-            }
-        }
-
-        // Update closest rock tracking
-        if closestRock !== closestRockInRange {
-            // Hide indicator on previous rock
-            closestRockInRange?.isCircleIndicatorVisible = false
-            // Show indicator on new closest rock
-            closestRock?.isCircleIndicatorVisible = true
-            closestRockInRange = closestRock
-        }
-
-        // If we have a target and it's destroyed, clear it
-        if let target = currentTarget, target.parent == nil {
-            stopFiringAtTarget()
-        }
-    }
-
     private func startFiringAtTarget(_ rock: RockFormation) {
         currentTarget = rock
 
@@ -330,11 +289,10 @@ final class GameScene: SKScene {
         guard let touch = touches.first else { return }
         let location = touch.location(in: self)
 
-        // Check if tap hit a highlighted rock
+        // Check if tap hit a rock
         let tappedNodes = nodes(at: location)
         for node in tappedNodes {
-            if let rock = node as? RockFormation,
-               rock.isCircleIndicatorVisible {
+            if let rock = node as? RockFormation {
                 startFiringAtTarget(rock)
                 return
             }
@@ -367,7 +325,11 @@ final class GameScene: SKScene {
         let deltaTime = lastUpdateTime == 0 ? 0 : currentTime - lastUpdateTime
         lastUpdateTime = currentTime
 
-        updateProximityDetection()
+        // Clear target if it's destroyed
+        if let target = currentTarget, target.parent == nil {
+            stopFiringAtTarget()
+        }
+
         updateCharacterMovement(deltaTime: currentTime)
         updateCamera()
         updateRockDamage(deltaTime: deltaTime)
