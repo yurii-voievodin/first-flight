@@ -167,22 +167,44 @@ final class GameScene: SKScene {
         virtualJoystick.position = CGPoint(x: xPosition, y: yPosition)
     }
 
-    private func beamEndPoint(towards rock: RockFormation) -> CGPoint {
-        // Use accumulated frame to get a stable center in scene coordinates
+    private func beamEndPoint(towards rock: RockFormation, inset: CGFloat = 4) -> CGPoint {
+        let start = astronaut.position
         let rockFrame = rock.calculateAccumulatedFrame()
         let targetPosition = CGPoint(x: rockFrame.midX, y: rockFrame.midY)
 
-        let dx = targetPosition.x - astronaut.position.x
-        let dy = targetPosition.y - astronaut.position.y
+        let dx = targetPosition.x - start.x
+        let dy = targetPosition.y - start.y
         let angle = atan2(dy, dx)
+        let direction = CGVector(dx: cos(angle), dy: sin(angle))
+
+        let farDistance = hypot(dx, dy) + max(rockFrame.width, rockFrame.height) * 4
+        let rayEnd = CGPoint(
+            x: start.x + direction.dx * farDistance,
+            y: start.y + direction.dy * farDistance
+        )
+
+        var hitPoint: CGPoint?
+        physicsWorld.enumerateBodies(alongRayStart: start, end: rayEnd) { body, point, _, stop in
+            if body == rock.physicsBody {
+                hitPoint = point
+                stop.pointee = true
+            }
+        }
+
+        if let hitPoint {
+            return CGPoint(
+                x: hitPoint.x - direction.dx * inset,
+                y: hitPoint.y - direction.dy * inset
+            )
+        }
 
         let distanceToCenter = hypot(dx, dy)
         let radius = max(rockFrame.width, rockFrame.height) * 0.5
         let distanceToEdge = max(0, distanceToCenter - radius)
 
         return CGPoint(
-            x: astronaut.position.x + cos(angle) * distanceToEdge,
-            y: astronaut.position.y + sin(angle) * distanceToEdge
+            x: start.x + direction.dx * distanceToEdge,
+            y: start.y + direction.dy * distanceToEdge
         )
     }
 
@@ -198,21 +220,13 @@ final class GameScene: SKScene {
             self?.impactFeedback.impactOccurred()
         }
 
-        // Calculate rock center in *scene* coordinates (more robust than relying on a custom centerPosition)
-        let rockFrame = rock.calculateAccumulatedFrame()
-        let targetPosition = CGPoint(x: rockFrame.midX, y: rockFrame.midY)
-
-        let dx = targetPosition.x - astronaut.position.x
-        let dy = targetPosition.y - astronaut.position.y
+        let endPoint = beamEndPoint(towards: rock)
+        let dx = endPoint.x - astronaut.position.x
+        let dy = endPoint.y - astronaut.position.y
         let angle = atan2(dy, dx)
+        let distance = hypot(dx, dy)
 
-        // Approximate distance from player to rock edge using the rock's bounding circle.
-        // (Using /2 for radius; /4 underestimates and makes the beam look like it stops short.)
-        let distanceToCenter = hypot(dx, dy)
-        let radius = max(rockFrame.width, rockFrame.height) * 0.5
-        let distanceToEdge = max(0, distanceToCenter - radius)
-
-        astronaut.startFiringBlaster(at: angle, distance: distanceToEdge)
+        astronaut.startFiringBlaster(at: angle, distance: distance)
     }
 
     private func stopFiringAtTarget() {
