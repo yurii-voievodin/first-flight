@@ -30,6 +30,10 @@ class RockFormation: SKShapeNode {
     var maxRadius: CGFloat {
         max(rockSize.width, rockSize.height) / 2
     }
+    
+    var radius: CGFloat {
+        max(rockSize.width, rockSize.height) / 4
+    }
 
     /// Visual center point of the rock in parent coordinates
     var centerPosition: CGPoint {

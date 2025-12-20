@@ -169,6 +169,9 @@ final class GameScene: SKScene {
     }
 
     private func startFiringAtTarget(_ rock: RockFormation) {
+        // Reset previous haptic feedback if any
+        hapticTimer?.invalidate()
+        hapticTimer = nil
         currentTarget = rock
 
         // Start haptic feedback
@@ -185,7 +188,7 @@ final class GameScene: SKScene {
 
         // Calculate distance from player to rock edge
         let distanceToCenter = hypot(dx, dy)
-        let distanceToEdge = distanceToCenter - rock.maxRadius
+        let distanceToEdge = distanceToCenter - rock.radius
 
         astronaut.startFiringBlaster(at: angle, distance: distanceToEdge)
     }
