@@ -20,7 +20,7 @@ final class GameScene: SKScene {
     var showDebugLabels: Bool = false
 
     // Beam damage system
-    private var rocksBeingDamaged: [RockFormation: CGPoint] = [:]
+    private var rocksBeingDamaged: Set<RockFormation> = []
     private var lastUpdateTime: TimeInterval = 0
     private let beamDamagePerSecond: CGFloat = 100
 
@@ -297,14 +297,14 @@ final class GameScene: SKScene {
         let damage = beamDamagePerSecond * CGFloat(deltaTime)
         var rocksToDestroy: [RockFormation] = []
 
-        for (rock, _) in rocksBeingDamaged {
+        for rock in rocksBeingDamaged {
             if rock.applyDamage(damage) {
                 rocksToDestroy.append(rock)
             }
         }
 
         for rock in rocksToDestroy {
-            rocksBeingDamaged.removeValue(forKey: rock)
+            rocksBeingDamaged.remove(rock)
             destroyRock(rock)
         }
 
@@ -542,7 +542,7 @@ extension GameScene: SKPhysicsContactDelegate {
                 print("  ✅ Starting damage on rock (strength: \(rock.currentStrength))")
                 let endPoint = beamEndPoint(towards: rock)
                 print("  📍 Beam end point: \(endPoint)")
-                rocksBeingDamaged[rock] = endPoint
+                rocksBeingDamaged.insert(rock)
             } else {
                 print("  ❌ Rock node not found")
             }
@@ -562,7 +562,7 @@ extension GameScene: SKPhysicsContactDelegate {
             let rockBody = contact.bodyA.categoryBitMask == PhysicsCategory.rock ? contact.bodyA : contact.bodyB
 
             if let rock = rockBody.node as? RockFormation {
-                rocksBeingDamaged.removeValue(forKey: rock)
+                rocksBeingDamaged.remove(rock)
             }
         }
 
