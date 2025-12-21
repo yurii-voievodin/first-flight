@@ -40,7 +40,7 @@ final class TerrainTextureFactory {
             .applyingFilter("CIColorControls", parameters: [
                 kCIInputBrightnessKey: CGFloat(p.globalBrightness),
                 kCIInputContrastKey: CGFloat(p.globalContrast),
-                kCIInputSaturationKey: 1.0
+                kCIInputSaturationKey: 0.0
             ])
             .applyingFilter("CIGammaAdjust", parameters: [
                 "inputPower": CGFloat(p.globalGamma)
@@ -52,10 +52,6 @@ final class TerrainTextureFactory {
 
         /// Pixel offset into the infinite noise field (set from tile coordinate: (x*size, y*size)).
         var fieldOffset: CGPoint = .zero
-
-        /// Layer toggles to simplify the look
-        var enableCraters: Bool = true
-        var enableSpeckles: Bool = false
 
         /// Strength 0..1 (lower = more uniform)
         var craterStrength: Float = 0.3
@@ -70,22 +66,20 @@ final class TerrainTextureFactory {
 
         // Dust
         var dustAmount: Float = 0.1        // 0..1
-        var dustPatchScale: Float = 16    // чим більше — тим більші плями
-        // Darker/less "chalky" dust so the ground doesn't read as white sand
-        var dustColor: CIColor = CIColor(red: 0.45, green: 0.32, blue: 0.22, alpha: 1.0) // “Mars-ish”, toned down
+        var dustPatchScale: Float = 5    // чим більше — тим більші плями
+        
+        var dustColor: CIColor = CIColor(red: 0.30, green: 0.31, blue: 0.34, alpha: 1)
 
         // Global (applied at the very end of texture generation)
         // These keep the noise structure intact while pushing the texture away from "white sand".
-        var globalBrightness: Float = -0.35      // darker overall
-        var globalContrast: Float = 0.95          // slightly lower contrast to avoid dark speckles popping too much
-        var globalGamma: Float = 1.3            // > 1 darkens mid/high tones (reduces the "chalky" look)
+        var globalBrightness: Float = -0.30      // darker overall
+        var globalContrast: Float = 0.92         // slightly lower contrast to avoid harsh speckles
+        var globalGamma: Float = 1.35            // > 1 darkens mid/high tones; < 1 brightens
     }
 
     func makeRockWithDustTexture(_ p: Params) -> SKTexture {
         let extent = CGRect(x: 0, y: 0, width: p.size, height: p.size)
-
-        // IMPORTANT: set p.fieldOffset per tile to eliminate seams:
-        // e.g. Params(fieldOffset: CGPoint(x: tileX * size, y: tileY * size), ...)
+        
 
         // 1) Base noise
         let baseNoise = randomField(extent: extent, offset: p.fieldOffset)
@@ -98,31 +92,6 @@ final class TerrainTextureFactory {
                 kCIInputBrightnessKey: p.rockBrightness - 0.20,
                 kCIInputSaturationKey: 0.0
             ])
-
-        let darkened: CIImage
-        if p.enableCraters {
-            let craterNoise = gaussianBlurWithBleed(
-                randomField(extent: extent, offset: CGPoint(x: p.fieldOffset.x + 911, y: p.fieldOffset.y + 127)),
-                radius: 6.0,
-                extent: extent
-            )
-            .applyingFilter("CIColorControls", parameters: [
-                kCIInputContrastKey: 1.35,
-                kCIInputBrightnessKey: -0.12,
-                kCIInputSaturationKey: 0.0
-            ])
-
-            // Control crater impact (0..1)
-            let craterAlpha = craterNoise.applyingFilter("CIColorMatrix", parameters: [
-                "inputAVector": CIVector(x: 0, y: 0, z: 0, w: CGFloat(p.craterStrength))
-            ])
-
-            darkened = rockGrain.applyingFilter("CIMultiplyCompositing", parameters: [
-                kCIInputBackgroundImageKey: craterAlpha
-            ])
-        } else {
-            darkened = rockGrain
-        }
 
         // 3) Dust mask (великі плями)
         let dustMaskSource = randomField(
@@ -150,7 +119,7 @@ final class TerrainTextureFactory {
 
         let dusted = dustColorImage
             .applyingFilter("CIBlendWithAlphaMask", parameters: [
-                kCIInputBackgroundImageKey: darkened,
+                kCIInputBackgroundImageKey: rockGrain,
                 kCIInputMaskImageKey: tunedMask
             ])
             .applyingFilter("CIColorControls", parameters: [
@@ -158,33 +127,8 @@ final class TerrainTextureFactory {
                 kCIInputContrastKey: 1.0
             ])
 
-        let final: CIImage
-        if p.enableSpeckles {
-            let specklesSource = randomField(
-                extent: extent,
-                offset: CGPoint(x: p.fieldOffset.x + 42, y: p.fieldOffset.y + 1337)
-            )
-            .applyingFilter("CIColorControls", parameters: [
-                kCIInputContrastKey: 0.95,
-                kCIInputBrightnessKey: -0.35,
-                kCIInputSaturationKey: 0.0
-            ])
-
-            let speckles = gaussianBlurWithBleed(specklesSource, radius: 1.35, extent: extent)
-                // Reduce speckle contribution (alpha) to keep the surface more uniform
-                .applyingFilter("CIColorMatrix", parameters: [
-                    "inputAVector": CIVector(x: 0, y: 0, z: 0, w: CGFloat(p.speckleOpacity))
-                ])
-
-            final = speckles.applyingFilter("CIScreenBlendMode", parameters: [
-                kCIInputBackgroundImageKey: dusted
-            ])
-        } else {
-            final = dusted
-        }
-
         // Global tuning at the very end (keeps noise structure intact)
-        let finalTuned = applyGlobalTuning(final, params: p)
+        let finalTuned = applyGlobalTuning(dusted, params: p)
 
         // Render → SKTexture
         guard let cg = ciContext.createCGImage(finalTuned, from: extent) else {
@@ -194,6 +138,27 @@ final class TerrainTextureFactory {
         tex.usesMipmaps = false
         tex.filteringMode = .linear
         return tex
+    }
+}
+
+extension TerrainTextureFactory.Params {
+
+    static func regolithBalanced(size: Int) -> Self {
+        var p = Self(size: size)
+        p.dustColor = CIColor(red: 0.34, green: 0.35, blue: 0.38, alpha: 1)
+        p.globalBrightness = -0.16
+        p.globalContrast   = 0.95
+        p.globalGamma      = 1.12
+        return p
+    }
+
+    static func regolithColder(size: Int) -> Self {
+        var p = Self(size: size)
+        p.dustColor = CIColor(red: 0.32, green: 0.33, blue: 0.37, alpha: 1)
+        p.globalBrightness = -0.14
+        p.globalContrast   = 0.94
+        p.globalGamma      = 1.10
+        return p
     }
 }
 
@@ -213,7 +178,7 @@ extension TerrainTextureFactory {
                 let n  = CGFloat.fbmNoise(x: c, y: r, seed: seed)
                 let dustAmount = Float(0.30 + (0.40 * n))
                 
-                var p = TerrainTextureFactory.Params(size: Int(tileSize))
+                var p = TerrainTextureFactory.Params.regolithColder(size: Int(tileSize))
                 p.dustAmount = dustAmount
                 
                 // Critical: offset into the infinite CI random field so tiles line up seamlessly
