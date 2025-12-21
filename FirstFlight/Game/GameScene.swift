@@ -253,7 +253,10 @@ final class GameScene: SKScene {
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
         let location = touch.location(in: self)
+        handleTap(at: location)
+    }
 
+    private func handleTap(at location: CGPoint) {
         // Check if tap hit a rock
         let tappedNodes = nodes(at: location)
         for node in tappedNodes {
@@ -470,5 +473,25 @@ extension GameScene: SKPhysicsContactDelegate {
 
         // Perform destruction animation
         rock.performDestructionAnimation { }
+    }
+}
+
+// MARK: - Testing Hooks
+
+extension GameScene {
+    var playerForTesting: Player { astronaut }
+    var targetableRocksForTesting: [RockFormation] { rockFormations }
+    var currentTargetForTesting: RockFormation? { currentTarget }
+
+    func handleTapForTesting(at location: CGPoint) {
+        handleTap(at: location)
+    }
+
+    func beginDamagingRockForTesting(_ rock: RockFormation) {
+        rocksBeingDamaged.insert(rock)
+    }
+
+    func stopFiringForTesting() {
+        stopFiringAtTarget()
     }
 }

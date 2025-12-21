@@ -29,17 +29,24 @@ final class Blaster: SKNode {
         barrel = SKShapeNode(rectOf: CGSize(width: 4.2, height: 12.5), cornerRadius: 1.6)
         emitter = SKShapeNode(circleOfRadius: 2.3)
         let beamSize = CGSize(width: 4, height: 120)
-        let beamTexture = Blaster.createRoundedBeamTexture(size: beamSize, cornerRadius: 3, color: SKColor.white.withAlphaComponent(0.5))
+        let beamTexture = SKTexture(imageNamed: "blaster_beam")
         beam = SKSpriteNode(texture: beamTexture, size: beamSize)
 
         super.init()
+
+        // Textures (expected to be in Assets / Sprite Atlas)
+        grip.fillTexture = SKTexture(imageNamed: "blaster_grip")
+        gripMount.fillTexture = SKTexture(imageNamed: "blaster_mount")
+        body.fillTexture = SKTexture(imageNamed: "blaster_body")
+        barrel.fillTexture = SKTexture(imageNamed: "blaster_barrel")
+        emitter.fillTexture = SKTexture(imageNamed: "blaster_emitter")
 
         position = CGPoint(x: 3, y: -4)
         zPosition = -1.0 // Low base so grip can hide behind hand
 
         grip.fillColor = SKColor(red: 0.2, green: 0.24, blue: 0.28, alpha: 1)
-        grip.strokeColor = SKColor.black.withAlphaComponent(0.35)
-        grip.lineWidth = 1
+        grip.strokeColor = .clear
+        grip.lineWidth = 0
         grip.position = CGPoint(x: -4.4, y: -3.8)
         grip.zRotation = -.pi / 2.08
         grip.zPosition = -1.0 // Behind hand to show grip is inside hand
@@ -55,30 +62,30 @@ final class Blaster: SKNode {
         mountPath.addQuadCurve(to: CGPoint(x: -6.0, y: 1.2), control: CGPoint(x: -0.8, y: 6.4))
         gripMount.path = mountPath
         gripMount.fillColor = SKColor(red: 0.33, green: 0.4, blue: 0.47, alpha: 1)
-        gripMount.strokeColor = SKColor.black.withAlphaComponent(0.25)
-        gripMount.lineWidth = 0.9
+        gripMount.strokeColor = .clear
+        gripMount.lineWidth = 0
         gripMount.lineJoin = .round
         gripMount.position = CGPoint(x: -2.2, y: -3.6)
         gripMount.zPosition = 1.0 // Above hand
         addChild(gripMount)
 
         body.fillColor = SKColor(red: 0.45, green: 0.52, blue: 0.6, alpha: 1)
-        body.strokeColor = SKColor.black.withAlphaComponent(0.28)
-        body.lineWidth = 1
+        body.strokeColor = .clear
+        body.lineWidth = 0
         body.position = CGPoint(x: 0.2, y: -9.6)
         body.zPosition = 1.5 // Above hand
         addChild(body)
 
         barrel.fillColor = SKColor(red: 0.72, green: 0.84, blue: 0.95, alpha: 0.9)
-        barrel.strokeColor = SKColor.white.withAlphaComponent(0.4)
-        barrel.lineWidth = 0.8
+        barrel.strokeColor = .clear
+        barrel.lineWidth = 0
         barrel.position = CGPoint(x: 0.2, y: -14.5)
         barrel.zPosition = 2.0 // Above hand
         addChild(barrel)
 
         emitter.fillColor = SKColor.cyan.withAlphaComponent(0.8)
-        emitter.strokeColor = SKColor.white.withAlphaComponent(0.6)
-        emitter.lineWidth = 0.6
+        emitter.strokeColor = .clear
+        emitter.lineWidth = 0
         emitter.position = CGPoint(x: 0.2, y: -21)
         emitter.zPosition = 2.5 // Above hand
         addChild(emitter)
@@ -89,6 +96,8 @@ final class Blaster: SKNode {
         beam.isHidden = true
         beam.alpha = 0
         beam.blendMode = .add
+        beam.color = .white
+        beam.colorBlendFactor = 1.0
         // Physics body will be created when firing starts
 
         addChild(beam)
@@ -174,12 +183,6 @@ final class Blaster: SKNode {
         let beamWidth: CGFloat = 4
 
         // Resize beam sprite
-        let newTexture = Blaster.createRoundedBeamTexture(
-            size: CGSize(width: beamWidth, height: beamLength),
-            cornerRadius: 3,
-            color: SKColor.white.withAlphaComponent(0.2)
-        )
-        beam.texture = newTexture
         beam.size = CGSize(width: beamWidth, height: beamLength)
 
         // Create physics body for collision detection with new size
@@ -286,14 +289,7 @@ final class Blaster: SKNode {
         particle.run(.sequence([group, .removeFromParent()]))
     }
 
-    private static func createRoundedBeamTexture(size: CGSize, cornerRadius: CGFloat, color: SKColor) -> SKTexture {
-        let renderer = UIGraphicsImageRenderer(size: size)
-        let image = renderer.image { _ in
-            let rect = CGRect(origin: .zero, size: size)
-            let path = UIBezierPath(roundedRect: rect, cornerRadius: cornerRadius)
-            color.setFill()
-            path.fill()
-        }
-        return SKTexture(image: image)
+    var isBeamVisibleForTesting: Bool {
+        !beam.isHidden && beam.alpha > 0.01
     }
 }

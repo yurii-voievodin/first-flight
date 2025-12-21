@@ -508,6 +508,10 @@ class Player: SKNode {
         blaster.spawnBeamDebris(in: scene, count: count)
     }
 
+    var isBeamVisibleForTesting: Bool {
+        blaster.isBeamVisibleForTesting
+    }
+
     // MARK: - Animation
 
     private func startWalkingAnimation() {
