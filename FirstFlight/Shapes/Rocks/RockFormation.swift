@@ -10,7 +10,7 @@ enum RockFormationType {
 
 class RockFormation: SKShapeNode {
     /// Extra collision padding so the player can't get too close (helps avoid head/rock z-overlap issues)
-    private static let collisionPadding: CGFloat = 16
+    private static let collisionPadding: CGFloat = 8
     private let formationType: RockFormationType
     private var debugLabel: SKLabelNode?
     
