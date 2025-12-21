@@ -206,15 +206,6 @@ class MapLoader {
         return contents.sorted()
     }
 
-    func debugBundleInfo() {
-        print("=== Bundle Debug Info ===")
-        print("Bundle path: \(Bundle.main.bundlePath)")
-        print("Available maps: \(getAvailableMaps())")
-        print("All bundle contents:")
-        getBundleContents().forEach { print("  - \($0)") }
-        print("========================")
-    }
-
     // MARK: - Validation
 
     private func validateMapData(_ mapData: MapData) throws {

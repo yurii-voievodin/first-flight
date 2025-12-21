@@ -129,11 +129,7 @@ final class GameScene: SKScene {
             for smallRock in smallRocks {
                 addChild(smallRock)
             }
-
-            // Print map info for debugging
-            print("Total rocks: \(rocks.boundary.count) boundary, \(rocks.interior.count) interior, \(rocks.signature.count) signature, \(smallRocks.count) small")
-            print("  Lakes: \(lakes.count)")
-
+            
         } catch {
             print("ERROR: Failed to load Map1.json: \(error.localizedDescription)")
             print("Cannot start game without valid map data.")
@@ -374,27 +370,19 @@ extension GameScene: SKPhysicsContactDelegate {
         print("🔵 COLLISION DETECTED:")
         print("  Body A: \(contact.bodyA.categoryBitMask) (\(categoryName(contact.bodyA.categoryBitMask)))")
         print("  Body B: \(contact.bodyB.categoryBitMask) (\(categoryName(contact.bodyB.categoryBitMask)))")
-        print("  Combined: \(collision)")
 
         // Check if player collided with wall or rock
         if collision == PhysicsCategory.player | PhysicsCategory.wall ||
            collision == PhysicsCategory.player | PhysicsCategory.rock {
-            print("  ➡️ Player collision - stopping movement")
             astronaut.stopMovement()
         }
 
         // Check if blaster beam hit a rock - start tracking damage
         if collision == PhysicsCategory.blasterBeam | PhysicsCategory.rock {
-            print("  ➡️ Beam-Rock collision detected!")
             let rockBody = contact.bodyA.categoryBitMask == PhysicsCategory.rock ? contact.bodyA : contact.bodyB
 
             if let rock = rockBody.node as? RockFormation {
-                print("  ✅ Starting damage on rock (strength: \(rock.currentStrength))")
-                let endPoint = beamEndPoint(towards: rock)
-                print("  📍 Beam end point: \(endPoint)")
                 rocksBeingDamaged.insert(rock)
-            } else {
-                print("  ❌ Rock node not found")
             }
         }
 
