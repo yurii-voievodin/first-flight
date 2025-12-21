@@ -53,14 +53,6 @@ final class TerrainTextureFactory {
         /// Pixel offset into the infinite noise field (set from tile coordinate: (x*size, y*size)).
         var fieldOffset: CGPoint = .zero
 
-        /// Strength 0..1 (lower = more uniform)
-        var craterStrength: Float = 0.3
-
-        // Rock
-        var rockContrast: Float = 1.12
-        var rockBrightness: Float = -0.05
-        var rockSharpness: Float = 0.18
-
         // Micro detail
         var speckleOpacity: Float = 0.2   // 0..1, lower = more homogeneous
 
@@ -69,6 +61,9 @@ final class TerrainTextureFactory {
         var dustPatchScale: Float = 5    // чим більше — тим більші плями
         
         var dustColor: CIColor = CIColor(red: 0.30, green: 0.31, blue: 0.34, alpha: 1)
+
+        // Base surface (solid) — keeps the texture calm and avoids heavy visual noise.
+        var baseColor: CIColor = CIColor(red: 0.10, green: 0.11, blue: 0.12, alpha: 1)
 
         // Global (applied at the very end of texture generation)
         // These keep the noise structure intact while pushing the texture away from "white sand".
@@ -80,18 +75,31 @@ final class TerrainTextureFactory {
     func makeRockWithDustTexture(_ p: Params) -> SKTexture {
         let extent = CGRect(x: 0, y: 0, width: p.size, height: p.size)
         
+        
+        // 1) Base surface (solid) — no heavy random noise by default.
+        let base = CIImage(color: p.baseColor).cropped(to: extent)
 
-        // 1) Base noise
-        let baseNoise = randomField(extent: extent, offset: p.fieldOffset)
+        // Optional: very subtle micro-grain to avoid a perfectly flat look.
+        // Keep `speckleOpacity` small (e.g. 0.02...0.08) for a calm result.
+        let microGrain: CIImage
+        if p.speckleOpacity > 0.0001 {
+            let grainSource = randomField(extent: extent, offset: p.fieldOffset, scale: 1.0)
+            microGrain = gaussianBlurWithBleed(grainSource, radius: 0.8, extent: extent)
+                .applyingFilter("CIColorControls", parameters: [
+                    kCIInputContrastKey: 0.75,
+                    kCIInputBrightnessKey: -0.25,
+                    kCIInputSaturationKey: 0.0
+                ])
+                .applyingFilter("CIOpacity", parameters: [
+                    "inputOpacity": CGFloat(p.speckleOpacity)
+                ])
+        } else {
+            microGrain = CIImage.empty()
+        }
 
-        // Зерно каменю: blur → підняти контраст
-        let rockGrain = gaussianBlurWithBleed(baseNoise, radius: 2.6, extent: extent)
-            .applyingFilter("CISharpenLuminance", parameters: [kCIInputSharpnessKey: p.rockSharpness])
-            .applyingFilter("CIColorControls", parameters: [
-                kCIInputContrastKey: p.rockContrast,
-                kCIInputBrightnessKey: p.rockBrightness - 0.20,
-                kCIInputSaturationKey: 0.0
-            ])
+        let baseWithGrain = microGrain.applyingFilter("CISourceOverCompositing", parameters: [
+            kCIInputBackgroundImageKey: base
+        ])
 
         // 3) Dust mask (великі плями)
         let dustMaskSource = randomField(
@@ -119,7 +127,7 @@ final class TerrainTextureFactory {
 
         let dusted = dustColorImage
             .applyingFilter("CIBlendWithAlphaMask", parameters: [
-                kCIInputBackgroundImageKey: rockGrain,
+                kCIInputBackgroundImageKey: baseWithGrain,
                 kCIInputMaskImageKey: tunedMask
             ])
             .applyingFilter("CIColorControls", parameters: [
@@ -127,7 +135,7 @@ final class TerrainTextureFactory {
                 kCIInputContrastKey: 1.0
             ])
 
-        // Global tuning at the very end (keeps noise structure intact)
+        // Global tuning at the very end
         let finalTuned = applyGlobalTuning(dusted, params: p)
 
         // Render → SKTexture
@@ -145,6 +153,7 @@ extension TerrainTextureFactory.Params {
 
     static func regolithBalanced(size: Int) -> Self {
         var p = Self(size: size)
+        p.baseColor = CIColor(red: 0.11, green: 0.12, blue: 0.13, alpha: 1)
         p.dustColor = CIColor(red: 0.34, green: 0.35, blue: 0.38, alpha: 1)
         p.globalBrightness = -0.16
         p.globalContrast   = 0.95
@@ -154,6 +163,7 @@ extension TerrainTextureFactory.Params {
 
     static func regolithColder(size: Int) -> Self {
         var p = Self(size: size)
+        p.baseColor = CIColor(red: 0.10, green: 0.11, blue: 0.13, alpha: 1)
         p.dustColor = CIColor(red: 0.32, green: 0.33, blue: 0.37, alpha: 1)
         p.globalBrightness = -0.14
         p.globalContrast   = 0.94
@@ -170,22 +180,16 @@ extension TerrainTextureFactory {
         var groups: [SKTileGroup] = []
         groups.reserveCapacity(tileColumns * tileRows)
         
-        let seed: UInt32 = 42
-        
         for r in 0..<tileRows {
             for c in 0..<tileColumns {
-                // Deterministic variation (no runtime randomness): 0.30 ... 0.70
-                let n  = CGFloat.fbmNoise(x: c, y: r, seed: seed)
-                let dustAmount = Float(0.30 + (0.40 * n))
+                let dustAmount = Float(0.10)
                 
                 var p = TerrainTextureFactory.Params.regolithColder(size: Int(tileSize))
                 p.dustAmount = dustAmount
-                
-                // Critical: offset into the infinite CI random field so tiles line up seamlessly
-                p.fieldOffset = CGPoint(
-                    x: CGFloat(c) * tileSize,
-                    y: CGFloat(r) * tileSize
-                )
+                p.fieldOffset = CGPoint(x: CGFloat(c) * tileSize, y: CGFloat(r) * tileSize)
+
+                // Keep micro-grain calm by default.
+                p.speckleOpacity = 0.7
                 
                 let texture = factory.makeRockWithDustTexture(p)
                 
