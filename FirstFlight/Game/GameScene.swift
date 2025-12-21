@@ -547,6 +547,11 @@ extension GameScene: SKPhysicsContactDelegate {
                 print("  ❌ Rock node not found")
             }
         }
+
+        // Check if player entered water
+        if collision == PhysicsCategory.player | PhysicsCategory.terrain {
+            astronaut.setInWater(true)
+        }
     }
 
     func didEnd(_ contact: SKPhysicsContact) {
@@ -559,6 +564,11 @@ extension GameScene: SKPhysicsContactDelegate {
             if let rock = rockBody.node as? RockFormation {
                 rocksBeingDamaged.removeValue(forKey: rock)
             }
+        }
+
+        // Check if player exited water
+        if collision == PhysicsCategory.player | PhysicsCategory.terrain {
+            astronaut.setInWater(false)
         }
     }
 

@@ -97,7 +97,7 @@ class LakeNode: SKShapeNode {
         physicsBody = SKPhysicsBody(polygonFrom: lakePath)
         physicsBody?.categoryBitMask = PhysicsCategory.terrain
         physicsBody?.contactTestBitMask = PhysicsCategory.player
-        physicsBody?.collisionBitMask = PhysicsCategory.player
+        physicsBody?.collisionBitMask = PhysicsCategory.none
         physicsBody?.isDynamic = false
         physicsBody?.friction = 0.2
         physicsBody?.restitution = 0.0
@@ -199,8 +199,9 @@ class LakeNode: SKShapeNode {
             crop.addChild(gradient)
             crop.addChild(ripples)
 
-            // Place under the outline.
-            crop.zPosition = -1
+            // Place water surface between player legs and torso
+            // Parent (LakeNode) is at -20, so +11 gives absolute -9
+            crop.zPosition = 11
             addChild(crop)
 
             self.cropNode = crop

@@ -54,6 +54,7 @@ class Player: SKNode {
     private var facingDirection: FacingDirection = .down
     private(set) var isFiring = false
     private(set) var isWalking = false
+    private(set) var isInWater = false
     private var lastWalkingDirection: FacingDirection?
 
     // Body parts
@@ -746,6 +747,21 @@ class Player: SKNode {
 
         isWalking = false
         lastWalkingDirection = nil  // Reset direction tracking
+    }
+
+    // MARK: - Water State
+
+    func setInWater(_ inWater: Bool) {
+        guard inWater != isInWater else { return }
+        isInWater = inWater
+
+        // Adjust leg z-positions so they render behind water surface
+        // Water surface is at absolute -9, player base is at -10
+        // Lowering thigh z-position by 10 puts legs at -20 (behind water at -9)
+        let legZOffset: CGFloat = inWater ? -10 : 0
+
+        leftThigh.zPosition = legZOffset
+        rightThigh.zPosition = legZOffset
     }
 }
 
