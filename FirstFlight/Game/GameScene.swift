@@ -33,6 +33,9 @@ final class GameScene: SKScene {
     private let impactFeedback = UIImpactFeedbackGenerator(style: .light)
     private var hapticTimer: Timer?
 
+    // Map size (stored separately because scene.size changes with scaleMode)
+    private var mapSize: CGSize = .zero
+
     override func didMove(to view: SKView) {
         setupScene()
         loadMapFromJSON()
@@ -63,11 +66,20 @@ final class GameScene: SKScene {
             let grid = MapLoader.shared.getTileGrid(from: mapData)
             let tileMap = TileMap(grid: grid)
 
-            // Scene size is derived from the tile map
-            size = CGSize(
+            // Store map size for camera constraints (scene.size changes with scaleMode)
+            mapSize = CGSize(
                 width: CGFloat(tileMap.tileColumns) * tileMap.tileSize,
                 height: CGFloat(tileMap.tileRows) * tileMap.tileSize
             )
+            size = mapSize
+
+            // Add invisible physics boundary around the map
+            let mapRect = CGRect(origin: .zero, size: mapSize)
+            let boundary = SKNode()
+            boundary.physicsBody = SKPhysicsBody(edgeLoopFrom: mapRect)
+            boundary.physicsBody?.categoryBitMask = PhysicsCategory.wall
+            boundary.physicsBody?.collisionBitMask = PhysicsCategory.player
+            addChild(boundary)
 
             // Add tile map node to scene
             addChild(tileMap.createNode())
@@ -255,18 +267,20 @@ final class GameScene: SKScene {
     override func didChangeSize(_ oldSize: CGSize) {
         super.didChangeSize(oldSize)
         updateJoystickPosition()
+        updateCameraConstraints()
     }
 
     private func updateCameraConstraints() {
-        guard let view = view, gameCamera != nil else { return }
+        guard let view = view, gameCamera != nil, mapSize != .zero else { return }
 
         // Account for viewport size when constraining camera position
         let viewportWidth = view.bounds.width
         let viewportHeight = view.bounds.height
 
-        // Camera position must be constrained so viewport edges don't exceed scene bounds
-        let xRange = SKRange(lowerLimit: viewportWidth / 2, upperLimit: size.width - viewportWidth / 2)
-        let yRange = SKRange(lowerLimit: viewportHeight / 2, upperLimit: size.height - viewportHeight / 2)
+        // Camera position must be constrained so viewport edges don't exceed map bounds
+        let xRange = SKRange(lowerLimit: viewportWidth / 2, upperLimit: mapSize.width - viewportWidth / 2)
+        let yRange = SKRange(lowerLimit: viewportHeight / 2, upperLimit: mapSize.height - viewportHeight / 2)
+
         let edgeConstraint = SKConstraint.positionX(xRange, y: yRange)
         edgeConstraint.referenceNode = self
 
