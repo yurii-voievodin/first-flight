@@ -12,6 +12,37 @@ import Testing
 
 struct FirstFlightTests {
 
+    @Test @MainActor func playerFiringTogglesBeamVisibility() {
+        let view = SKView(frame: CGRect(x: 0, y: 0, width: 512, height: 384))
+        let scene = SKScene(size: view.bounds.size)
+        scene.scaleMode = .resizeFill
+        view.presentScene(scene)
+
+        let player = Player()
+        player.position = CGPoint(x: 100, y: 100)
+        scene.addChild(player)
+
+        player.startFiringBlaster(at: 0, distance: 120)
+        #expect(player.isFiring)
+
+        let beamDeadline = Date().addingTimeInterval(0.3)
+        var beamVisible = false
+
+        while Date() < beamDeadline {
+            RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+            if player.isBeamVisibleForTesting {
+                beamVisible = true
+                break
+            }
+        }
+
+        #expect(beamVisible)
+
+        player.stopFiringBlaster()
+        #expect(player.isFiring == false)
+        #expect(player.isBeamVisibleForTesting == false)
+    }
+
     @Test @MainActor func tapNearestRockDamagesAndDestroysIt() {
         let view = SKView(frame: CGRect(x: 0, y: 0, width: 1024, height: 768))
         let scene = GameScene(size: view.bounds.size)
@@ -73,6 +104,32 @@ struct FirstFlightTests {
         #expect(scene.playerForTesting.isFiring == false)
     }
 
+    @Test @MainActor func joystickInputSetsPlayerVelocity() {
+        let view = SKView(frame: CGRect(x: 0, y: 0, width: 800, height: 600))
+        let scene = GameScene(size: view.bounds.size)
+        scene.scaleMode = .resizeFill
+        view.presentScene(scene)
+
+        scene.setJoystickDirectionForTesting(CGVector(dx: 1, dy: 0))
+        scene.update(1.0)
+
+        let velocity = scene.playerForTesting.physicsBody?.velocity ?? .zero
+        #expect(hypot(velocity.dx, velocity.dy) > 0.1)
+    }
+
+    @Test @MainActor func cameraFollowsPlayer() {
+        let view = SKView(frame: CGRect(x: 0, y: 0, width: 800, height: 600))
+        let scene = GameScene(size: view.bounds.size)
+        scene.scaleMode = .resizeFill
+        view.presentScene(scene)
+
+        let initialCamera = scene.cameraPositionForTesting
+        scene.setPlayerPositionForTesting(CGPoint(x: initialCamera.x + 200, y: initialCamera.y + 120))
+        scene.update(1.0)
+
+        let updatedCamera = scene.cameraPositionForTesting
+        #expect(hypot(updatedCamera.x - initialCamera.x, updatedCamera.y - initialCamera.y) > 0.1)
+    }
 }
 
 private func nearestRock(to position: CGPoint, in rocks: [RockFormation]) -> RockFormation? {

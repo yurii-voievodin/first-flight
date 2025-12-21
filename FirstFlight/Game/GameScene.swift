@@ -482,6 +482,7 @@ extension GameScene {
     var playerForTesting: Player { astronaut }
     var targetableRocksForTesting: [RockFormation] { rockFormations }
     var currentTargetForTesting: RockFormation? { currentTarget }
+    var cameraPositionForTesting: CGPoint { gameCamera.position }
 
     func handleTapForTesting(at location: CGPoint) {
         handleTap(at: location)
@@ -493,5 +494,13 @@ extension GameScene {
 
     func stopFiringForTesting() {
         stopFiringAtTarget()
+    }
+
+    func setJoystickDirectionForTesting(_ direction: CGVector) {
+        virtualJoystick?.currentDirection = direction
+    }
+
+    func setPlayerPositionForTesting(_ position: CGPoint) {
+        astronaut.position = position
     }
 }
