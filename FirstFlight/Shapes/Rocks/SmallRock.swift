@@ -122,5 +122,48 @@ class SmallRock: SKShapeNode {
 
         lineWidth = 1.0
         zPosition = -11 // Below player (player is at -10)
+
+        addSoftShadowAndHighlight()
+    }
+
+    private func addSoftShadowAndHighlight() {
+        guard let path = self.path else { return }
+
+        let bounds = path.boundingBox
+        let offset = CGSize(width: bounds.width * 0.04, height: bounds.height * 0.04)
+
+        // Soft shadow with blur
+        let shadowShape = SKShapeNode(path: path)
+        shadowShape.fillColor = .black
+        shadowShape.strokeColor = .clear
+        shadowShape.lineWidth = 0
+        shadowShape.alpha = 0.35
+        shadowShape.blendMode = .multiply
+
+        let shadowEffect = SKEffectNode()
+        shadowEffect.name = "rock-shadow"
+        shadowEffect.shouldRasterize = true
+        shadowEffect.filter = CIFilter(name: "CIGaussianBlur", parameters: [kCIInputRadiusKey: 1.5])
+        shadowEffect.position = CGPoint(x: offset.width, y: -offset.height)
+        shadowEffect.addChild(shadowShape)
+
+        // Subtle highlight with blur
+        let highlightShape = SKShapeNode(path: path)
+        highlightShape.fillColor = .white
+        highlightShape.strokeColor = .clear
+        highlightShape.lineWidth = 0
+        highlightShape.alpha = 0.15
+        highlightShape.blendMode = .add
+        highlightShape.setScale(0.92)
+
+        let highlightEffect = SKEffectNode()
+        highlightEffect.name = "rock-highlight"
+        highlightEffect.shouldRasterize = true
+        highlightEffect.filter = CIFilter(name: "CIGaussianBlur", parameters: [kCIInputRadiusKey: 1])
+        highlightEffect.position = CGPoint(x: -offset.width * 0.6, y: offset.height * 0.6)
+        highlightEffect.addChild(highlightShape)
+
+        addChild(shadowEffect)
+        addChild(highlightEffect)
     }
 }
