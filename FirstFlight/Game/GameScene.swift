@@ -25,6 +25,7 @@ final class GameScene: SKScene {
     private var lastUpdateTime: TimeInterval = 0
     private let beamDamagePerSecond: CGFloat = 100
     private let energyDrainPerSecond: CGFloat = 5.0
+    private let energyRechargePerSecond: CGFloat = 2.5
 
     // Particle effect system
     private var particleSpawnTimer: TimeInterval = 0
@@ -331,6 +332,8 @@ final class GameScene: SKScene {
         updateCharacterMovement(deltaTime: currentTime)
         updateCamera()
         updateRockDamage(deltaTime: deltaTime)
+        updateEnergyRecharge(deltaTime: deltaTime)
+        updateRechargeButtonVisibility()
     }
 
     private func updateRockDamage(deltaTime: TimeInterval) {
@@ -369,6 +372,31 @@ final class GameScene: SKScene {
                 spawnImpactParticles()
             }
         }
+    }
+
+    private func updateEnergyRecharge(deltaTime: TimeInterval) {
+        guard deltaTime > 0 else { return }
+        guard energyBar.isRecharging else { return }
+
+        // Only recharge if still in water
+        guard astronaut.isInWater else {
+            energyBar.stopRecharging()
+            return
+        }
+
+        // Recharge energy
+        let rechargeAmount = energyRechargePerSecond * CGFloat(deltaTime)
+        astronaut.addEnergy(rechargeAmount)
+        energyBar.update(currentEnergy: astronaut.currentEnergy, maxEnergy: astronaut.maxEnergy)
+
+        // Check if energy is now full
+        if astronaut.currentEnergy >= astronaut.maxEnergy {
+            energyBar.checkEnergyFull()
+        }
+    }
+
+    private func updateRechargeButtonVisibility() {
+        energyBar.updateRechargeButtonVisibility(isInWater: astronaut.isInWater)
     }
 
     private func updateCharacterMovement(deltaTime: TimeInterval) {
