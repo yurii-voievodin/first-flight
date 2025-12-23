@@ -470,7 +470,6 @@ class RockFormation: SKShapeNode {
         shadowEffect.shouldRasterize = true
         shadowEffect.filter = CIFilter(name: "CIGaussianBlur", parameters: [kCIInputRadiusKey: 5])
         shadowEffect.position = CGPoint(x: offset.width, y: -offset.height)
-        shadowEffect.zPosition = 0.2
         shadowEffect.addChild(shadowShape)
 
         // Легкий блік, трохи менший за силует і з blur
@@ -487,7 +486,6 @@ class RockFormation: SKShapeNode {
         highlightEffect.shouldRasterize = true
         highlightEffect.filter = CIFilter(name: "CIGaussianBlur", parameters: [kCIInputRadiusKey: 4])
         highlightEffect.position = CGPoint(x: -offset.width * 0.6, y: offset.height * 0.6)
-        highlightEffect.zPosition = 0.25
         highlightEffect.addChild(highlightShape)
 
         addChild(shadowEffect)
