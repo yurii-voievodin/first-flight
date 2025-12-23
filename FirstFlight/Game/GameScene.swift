@@ -24,6 +24,7 @@ final class GameScene: SKScene {
     private var rocksBeingDamaged: Set<RockFormation> = []
     private var lastUpdateTime: TimeInterval = 0
     private let beamDamagePerSecond: CGFloat = 100
+    private let energyDrainPerSecond: CGFloat = 5.0
 
     // Particle effect system
     private var particleSpawnTimer: TimeInterval = 0
@@ -241,6 +242,9 @@ final class GameScene: SKScene {
     }
 
     private func startFiringAtTarget(_ rock: RockFormation) {
+        // Check if player has energy to fire
+        guard astronaut.currentEnergy > 0 else { return }
+
         // Reset previous haptic feedback if any
         hapticTimer?.invalidate()
         hapticTimer = nil
@@ -331,6 +335,17 @@ final class GameScene: SKScene {
 
     private func updateRockDamage(deltaTime: TimeInterval) {
         guard deltaTime > 0, !rocksBeingDamaged.isEmpty else { return }
+
+        // Drain energy while firing
+        let energyDrain = energyDrainPerSecond * CGFloat(deltaTime)
+        astronaut.spendEnergy(energyDrain)
+        energyBar.update(currentEnergy: astronaut.currentEnergy, maxEnergy: astronaut.maxEnergy)
+
+        // Stop firing if out of energy
+        if astronaut.currentEnergy <= 0 {
+            stopFiringAtTarget()
+            return
+        }
 
         let damage = beamDamagePerSecond * CGFloat(deltaTime)
         var rocksToDestroy: [RockFormation] = []

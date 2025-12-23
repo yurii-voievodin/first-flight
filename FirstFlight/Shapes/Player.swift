@@ -59,8 +59,8 @@ class Player: SKNode {
 
     // MARK: - Energy System
 
-    private(set) var currentEnergy: Int = 50
-    private(set) var maxEnergy: Int = 50
+    private(set) var currentEnergy: CGFloat = 50.0
+    private(set) var maxEnergy: CGFloat = 50.0
 
     // Body parts
     private var body: SKSpriteNode!
@@ -778,17 +778,17 @@ class Player: SKNode {
     // MARK: - Energy Methods
 
     @discardableResult
-    func spendEnergy(_ amount: Int) -> Bool {
-        guard currentEnergy >= amount else { return false }
-        currentEnergy -= amount
+    func spendEnergy(_ amount: CGFloat) -> Bool {
+        guard currentEnergy > 0 else { return false }
+        currentEnergy = max(0, currentEnergy - amount)
         return true
     }
 
-    func addEnergy(_ amount: Int) {
+    func addEnergy(_ amount: CGFloat) {
         currentEnergy = min(currentEnergy + amount, maxEnergy)
     }
 
-    func setMaxEnergy(_ newMax: Int) {
+    func setMaxEnergy(_ newMax: CGFloat) {
         maxEnergy = max(1, newMax)
         currentEnergy = min(currentEnergy, maxEnergy)
     }

@@ -12,8 +12,8 @@ class EnergyBar: SKNode {
     private var fillBar: SKShapeNode!
     private var fillCropNode: SKCropNode!
 
-    private var currentEnergy: Int = 0
-    private var maxEnergy: Int = 1
+    private var currentEnergy: CGFloat = 0
+    private var maxEnergy: CGFloat = 1
 
     override init() {
         super.init()
@@ -89,14 +89,14 @@ class EnergyBar: SKNode {
         addChild(iconNode)
     }
 
-    func update(currentEnergy: Int, maxEnergy: Int, animated: Bool = true) {
+    func update(currentEnergy: CGFloat, maxEnergy: CGFloat, animated: Bool = true) {
         self.currentEnergy = currentEnergy
         self.maxEnergy = max(1, maxEnergy)
         updateFillBar(animated: animated)
     }
 
     private func updateFillBar(animated: Bool) {
-        let fillRatio = CGFloat(currentEnergy) / CGFloat(maxEnergy)
+        let fillRatio = currentEnergy / maxEnergy
         // When fillRatio = 1.0, targetX = 0 (fully visible)
         // When fillRatio = 0.0, targetX = -barWidth (hidden to the left)
         let targetX = -barWidth * (1 - fillRatio)
