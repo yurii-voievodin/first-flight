@@ -57,6 +57,11 @@ class Player: SKNode {
     private(set) var isInWater = false
     private var lastWalkingDirection: FacingDirection?
 
+    // MARK: - Energy System
+
+    private(set) var currentEnergy: Int = 50
+    private(set) var maxEnergy: Int = 50
+
     // Body parts
     private var body: SKSpriteNode!
     private var backpack: SKSpriteNode!
@@ -768,6 +773,24 @@ class Player: SKNode {
 
         leftThigh.zPosition = legZOffset
         rightThigh.zPosition = legZOffset
+    }
+
+    // MARK: - Energy Methods
+
+    @discardableResult
+    func spendEnergy(_ amount: Int) -> Bool {
+        guard currentEnergy >= amount else { return false }
+        currentEnergy -= amount
+        return true
+    }
+
+    func addEnergy(_ amount: Int) {
+        currentEnergy = min(currentEnergy + amount, maxEnergy)
+    }
+
+    func setMaxEnergy(_ newMax: Int) {
+        maxEnergy = max(1, newMax)
+        currentEnergy = min(currentEnergy, maxEnergy)
     }
 }
 

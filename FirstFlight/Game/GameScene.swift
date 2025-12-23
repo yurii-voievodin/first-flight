@@ -15,6 +15,7 @@ final class GameScene: SKScene {
     private var lakes: [LakeNode] = []
     private var boundaryRocks: [RockFormation] = []
     private var virtualJoystick: VirtualJoystick!
+    private var energyBar: EnergyBar!
 
     // Debug mode flag
     var showDebugLabels: Bool = false
@@ -42,6 +43,7 @@ final class GameScene: SKScene {
         createCharacters()
         setupCamera()
         setupJoystick()
+        setupEnergyBar()
         updateCameraConstraints()
     }
 
@@ -176,6 +178,27 @@ final class GameScene: SKScene {
         virtualJoystick.position = CGPoint(x: xPosition, y: yPosition)
     }
 
+    private func setupEnergyBar() {
+        energyBar = EnergyBar()
+        energyBar.zPosition = 100
+        gameCamera.addChild(energyBar)
+        updateEnergyBarPosition()
+        energyBar.update(currentEnergy: astronaut.currentEnergy, maxEnergy: astronaut.maxEnergy, animated: false)
+    }
+
+    private func updateEnergyBarPosition() {
+        guard  view != nil, energyBar != nil, virtualJoystick != nil else { return }
+
+        let joystickRadius: CGFloat = 40
+        let margin: CGFloat = 20
+
+        // Position under the joystick (centered)
+        let xPosition: CGFloat = 0
+        let yPosition = virtualJoystick.position.y - joystickRadius - margin
+
+        energyBar.position = CGPoint(x: xPosition, y: yPosition)
+    }
+
     private func beamEndPoint(towards rock: RockFormation, inset: CGFloat = 4) -> CGPoint {
         let start = astronaut.position
         let rockFrame = rock.calculateAccumulatedFrame()
@@ -270,6 +293,7 @@ final class GameScene: SKScene {
     override func didChangeSize(_ oldSize: CGSize) {
         super.didChangeSize(oldSize)
         updateJoystickPosition()
+        updateEnergyBarPosition()
         updateCameraConstraints()
     }
 
