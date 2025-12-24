@@ -31,6 +31,10 @@ final class GameScene: SKScene {
     private var particleSpawnTimer: TimeInterval = 0
     private let particleSpawnInterval: TimeInterval = 0.04
 
+    // Element extraction tracking
+    private var extractionProgress: [RockFormation: CGFloat] = [:]
+    private let damagePerElement: CGFloat = 10 // Yield 1 element per 10 damage
+
     // Targeting system
     private var currentTarget: RockFormation?
     private let impactFeedback = UIImpactFeedbackGenerator(style: .light)
@@ -357,10 +361,21 @@ final class GameScene: SKScene {
             if rock.applyDamage(damage) {
                 rocksToDestroy.append(rock)
             }
+
+            // Element extraction during continuous firing
+            extractionProgress[rock, default: 0] += damage
+            while extractionProgress[rock, default: 0] >= damagePerElement {
+                extractionProgress[rock, default: 0] -= damagePerElement
+                if let element = rock.extractRandomElement() {
+                    astronaut.inventory.add(element, amount: 1)
+                    ElementPopup.spawn(element: element, amount: 1, at: rock.centerPosition, in: self)
+                }
+            }
         }
 
         for rock in rocksToDestroy {
             rocksBeingDamaged.remove(rock)
+            extractionProgress.removeValue(forKey: rock)
             destroyRock(rock)
         }
 
@@ -521,6 +536,13 @@ extension GameScene: SKPhysicsContactDelegate {
         // Clear target/indicator state if needed
         if currentTarget === rock {
             stopFiringAtTarget()
+        }
+
+        // Extract remaining elements on destruction
+        let remainingElements = rock.extractAllRemaining()
+        if !remainingElements.isEmpty {
+            astronaut.inventory.add(remainingElements)
+            ElementPopup.spawn(elements: remainingElements, at: rock.centerPosition, in: self)
         }
 
         // Spawn destruction particles

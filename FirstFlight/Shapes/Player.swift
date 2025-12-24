@@ -71,6 +71,9 @@ class Player: SKNode {
     // Equipment
     private let blaster = Blaster()
 
+    // Inventory
+    let inventory = Inventory()
+
     // Arms (multi-segment)
     private var leftUpperArm: SKSpriteNode!
     private var leftElbow: SKSpriteNode!

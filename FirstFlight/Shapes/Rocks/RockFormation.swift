@@ -23,7 +23,13 @@ class RockFormation: SKShapeNode {
     
     // Resource composition (only Tier 1 / base elements; rare elements come from crystals)
     let composition: [ElementType: Float]
-    
+
+    // Element extraction tracking
+    /// Total elements this rock can yield (based on size)
+    let totalYield: Int
+    /// Elements already extracted during mining
+    private(set) var extractedTotal: Int = 0
+
     // Debug information
     var debugInfo: [String: String] = [:]
     
@@ -51,6 +57,8 @@ class RockFormation: SKShapeNode {
         self.maxStrength = (size.width + size.height) / 2
         self.currentStrength = (size.width + size.height) / 2
         self.composition = Self.generateBaseComposition(for: type, size: size, seed: seed)
+        // Total yield scales with rock size (roughly 1 element per 2 HP)
+        self.totalYield = Int((size.width + size.height) / 4)
         super.init()
         
         self.position = position
@@ -58,7 +66,6 @@ class RockFormation: SKShapeNode {
         setupPhysics()
         setupVisuals()
         
-        // Optional: debug labels can show a short composition summary
          debugInfo["comp"] = Self.formatComposition(self.composition)
     }
     
@@ -74,6 +81,7 @@ class RockFormation: SKShapeNode {
             .aluminum: 0.10,
             .copper: 0.10
         ]
+        self.totalYield = 50
         super.init(coder: aDecoder)
     }
     
@@ -85,6 +93,63 @@ class RockFormation: SKShapeNode {
     func applyDamage(_ amount: CGFloat) -> Bool {
         currentStrength -= amount
         return currentStrength <= 0
+    }
+
+    // MARK: - Element Extraction
+
+    /// How many elements remain to be extracted
+    var remainingYield: Int {
+        max(0, totalYield - extractedTotal)
+    }
+
+    /// Extract a random element based on composition weights
+    /// - Returns: The element type extracted, or nil if rock is depleted
+    func extractRandomElement() -> ElementType? {
+        guard remainingYield > 0, !composition.isEmpty else { return nil }
+
+        // Weighted random selection
+        let totalWeight = composition.values.reduce(0, +)
+        guard totalWeight > 0 else { return nil }
+
+        let roll = Float.random(in: 0..<totalWeight)
+        var cumulative: Float = 0
+
+        for (element, weight) in composition {
+            cumulative += weight
+            if roll < cumulative {
+                extractedTotal += 1
+                return element
+            }
+        }
+
+        // Fallback to first element
+        extractedTotal += 1
+        return composition.keys.first
+    }
+
+    /// Extract all remaining elements at once
+    /// - Returns: Dictionary of elements and their amounts
+    func extractAllRemaining() -> [ElementType: Int] {
+        var result: [ElementType: Int] = [:]
+        let remaining = remainingYield
+
+        guard remaining > 0, !composition.isEmpty else { return result }
+
+        // Distribute remaining elements according to composition
+        for (element, weight) in composition {
+            let amount = Int(Float(remaining) * weight)
+            if amount > 0 {
+                result[element] = amount
+            }
+        }
+
+        // Ensure at least 1 element if we have remaining yield
+        if result.isEmpty, let firstElement = composition.keys.first {
+            result[firstElement] = remaining
+        }
+
+        extractedTotal = totalYield
+        return result
     }
     
     private func createRockShape(size: CGSize) {
@@ -779,7 +844,7 @@ class RockFormation: SKShapeNode {
         return result
     }
     
-    static func formatComposition(_ composition: [ElementType: Float]) -> String {
+    private static func formatComposition(_ composition: [ElementType: Float]) -> String {
         composition
             .sorted { $0.value > $1.value }
             .prefix(3)
