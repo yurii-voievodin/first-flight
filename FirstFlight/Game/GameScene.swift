@@ -18,7 +18,7 @@ final class GameScene: SKScene {
     private var energyBar: EnergyBar!
 
     // Debug mode flag
-    var showDebugLabels: Bool = false
+    var showDebugLabels: Bool = ProcessInfo.processInfo.environment["SHOW_DEBUG_LABELS"] == "1"
 
     // Beam damage system
     private var rocksBeingDamaged: Set<RockFormation> = []
