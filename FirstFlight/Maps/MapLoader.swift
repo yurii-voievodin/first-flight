@@ -53,18 +53,20 @@ class MapLoader {
         var rocks: [RockFormation] = []
 
         for boundaryRock in mapData.boundaryRocks {
+            let seed = rockSeed(x: boundaryRock.position.x, y: boundaryRock.position.y, extra: 1)
+
             let rock = RockFormation(
                 type: boundaryRock.rockFormationType,
                 size: boundaryRock.size.cgSize,
-                position: boundaryRock.position.cgPoint
+                position: boundaryRock.position.cgPoint,
+                seed: seed
             )
-            
-            let seed = rockSeed(x: boundaryRock.position.x, y: boundaryRock.position.y, extra: 1)
             rock.applyProceduralTextures(seed: seed)
 
             // Add debug info
             rock.debugInfo["type"] = boundaryRock.type
             rock.debugInfo["position"] = "(\(Int(boundaryRock.position.x)), \(Int(boundaryRock.position.y)))"
+            rock.debugInfo["composition"] = RockFormation.formatComposition(rock.composition)
 
             rocks.append(rock)
         }
@@ -76,23 +78,25 @@ class MapLoader {
         var rocks: [RockFormation] = []
 
         for interiorRock in mapData.interiorRocks {
+            let seed = rockSeed(x: interiorRock.position.x, y: interiorRock.position.y, extra: 2)
+
             let rock = RockFormation(
                 type: interiorRock.rockFormationType,
                 size: interiorRock.size.cgSize,
-                position: interiorRock.position.cgPoint
+                position: interiorRock.position.cgPoint,
+                seed: seed
             )
 
             // Apply rotation if specified
             if let rotation = interiorRock.rotation {
                 rock.zRotation = CGFloat(rotation * .pi / 180) // Convert degrees to radians
             }
-            
-            let seed = rockSeed(x: interiorRock.position.x, y: interiorRock.position.y, extra: 2)
             rock.applyProceduralTextures(seed: seed)
 
             // Add debug info
             rock.debugInfo["type"] = interiorRock.type
             rock.debugInfo["position"] = "(\(Int(interiorRock.position.x)), \(Int(interiorRock.position.y)))"
+            rock.debugInfo["composition"] = RockFormation.formatComposition(rock.composition)
 
             rocks.append(rock)
         }
@@ -104,18 +108,20 @@ class MapLoader {
         var rocks: [RockFormation] = []
 
         for signatureFormation in mapData.signatureFormations {
+            let seed = rockSeed(x: signatureFormation.position.x, y: signatureFormation.position.y, extra: 3)
+
             let rock = RockFormation(
                 type: signatureFormation.rockFormationType,
                 size: signatureFormation.size.cgSize,
-                position: signatureFormation.position.cgPoint
+                position: signatureFormation.position.cgPoint,
+                seed: seed
             )
-            
-            let seed = rockSeed(x: signatureFormation.position.x, y: signatureFormation.position.y, extra: 3)
             rock.applyProceduralTextures(seed: seed)
 
             // Add debug info
             rock.debugInfo["type"] = signatureFormation.type
             rock.debugInfo["position"] = "(\(Int(signatureFormation.position.x)), \(Int(signatureFormation.position.y)))"
+            rock.debugInfo["composition"] = RockFormation.formatComposition(rock.composition)
 
             rocks.append(rock)
         }
