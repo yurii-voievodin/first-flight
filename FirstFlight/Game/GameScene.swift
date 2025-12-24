@@ -23,7 +23,7 @@ final class GameScene: SKScene {
     // Beam damage system
     private var rocksBeingDamaged: Set<RockFormation> = []
     private var lastUpdateTime: TimeInterval = 0
-    private let beamDamagePerSecond: CGFloat = 100
+    private let beamDamagePerSecond: CGFloat = 25
     private let energyDrainPerSecond: CGFloat = 5.0
     private let energyRechargePerSecond: CGFloat = 2.5
 

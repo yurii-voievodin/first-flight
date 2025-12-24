@@ -59,7 +59,7 @@ class RockFormation: SKShapeNode {
         setupVisuals()
         
         // Optional: debug labels can show a short composition summary
-        // debugInfo["comp"] = Self.formatComposition(self.composition)
+         debugInfo["comp"] = Self.formatComposition(self.composition)
     }
     
     required init?(coder aDecoder: NSCoder) {

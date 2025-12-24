@@ -66,7 +66,6 @@ class MapLoader {
             // Add debug info
             rock.debugInfo["type"] = boundaryRock.type
             rock.debugInfo["position"] = "(\(Int(boundaryRock.position.x)), \(Int(boundaryRock.position.y)))"
-            rock.debugInfo["composition"] = RockFormation.formatComposition(rock.composition)
 
             rocks.append(rock)
         }
@@ -96,7 +95,6 @@ class MapLoader {
             // Add debug info
             rock.debugInfo["type"] = interiorRock.type
             rock.debugInfo["position"] = "(\(Int(interiorRock.position.x)), \(Int(interiorRock.position.y)))"
-            rock.debugInfo["composition"] = RockFormation.formatComposition(rock.composition)
 
             rocks.append(rock)
         }
@@ -121,7 +119,6 @@ class MapLoader {
             // Add debug info
             rock.debugInfo["type"] = signatureFormation.type
             rock.debugInfo["position"] = "(\(Int(signatureFormation.position.x)), \(Int(signatureFormation.position.y)))"
-            rock.debugInfo["composition"] = RockFormation.formatComposition(rock.composition)
 
             rocks.append(rock)
         }
