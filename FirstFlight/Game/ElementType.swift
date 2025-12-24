@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 /// Basic chemical elements used as raw resources in the game.
 ///
@@ -111,7 +112,11 @@ enum ElementType: String, CaseIterable, Codable, Hashable {
         case .gold: return "Au"
         }
     }
-
+    
+    var image: UIImage {
+        UIImage(named: "\(self.rawValue)")!
+    }
+    
     /// Short usage hints for UI tooltips / inventory.
     /// Keep it actionable: what the player typically crafts/upgrades with this.
     var usageDescription: String {
