@@ -10,8 +10,18 @@ final class InventoryOverlayNode: SKNode {
     private let closeLabel = SKLabelNode(text: "✕")
 
     private let gridNode = SKNode()
+    private let cropNode = SKCropNode()
+    private let maskNode = SKShapeNode()
 
     private var panelRect: CGRect = .zero
+    private var gridViewportRect: CGRect = .zero
+
+    // Scrolling
+    private var scrollOffsetY: CGFloat = 0
+    private var contentHeight: CGFloat = 0
+    private var viewportHeight: CGFloat = 0
+    private var isDraggingGrid: Bool = false
+    private var lastDragY: CGFloat = 0
     
     var onClose: (() -> Void)?
 
@@ -25,9 +35,13 @@ final class InventoryOverlayNode: SKNode {
 
         addChild(dimBackground)
         addChild(panel)
+        addChild(cropNode)
         addChild(titleLabel)
         addChild(closeLabel)
-        addChild(gridNode)
+
+        // Mask node is used only for cropping; do not add it as a child, otherwise it will render.
+        cropNode.maskNode = maskNode
+        cropNode.addChild(gridNode)
 
         dimBackground.fillColor = SKColor(white: 0.0, alpha: 0.65)
         dimBackground.strokeColor = .clear
@@ -44,6 +58,21 @@ final class InventoryOverlayNode: SKNode {
         closeLabel.name = "close"
         closeLabel.horizontalAlignmentMode = .center
         closeLabel.verticalAlignmentMode = .center
+
+        dimBackground.zPosition = 200
+        panel.zPosition = 210
+        cropNode.zPosition = 220
+        titleLabel.zPosition = 230
+        closeLabel.zPosition = 230
+
+        // For SKCropNode masking, the mask must render with *opaque alpha* in the visible area.
+        // It's not added as a child, so it won't be visible on screen.
+        maskNode.fillColor = .white
+        maskNode.strokeColor = .clear
+        maskNode.lineWidth = 0
+
+        // A little padding so the first row isn't clipped by the mask
+        gridNode.position = .zero
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -73,8 +102,25 @@ final class InventoryOverlayNode: SKNode {
         titleLabel.position = CGPoint(x: panelRect.minX + 18, y: panelRect.maxY - 28)
         closeLabel.position = CGPoint(x: panelRect.maxX - 18, y: panelRect.maxY - 28)
 
-        // Grid origin
-        gridNode.position = CGPoint(x: panelRect.minX + 18, y: panelRect.maxY - 64)
+        // Grid viewport (inside the panel, below the header)
+        let padding: CGFloat = 18
+        let headerHeight: CGFloat = 64
+
+        let viewportTopY = panelRect.maxY - headerHeight
+        let viewportBottomY = panelRect.minY + padding
+        viewportHeight = max(0, viewportTopY - viewportBottomY)
+
+        gridViewportRect = CGRect(
+            x: panelRect.minX + padding,
+            y: viewportBottomY,
+            width: panelRect.width - padding * 2,
+            height: viewportHeight
+        )
+
+        // Crop mask defines visible area
+        maskNode.path = CGPath(roundedRect: gridViewportRect, cornerWidth: 12, cornerHeight: 12, transform: nil)
+
+        applyScrollAndLayout()
     }
 
     func render(state: InventoryState, defsById: [String: ItemDef]) {
@@ -83,6 +129,8 @@ final class InventoryOverlayNode: SKNode {
         // Compute rows for current capacity
         let totalSlots = state.maxSlots
         let rows = Int(ceil(Double(totalSlots) / Double(columns)))
+        updateContentMetrics(totalSlots: totalSlots)
+        applyScrollAndLayout()
 
         for slotIndex in 0..<totalSlots {
             let col = slotIndex % columns
@@ -155,5 +203,54 @@ final class InventoryOverlayNode: SKNode {
             removeFromParent()
             return
         }
+
+        // Begin drag-scrolling if the touch starts inside the grid viewport
+        if gridViewportRect.contains(p) {
+            isDraggingGrid = true
+            lastDragY = p.y
+        } else {
+            isDraggingGrid = false
+        }
+    }
+
+    func handleTouchMoved(from touch: UITouch, in scene: SKScene) {
+        guard isDraggingGrid, let cam = scene.camera else { return }
+        let p = touch.location(in: cam)
+        let dy = p.y - lastDragY
+        lastDragY = p.y
+
+        // Drag scrolling (UIScrollView-style): content follows the finger.
+        // dy is in SpriteKit coords (positive = finger moved up).
+        // Finger up  => grid up  (scroll down)
+        // Finger down => grid down (scroll up)
+        scrollOffsetY += dy
+        applyScrollAndLayout()
+    }
+
+    func handleTouchEnded(from touch: UITouch, in scene: SKScene) {
+        isDraggingGrid = false
+        lastDragY = 0
+    }
+
+    private func clampScrollOffset() {
+        // scrollOffsetY = 0 at top; positive values scroll down through content
+        let maxOffset = max(0, contentHeight - viewportHeight)
+        let clamped = max(0, min(maxOffset, scrollOffsetY))
+        scrollOffsetY = clamped
+    }
+
+    private func applyScrollAndLayout() {
+        clampScrollOffset()
+        // Increasing scrollOffsetY moves content UP, revealing lower rows (UIScrollView behavior)
+        gridNode.position = CGPoint(x: gridViewportRect.minX, y: gridViewportRect.maxY + scrollOffsetY)
+    }
+
+    private func updateContentMetrics(totalSlots: Int) {
+        let rows = Int(ceil(Double(totalSlots) / Double(columns)))
+        if rows <= 0 {
+            contentHeight = 0
+            return
+        }
+        contentHeight = CGFloat(rows) * slotSize.height + CGFloat(max(0, rows - 1)) * slotSpacing
     }
 }
