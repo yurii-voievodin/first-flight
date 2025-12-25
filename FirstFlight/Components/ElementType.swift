@@ -1,5 +1,4 @@
 import Foundation
-import UIKit
 
 /// Basic chemical elements used as raw resources in the game.
 ///
@@ -113,10 +112,6 @@ enum ElementType: String, CaseIterable, Codable, Hashable {
         }
     }
     
-    var image: UIImage {
-        UIImage(named: "\(self.rawValue)")!
-    }
-    
     /// Short usage hints for UI tooltips / inventory.
     /// Keep it actionable: what the player typically crafts/upgrades with this.
     var usageDescription: String {
@@ -162,6 +157,35 @@ enum ElementType: String, CaseIterable, Codable, Hashable {
     /// Optional: handy grouping for screens, drop tables, and filters.
     static var tier1: [ElementType] { allCases.filter { $0.tier == .tier1 } }
     static var tier2: [ElementType] { allCases.filter { $0.tier == .tier2 } }
+}
+
+// MARK: - Item Catalog
+
+/// Central catalog of all item definitions available in the game.
+///
+/// For now this lives next to `ElementType` for convenience.
+/// You can move it later into a dedicated file (e.g. `ItemCatalog.swift`).
+enum ItemCatalog {
+
+    /// Inventory item definitions used by `Inventory`.
+    ///
+    /// Notes:
+    /// - `id` is based on `ElementType.rawValue` (e.g. "iron").
+    /// - `iconName` matches your current texture naming: `UIImage(named: "<rawValue>")`.
+    static func makeAllDefs() -> [ItemDef] {
+        let elementDefs: [ItemDef] = ElementType.allCases.map { element in
+            ItemDef(
+                id: element.rawValue,
+                kind: .resource,
+                displayName: element.displayName,
+                iconName: element.rawValue,
+                maxStack: 99
+            )
+        }
+
+        // Add non-element items here later (equipment, crystals, quest items, etc.).
+        return elementDefs
+    }
 }
 
 // MARK: - Crafting Examples

@@ -8,8 +8,9 @@
 import SpriteKit
 
 final class GameScene: SKScene {
-
-    private let astronaut = Player()
+    private var inventory: Inventory!
+    private var astronaut: Player!
+    
     private var gameCamera: SKCameraNode!
     private var rockFormations: [RockFormation] = []
     private var lakes: [LakeNode] = []
@@ -45,8 +46,8 @@ final class GameScene: SKScene {
 
     override func didMove(to view: SKView) {
         setupScene()
-        loadMapFromJSON()
         createCharacters()
+        loadMapFromJSON()
         setupCamera()
         setupJoystick()
         setupEnergyBar()
@@ -59,6 +60,13 @@ final class GameScene: SKScene {
     }
 
     private func createCharacters() {
+        let defs = ItemCatalog.makeAllDefs()                 // твій список ItemDef
+        let state = (try? InventoryStorage.loadOrCreate(defaultMaxSlots: 24))
+        ?? InventoryState(maxSlots: 24)
+        
+        inventory = Inventory(state: state, defs: defs)
+        astronaut = Player(inventory: inventory)
+        
         // Position is set by loadMapFromJSON() (playerStartPosition)
         if astronaut.parent == nil {
             addChild(astronaut)
@@ -367,8 +375,14 @@ final class GameScene: SKScene {
             while extractionProgress[rock, default: 0] >= damagePerElement {
                 extractionProgress[rock, default: 0] -= damagePerElement
                 if let element = rock.extractRandomElement() {
-                    astronaut.inventory.add(element, amount: 1)
-                    ElementPopup.spawn(element: element, amount: 1, at: rock.centerPosition, in: self)
+                    let added = astronaut.inventory.add(element, amount: 1)
+                    if added > 0 {
+                        ElementPopup.spawn(element: element, amount: added, at: rock.centerPosition, in: self)
+                    } else {
+                        // Inventory is full (no free slots / no room in existing stacks).
+                        // For now: don't show popup and silently discard the extra.
+                        // (Alternative: drop to world.)
+                    }
                 }
             }
         }
@@ -420,30 +434,30 @@ final class GameScene: SKScene {
         
         guard let aimAngle = virtualJoystick.currentAngle else {
             // Joystick released - hide sight and stop
-            player.stopMovement()
+            player?.stopMovement()
             return
         }
 
         // Only update aim sight from joystick if not targeting a rock
         if currentTarget == nil {
-            player.updatePlayerDirection(angle: aimAngle)
+            player?.updatePlayerDirection(angle: aimAngle)
         }
 
         // Check joystick magnitude to decide between aiming and moving
         let magnitude = hypot(direction.dx, direction.dy)
         let movementThreshold: CGFloat = 0.5 // 50% of max joystick distance
         
-        if magnitude > movementThreshold || player.isWalking {
+        if magnitude > movementThreshold || player?.isWalking == true {
             // Movement detected - stop firing at target if active
             if currentTarget != nil {
                 stopFiringAtTarget()
             }
 
             // Strong joystick push or already walking - move player
-            player.moveInDirection(direction: direction)
+            player?.moveInDirection(direction: direction)
         } else {
             // Light joystick touch - just aim, don't move
-            player.stopMovement()
+            player?.stopMovement()
         }
     }
 
@@ -541,8 +555,19 @@ extension GameScene: SKPhysicsContactDelegate {
         // Extract remaining elements on destruction
         let remainingElements = rock.extractAllRemaining()
         if !remainingElements.isEmpty {
-            astronaut.inventory.add(remainingElements)
-            ElementPopup.spawn(elements: remainingElements, at: rock.centerPosition, in: self)
+            var actuallyAdded: [ElementType: Int] = [:]
+            for (element, amount) in remainingElements {
+                guard amount > 0 else { continue }
+                let added = astronaut.inventory.add(element, amount: amount)
+                if added > 0 {
+                    actuallyAdded[element, default: 0] += added
+                }
+            }
+
+            if !actuallyAdded.isEmpty {
+                ElementPopup.spawn(elements: actuallyAdded, at: rock.centerPosition, in: self)
+            }
+            // If `actuallyAdded` is empty, inventory was full; we currently discard the remainder.
         }
 
         // Spawn destruction particles

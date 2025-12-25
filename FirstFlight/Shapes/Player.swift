@@ -1,7 +1,7 @@
 import SpriteKit
 
 
-class Player: SKNode {
+final class Player: SKNode {
     private let bodyRadius: CGFloat = 20.0
     private let backpackBasePosition = CGPoint(x: 0, y: -2)
     private let helmetGlassBasePosition = CGPoint(x: 0, y: 2)
@@ -72,7 +72,7 @@ class Player: SKNode {
     private let blaster = Blaster()
 
     // Inventory
-    let inventory = Inventory()
+    let inventory: Inventory
 
     // Arms (multi-segment)
     private var leftUpperArm: SKSpriteNode!
@@ -102,20 +102,15 @@ class Player: SKNode {
         [leftUpperArm, leftElbow, leftForearm, leftWrist, leftHand]
     }
 
-    override init() {
+    init(inventory: Inventory) {
+        self.inventory = inventory
         super.init()
-
         configureBaseLayer()
         setupBodyParts()
         setupPhysics()
     }
 
-    required init?(coder aDecoder: NSCoder) {
-        super.init(coder: aDecoder)
-        configureBaseLayer()
-        setupBodyParts()
-        setupPhysics()
-    }
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     private func setupBodyParts() {
         // Body (torso) - main body part with rounded corners
