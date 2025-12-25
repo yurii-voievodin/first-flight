@@ -1,11 +1,12 @@
 import SpriteKit
 
-enum RockFormationType {
+enum RockFormationType: String {
     case boulder
     case cave
     case overhang
     case cluster
     case spire
+    case hydrogenDeposit
 }
 
 class RockFormation: SKShapeNode {
@@ -58,7 +59,7 @@ class RockFormation: SKShapeNode {
         self.currentStrength = (size.width + size.height) / 2
         self.composition = Self.generateBaseComposition(for: type, size: size, seed: seed)
         // Total yield scales with rock size (roughly 1 element per 2 HP)
-        self.totalYield = Int((size.width + size.height) / 4)
+        self.totalYield = Int((size.width + size.height) / 8)
         super.init()
         
         self.position = position
@@ -166,6 +167,8 @@ class RockFormation: SKShapeNode {
             path.addPath(createClusterPath(size: size))
         case .spire:
             path.addPath(createSpirePath(size: size))
+        case .hydrogenDeposit:
+            path.addPath(createHydrogenDepositPath(size: size))
         }
         
         self.path = path
@@ -374,6 +377,56 @@ class RockFormation: SKShapeNode {
             control2: CGPoint(x: centerX * 1.06, y: -size.height * 0.05)
         )
         
+        path.closeSubpath()
+        return path
+    }
+
+    /// A porous, bubbly shape to visually read as a volatile/gas deposit.
+    /// Kept as a single polygon (no holes) for stable SKPhysicsBody generation.
+    private func createHydrogenDepositPath(size: CGSize) -> CGPath {
+        let path = CGMutablePath()
+        let w = size.width
+        let h = size.height
+
+        // Irregular "blob" with a few soft bulges (avoid sharp mineral edges).
+        path.move(to: CGPoint(x: w * 0.18, y: h * 0.18))
+
+        path.addCurve(
+            to: CGPoint(x: w * 0.62, y: h * 0.10),
+            control1: CGPoint(x: w * 0.30, y: h * 0.02),
+            control2: CGPoint(x: w * 0.50, y: h * 0.04)
+        )
+
+        path.addCurve(
+            to: CGPoint(x: w * 0.90, y: h * 0.36),
+            control1: CGPoint(x: w * 0.78, y: h * 0.12),
+            control2: CGPoint(x: w * 0.96, y: h * 0.20)
+        )
+
+        path.addCurve(
+            to: CGPoint(x: w * 0.82, y: h * 0.78),
+            control1: CGPoint(x: w * 0.88, y: h * 0.52),
+            control2: CGPoint(x: w * 0.92, y: h * 0.70)
+        )
+
+        path.addCurve(
+            to: CGPoint(x: w * 0.40, y: h * 0.90),
+            control1: CGPoint(x: w * 0.72, y: h * 0.94),
+            control2: CGPoint(x: w * 0.56, y: h * 0.98)
+        )
+
+        path.addCurve(
+            to: CGPoint(x: w * 0.12, y: h * 0.62),
+            control1: CGPoint(x: w * 0.24, y: h * 0.86),
+            control2: CGPoint(x: w * 0.08, y: h * 0.78)
+        )
+
+        path.addCurve(
+            to: CGPoint(x: w * 0.18, y: h * 0.18),
+            control1: CGPoint(x: w * 0.14, y: h * 0.48),
+            control2: CGPoint(x: w * 0.06, y: h * 0.30)
+        )
+
         path.closeSubpath()
         return path
     }
@@ -720,7 +773,7 @@ class RockFormation: SKShapeNode {
     private static let baseElements: [ElementType] = [
         .iron, .silicon, .aluminum, .carbon, .sulfur,
         .copper, .nickel, .cobalt,
-        .hydrogen, .oxygen, .nitrogen
+        .oxygen, .nitrogen
     ]
     
     /// Defines what elements are more likely for each rock formation type.
@@ -732,7 +785,7 @@ class RockFormation: SKShapeNode {
             return [
                 (.iron, 6), (.silicon, 6), (.aluminum, 3), (.carbon, 2), (.sulfur, 2),
                 (.copper, 2), (.nickel, 1.5), (.cobalt, 1),
-                (.hydrogen, 0.6), (.oxygen, 1.2), (.nitrogen, 0.6)
+                (.oxygen, 1.2), (.nitrogen, 0.6)
             ]
             
         case .cave:
@@ -740,7 +793,7 @@ class RockFormation: SKShapeNode {
             return [
                 (.iron, 4), (.silicon, 4), (.aluminum, 2), (.carbon, 3), (.sulfur, 3),
                 (.copper, 1.5), (.nickel, 1.5), (.cobalt, 1.2),
-                (.hydrogen, 2.0), (.oxygen, 1.6), (.nitrogen, 1.8)
+                (.oxygen, 1.6), (.nitrogen, 1.8)
             ]
             
         case .overhang:
@@ -748,7 +801,7 @@ class RockFormation: SKShapeNode {
             return [
                 (.iron, 4.5), (.silicon, 5), (.aluminum, 3.5), (.carbon, 2), (.sulfur, 1.8),
                 (.copper, 2.2), (.nickel, 1.2), (.cobalt, 0.9),
-                (.hydrogen, 0.4), (.oxygen, 1.2), (.nitrogen, 0.5)
+                (.oxygen, 1.2), (.nitrogen, 0.5)
             ]
             
         case .cluster:
@@ -756,7 +809,7 @@ class RockFormation: SKShapeNode {
             return [
                 (.iron, 4.5), (.silicon, 4.5), (.aluminum, 2.5), (.carbon, 2.2), (.sulfur, 2.0),
                 (.copper, 3.0), (.nickel, 2.2), (.cobalt, 2.0),
-                (.hydrogen, 0.6), (.oxygen, 1.2), (.nitrogen, 0.6)
+                (.oxygen, 1.2), (.nitrogen, 0.6)
             ]
             
         case .spire:
@@ -764,7 +817,13 @@ class RockFormation: SKShapeNode {
             return [
                 (.iron, 4.0), (.silicon, 4.0), (.aluminum, 2.0), (.carbon, 1.6), (.sulfur, 2.2),
                 (.copper, 3.2), (.nickel, 2.6), (.cobalt, 2.2),
-                (.hydrogen, 0.4), (.oxygen, 1.0), (.nitrogen, 0.5)
+                (.oxygen, 1.0), (.nitrogen, 0.5)
+            ]
+        case .hydrogenDeposit:
+            // Exclusive hydrogen source. Composition is enforced elsewhere as 100% hydrogen.
+            // We keep this branch for completeness and future expansion.
+            return [
+                (.hydrogen, 1.0)
             ]
         }
     }
@@ -772,6 +831,10 @@ class RockFormation: SKShapeNode {
     /// Generates a small, varied element composition for this rock.
     /// - Important: Returns only base elements (Tier 1). Total sums to ~1.0.
     private static func generateBaseComposition(for type: RockFormationType, size: CGSize, seed: UInt64) -> [ElementType: Float] {
+        // Hydrogen is an exclusive resource: only hydrogenDeposit rocks can yield it.
+        if type == .hydrogenDeposit {
+            return [.hydrogen: 1.0]
+        }
         var rng = SplitMix64(
             seed: seed
             ^ UInt64(bitPattern: Int64(type.hashValue))

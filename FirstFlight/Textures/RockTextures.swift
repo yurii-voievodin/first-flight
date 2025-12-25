@@ -11,6 +11,7 @@ final class RockTextures {
     private lazy var smooth  = atlas.textureNamed("rock_smooth")
     private lazy var layered = atlas.textureNamed("rock_layered")
     private lazy var dark    = atlas.textureNamed("rock_dark")
+    private lazy var hydrogen = atlas.textureNamed("rock_hydrogen")
 
     func baseTexture(for type: RockFormationType, seed: UInt64) -> SKTexture {
         let roll = Int(seed % 100)
@@ -28,6 +29,8 @@ final class RockTextures {
             if roll < 20 { return smooth }
             if roll < 70 { return base }
             return rough
+        case .hydrogenDeposit:
+            return hydrogen
         }
     }
 }

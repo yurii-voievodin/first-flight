@@ -59,20 +59,19 @@ struct Size: Codable {
     }
 }
 
+/// Helper to decode rock formation types from raw string values.
+@inline(__always)
+private func rockType(from raw: String) -> RockFormationType {
+    RockFormationType(rawValue: raw) ?? .boulder
+}
+
 struct BoundaryRockData: Codable {
     let position: Position
     let size: Size
     let type: String
 
     var rockFormationType: RockFormationType {
-        switch type.lowercased() {
-        case "boulder": return .boulder
-        case "cave": return .cave
-        case "overhang": return .overhang
-        case "cluster": return .cluster
-        case "spire": return .spire
-        default: return .boulder
-        }
+        rockType(from: type)
     }
 }
 
@@ -83,14 +82,7 @@ struct InteriorRockData: Codable {
     let rotation: Double?
 
     var rockFormationType: RockFormationType {
-        switch type.lowercased() {
-        case "boulder": return .boulder
-        case "cave": return .cave
-        case "overhang": return .overhang
-        case "cluster": return .cluster
-        case "spire": return .spire
-        default: return .boulder
-        }
+        rockType(from: type)
     }
 }
 
@@ -100,14 +92,7 @@ struct SignatureFormationData: Codable {
     let type: String
 
     var rockFormationType: RockFormationType {
-        switch type.lowercased() {
-        case "boulder": return .boulder
-        case "cave": return .cave
-        case "overhang": return .overhang
-        case "cluster": return .cluster
-        case "spire": return .spire
-        default: return .boulder
-        }
+        rockType(from: type)
     }
 }
 
