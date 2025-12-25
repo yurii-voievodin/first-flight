@@ -10,6 +10,11 @@ import SpriteKit
 final class GameScene: SKScene {
     private var inventory: Inventory!
     private var astronaut: Player!
+
+    private var itemDefsById: [String: ItemDef] = [:]
+
+    private var inventoryOverlay: InventoryOverlayNode?
+    private var inventoryButton: SKLabelNode?
     
     private var gameCamera: SKCameraNode!
     private var rockFormations: [RockFormation] = []
@@ -51,6 +56,7 @@ final class GameScene: SKScene {
         setupCamera()
         setupJoystick()
         setupEnergyBar()
+        setupInventoryButton()
         updateCameraConstraints()
     }
 
@@ -61,6 +67,7 @@ final class GameScene: SKScene {
 
     private func createCharacters() {
         let defs = ItemCatalog.makeAllDefs()                 // твій список ItemDef
+        itemDefsById = Dictionary(uniqueKeysWithValues: defs.map { ($0.id, $0) })
         let state = (try? InventoryStorage.loadOrCreate(defaultMaxSlots: 24))
         ?? InventoryState(maxSlots: 24)
         
@@ -179,6 +186,30 @@ final class GameScene: SKScene {
         updateJoystickPosition()
     }
 
+    private func setupInventoryButton() {
+        let button = SKLabelNode(text: "🎒")
+        button.fontSize = 28
+        button.zPosition = 120
+        button.name = "inventory_button"
+
+        inventoryButton = button
+        gameCamera.addChild(button)
+        updateInventoryButtonPosition()
+    }
+
+    private func updateInventoryButtonPosition() {
+        guard let view else { return }
+
+        let safeArea = view.safeAreaInsets
+        let margin: CGFloat = 18
+
+        // Top-right corner of the camera viewport
+        let x = view.bounds.width / 2 - safeArea.right - margin
+        let y = view.bounds.height / 2 - safeArea.top - margin
+
+        inventoryButton?.position = CGPoint(x: x, y: y)
+    }
+
     private func updateJoystickPosition() {
         guard let view = view, virtualJoystick != nil else { return }
 
@@ -292,6 +323,23 @@ final class GameScene: SKScene {
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
+
+        // If overlay is open, let it handle touches first.
+        if let overlay = inventoryOverlay {
+            overlay.handleTouch(from: touch, in: self)
+            return
+        }
+
+        // HUD button taps are in camera coordinates
+        if let cam = gameCamera {
+            let hudPoint = touch.location(in: cam)
+            if let tapped = cam.atPoint(hudPoint) as? SKLabelNode, tapped.name == "inventory_button" {
+                toggleInventoryOverlay()
+                return
+            }
+        }
+
+        // Otherwise, regular scene tap
         let location = touch.location(in: self)
         handleTap(at: location)
     }
@@ -311,8 +359,30 @@ final class GameScene: SKScene {
         super.didChangeSize(oldSize)
         updateJoystickPosition()
         updateEnergyBarPosition()
+        if inventoryButton != nil {
+            updateInventoryButtonPosition()
+        }
+        inventoryOverlay?.layout(for: size)
         updateCameraConstraints()
     }
+    private func toggleInventoryOverlay() {
+        if inventoryOverlay != nil {
+            inventoryOverlay?.removeFromParent()
+            inventoryOverlay = nil
+            return
+        }
+
+        let overlay = InventoryOverlayNode()
+        overlay.onClose = { [weak self] in
+            self?.inventoryOverlay = nil
+        }
+        overlay.zPosition = 10_000
+        overlay.layout(for: size)
+        overlay.render(state: inventory.state, defsById: itemDefsById)
+        gameCamera?.addChild(overlay)
+        inventoryOverlay = overlay
+    }
+
 
     private func updateCameraConstraints() {
         guard let view = view, gameCamera != nil, mapSize != .zero else { return }
