@@ -88,7 +88,12 @@ final class InventoryOverlayNode: SKNode {
         dimBackground.path = CGPath(rect: bgRect, transform: nil)
 
         // Center panel
-        let panelWidth = min(sceneSize.width * 0.85, 520)
+        let gridWidth =
+            CGFloat(columns) * slotSize.width +
+            CGFloat(columns - 1) * slotSpacing
+
+        let sidePadding: CGFloat = 18
+        let panelWidth = gridWidth + sidePadding * 2
         let panelHeight = min(sceneSize.height * 0.75, 520)
         panelRect = CGRect(
             x: -panelWidth / 2,

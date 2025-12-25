@@ -66,8 +66,8 @@ final class GameScene: SKScene {
     private func createCharacters() {
         let defs = ItemCatalog.makeAllDefs()                 // твій список ItemDef
         itemDefsById = Dictionary(uniqueKeysWithValues: defs.map { ($0.id, $0) })
-        let state = (try? InventoryStorage.loadOrCreate(defaultMaxSlots: 24))
-        ?? InventoryState(maxSlots: 24)
+        let state = (try? InventoryStorage.loadOrCreate(defaultMaxSlots: 12))
+        ?? InventoryState(maxSlots: 12)
         
         inventory = Inventory(state: state, defs: defs)
         astronaut = Player(inventory: inventory)
