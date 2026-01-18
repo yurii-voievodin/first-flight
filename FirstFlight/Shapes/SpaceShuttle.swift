@@ -4,12 +4,16 @@ class SpaceShuttle: SKNode {
     private let shuttleScale: CGFloat
     private var renderedSize: CGSize = .zero
 
+    // MARK: - Inventory
+    private(set) var inventory: Inventory
+
     // MARK: - Debug editor (optional)
     private let debugEditorEnabled: Bool = false
     private var debugEditor: PolygonDebugEditor?
 
-    init(scale: CGFloat = 0.6) {
+    init(scale: CGFloat = 0.6, inventory: Inventory) {
         self.shuttleScale = scale
+        self.inventory = inventory
         super.init()
         zPosition = -11 // Below player (player is at -10)
         setupSprite()
@@ -29,8 +33,7 @@ class SpaceShuttle: SKNode {
     }
 
     required init?(coder aDecoder: NSCoder) {
-        self.shuttleScale = 0.6
-        super.init(coder: aDecoder)
+        fatalError("init(coder:) has not been implemented")
     }
 
     private func setupSprite() {

@@ -9,11 +9,13 @@ import SpriteKit
 
 final class GameScene: SKScene {
     private var inventory: Inventory!
+    private var shuttleInventory: Inventory!
     private var astronaut: Player!
 
     private var itemDefsById: [String: ItemDef] = [:]
 
     private var inventoryOverlay: InventoryOverlayNode?
+    private var transferOverlay: TransferOverlayNode?
     
     private var gameCamera: SKCameraNode!
     private var rockFormations: [RockFormation] = []
@@ -65,14 +67,21 @@ final class GameScene: SKScene {
     }
 
     private func createCharacters() {
-        let defs = ItemCatalog.makeAllDefs()                 // твій список ItemDef
+        let defs = ItemCatalog.makeAllDefs()
         itemDefsById = Dictionary(uniqueKeysWithValues: defs.map { ($0.id, $0) })
-        let state = (try? InventoryStorage.loadOrCreate(defaultMaxSlots: 12))
-        ?? InventoryState(maxSlots: 12)
-        
-        inventory = Inventory(state: state, defs: defs)
+
+        // Player inventory (12 slots)
+        let playerState = (try? InventoryStorage.loadOrCreate(for: .player, defaultMaxSlots: 12))
+            ?? InventoryState(maxSlots: 12)
+        inventory = Inventory(state: playerState, defs: defs)
+
+        // Shuttle inventory (24 slots - double player capacity)
+        let shuttleState = (try? InventoryStorage.loadOrCreate(for: .shuttle, defaultMaxSlots: 24))
+            ?? InventoryState(maxSlots: 24)
+        shuttleInventory = Inventory(state: shuttleState, defs: defs)
+
         astronaut = Player(inventory: inventory)
-        
+
         // Position is set by loadMapFromJSON() (playerStartPosition)
         if astronaut.parent == nil {
             addChild(astronaut)
@@ -116,7 +125,7 @@ final class GameScene: SKScene {
             astronaut.position = startPosition
 
             // Add space shuttle from map data
-            if let shuttle = MapLoader.shared.createSpaceShuttle(from: mapData) {
+            if let shuttle = MapLoader.shared.createSpaceShuttle(from: mapData, inventory: shuttleInventory) {
                 addChild(shuttle)
                 spaceShuttle = shuttle
             }
@@ -306,7 +315,13 @@ final class GameScene: SKScene {
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
 
-        // If overlay is open, let it handle touches first.
+        // If transfer overlay is open, let it handle touches first.
+        if let overlay = transferOverlay {
+            overlay.handleTouchBegan(from: touch, in: self)
+            return
+        }
+
+        // If inventory overlay is open, let it handle touches first.
         if let overlay = inventoryOverlay {
             overlay.handleTouch(from: touch, in: self)
             return
@@ -320,28 +335,40 @@ final class GameScene: SKScene {
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
 
+        // Transfer overlay consumes drag gestures
+        if let overlay = transferOverlay {
+            overlay.handleTouchMoved(from: touch, in: self)
+            return
+        }
+
         // Inventory overlay consumes drag gestures (scroll)
         if let overlay = inventoryOverlay {
             overlay.handleTouchMoved(from: touch, in: self)
             return
         }
-
-        // якщо в тебе є логіка джойстика/перетягування — хай буде нижче
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
 
-        if let overlay = inventoryOverlay {
+        if let overlay = transferOverlay {
             overlay.handleTouchEnded(from: touch, in: self)
             return
         }
 
-        // інша логіка (якщо є)
+        if let overlay = inventoryOverlay {
+            overlay.handleTouchEnded(from: touch, in: self)
+            return
+        }
     }
 
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
+
+        if let overlay = transferOverlay {
+            overlay.handleTouchEnded(from: touch, in: self)
+            return
+        }
 
         if let overlay = inventoryOverlay {
             overlay.handleTouchEnded(from: touch, in: self)
@@ -356,6 +383,15 @@ final class GameScene: SKScene {
             toggleInventoryOverlay()
             return
         }
+
+        // Open transfer overlay when tapping inside shuttle physics body
+        if let shuttle = spaceShuttle,
+           let bodyAtLocation = physicsWorld.body(at: location),
+           bodyAtLocation === shuttle.physicsBody {
+            toggleTransferOverlay()
+            return
+        }
+
         // Check if tap hit a rock
         for node in tappedNodes {
             if let rock = node as? RockFormation {
@@ -370,6 +406,7 @@ final class GameScene: SKScene {
         updateJoystickPosition()
         updateEnergyBarPosition()
         inventoryOverlay?.layout(for: size)
+        transferOverlay?.layout(for: size)
         updateCameraConstraints()
     }
     private func toggleInventoryOverlay() {
@@ -390,6 +427,36 @@ final class GameScene: SKScene {
         inventoryOverlay = overlay
     }
 
+    private func toggleTransferOverlay() {
+        if transferOverlay != nil {
+            transferOverlay?.removeFromParent()
+            transferOverlay = nil
+            return
+        }
+
+        let overlay = TransferOverlayNode(
+            playerInventory: inventory,
+            shuttleInventory: shuttleInventory,
+            itemDefsById: itemDefsById
+        )
+        overlay.onClose = { [weak self] in
+            self?.transferOverlay = nil
+            self?.saveInventories()
+        }
+        overlay.onTransfer = { [weak self] in
+            self?.saveInventories()
+        }
+        overlay.zPosition = 10_000
+        overlay.layout(for: size)
+        overlay.render()
+        gameCamera?.addChild(overlay)
+        transferOverlay = overlay
+    }
+
+    private func saveInventories() {
+        try? InventoryStorage.save(inventory.state, for: .player)
+        try? InventoryStorage.save(shuttleInventory.state, for: .shuttle)
+    }
 
     private func updateCameraConstraints() {
         guard let view = view, gameCamera != nil, mapSize != .zero else { return }

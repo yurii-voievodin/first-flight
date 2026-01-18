@@ -140,9 +140,9 @@ class MapLoader {
         }
     }
 
-    func createSpaceShuttle(from mapData: MapData) -> SpaceShuttle? {
+    func createSpaceShuttle(from mapData: MapData, inventory: Inventory) -> SpaceShuttle? {
         guard let shuttleData = mapData.spaceShuttle else { return nil }
-        let shuttle = SpaceShuttle(scale: CGFloat(shuttleData.scale))
+        let shuttle = SpaceShuttle(scale: CGFloat(shuttleData.scale), inventory: inventory)
         shuttle.position = shuttleData.position.cgPoint
         return shuttle
     }
