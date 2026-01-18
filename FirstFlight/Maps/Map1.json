@@ -621,6 +621,6 @@
   ],
   "spaceShuttle": {
     "position": { "x": 500, "y": 500 },
-    "size": { "width": 600, "height": 480 }
+    "scale": 0.6
   }
 }

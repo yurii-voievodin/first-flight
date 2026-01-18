@@ -1,21 +1,23 @@
 import SpriteKit
 
 class SpaceShuttle: SKNode {
-    private let shuttleSize: CGSize
+    private let shuttleScale: CGFloat
+    private var renderedSize: CGSize = .zero
 
     // MARK: - Debug editor (optional)
     private let debugEditorEnabled: Bool = false
     private var debugEditor: PolygonDebugEditor?
 
-    init(size: CGSize = CGSize(width: 600, height: 480)) {
-        self.shuttleSize = size
+    init(scale: CGFloat = 0.6) {
+        self.shuttleScale = scale
         super.init()
+        zPosition = -11 // Below player (player is at -10)
         setupSprite()
         setupShadowAndHighlight()
         setupPhysics()
         if debugEditorEnabled {
             let editor = PolygonDebugEditor(
-                size: shuttleSize,
+                size: renderedSize,
                 baselinePointsProvider: { [weak self] in
                     return self?.shuttlePolygonPoints() ?? []
                 },
@@ -40,7 +42,7 @@ class SpaceShuttle: SKNode {
     }
 
     required init?(coder aDecoder: NSCoder) {
-        self.shuttleSize = CGSize(width: 600, height: 480)
+        self.shuttleScale = 0.6
         super.init(coder: aDecoder)
     }
 
@@ -48,23 +50,32 @@ class SpaceShuttle: SKNode {
         let texture = SKTexture(imageNamed: "space shuttle")
         texture.filteringMode = .linear
 
-        let sprite = SKSpriteNode(texture: texture, size: shuttleSize)
+        // Get natural texture size and calculate rendered size
+        let naturalSize = texture.size()
+        renderedSize = CGSize(
+            width: naturalSize.width * shuttleScale,
+            height: naturalSize.height * shuttleScale
+        )
+
+        let sprite = SKSpriteNode(texture: texture)
+        sprite.setScale(shuttleScale)
         sprite.name = "shuttle-sprite"
         sprite.zPosition = 0
         addChild(sprite)
     }
 
     private func setupShadowAndHighlight() {
-        let offset = CGSize(width: shuttleSize.width * 0.04, height: shuttleSize.height * 0.04)
+        let offset = CGSize(width: renderedSize.width * 0.04, height: renderedSize.height * 0.04)
 
-        // Scale blur radius proportionally (base 200x160 used radius 5/4, now 3x larger uses 8/6)
-        let scaleFactor = shuttleSize.width / 200.0
-        let shadowBlurRadius = 5.0 * scaleFactor * 0.53  // Results in ~8 for 600 width
-        let highlightBlurRadius = 4.0 * scaleFactor * 0.5  // Results in ~6 for 600 width
+        // Scale blur radius proportionally (base 200x160 used radius 5/4)
+        let scaleFactor = renderedSize.width / 200.0
+        let shadowBlurRadius = 5.0 * scaleFactor * 0.53
+        let highlightBlurRadius = 4.0 * scaleFactor * 0.5
 
         // Soft shadow with blur
         let shadowTexture = SKTexture(imageNamed: "space shuttle")
-        let shadowSprite = SKSpriteNode(texture: shadowTexture, size: shuttleSize)
+        let shadowSprite = SKSpriteNode(texture: shadowTexture)
+        shadowSprite.setScale(shuttleScale)
         shadowSprite.color = .black
         shadowSprite.colorBlendFactor = 1.0
         shadowSprite.alpha = 0.45
@@ -81,12 +92,12 @@ class SpaceShuttle: SKNode {
 
         // Highlight with blur
         let highlightTexture = SKTexture(imageNamed: "space shuttle")
-        let highlightSprite = SKSpriteNode(texture: highlightTexture, size: shuttleSize)
+        let highlightSprite = SKSpriteNode(texture: highlightTexture)
+        highlightSprite.setScale(shuttleScale * 0.92)
         highlightSprite.color = .white
         highlightSprite.colorBlendFactor = 1.0
         highlightSprite.alpha = 0.18
         highlightSprite.blendMode = .add
-        highlightSprite.setScale(0.92)
 
         let highlightEffect = SKEffectNode()
         highlightEffect.name = "shuttle-highlight"
@@ -99,8 +110,8 @@ class SpaceShuttle: SKNode {
     }
 
     private func shuttlePolygonPoints() -> [CGPoint] {
-        let w = shuttleSize.width
-        let h = shuttleSize.height
+        let w = renderedSize.width
+        let h = renderedSize.height
 
         // Nose is to the left (-X), tail/engines to the right (+X).
         // Keep this list as the single source of truth for both physics and debug.
@@ -175,8 +186,8 @@ class SpaceShuttle: SKNode {
 
     // Print normalized points for copy/paste
     private func printPointsToConsole(_ points: [CGPoint]) {
-        let w = shuttleSize.width
-        let h = shuttleSize.height
+        let w = renderedSize.width
+        let h = renderedSize.height
 
         func fmt(_ v: CGFloat) -> String {
             return String(format: "%.3f", Double(v))

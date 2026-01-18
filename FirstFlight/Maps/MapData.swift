@@ -105,5 +105,5 @@ struct LakeData: Codable {
 
 struct SpaceShuttleData: Codable {
     let position: Position
-    let size: Size
+    let scale: Double
 }
