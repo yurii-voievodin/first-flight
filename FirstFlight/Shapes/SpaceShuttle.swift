@@ -5,7 +5,7 @@ class SpaceShuttle: SKNode {
     private var renderedSize: CGSize = .zero
 
     // MARK: - Debug editor (optional)
-    private let debugEditorEnabled: Bool = true
+    private let debugEditorEnabled: Bool = false
     private var debugEditor: PolygonDebugEditor?
 
     init(scale: CGFloat = 0.6) {
@@ -113,8 +113,6 @@ class SpaceShuttle: SKNode {
         let w = renderedSize.width
         let h = renderedSize.height
 
-        // Nose is to the left (-X), tail/engines to the right (+X).
-        // Keep this list as the single source of truth for both physics and debug.
         return [
             CGPoint(x: w * -0.264, y: h * 0.065), // 0  (-158, 30)
             CGPoint(x: w * -0.331, y: h * 0.157), // 1  (-198, 75)
@@ -149,19 +147,6 @@ class SpaceShuttle: SKNode {
 
     private func currentPolygonPoints() -> [CGPoint] {
         return debugEditor?.currentPoints ?? shuttlePolygonPoints()
-    }
-
-    private func createShuttlePath() -> CGPath {
-        let pts = currentPolygonPoints()
-        let path = CGMutablePath()
-
-        guard let first = pts.first else { return path }
-        path.move(to: first)
-        for p in pts.dropFirst() {
-            path.addLine(to: p)
-        }
-        path.closeSubpath()
-        return path
     }
 
     private func setupPhysics() {
