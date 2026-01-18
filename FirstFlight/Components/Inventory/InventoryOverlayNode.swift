@@ -22,7 +22,14 @@ final class InventoryOverlayNode: SKNode {
     private var viewportHeight: CGFloat = 0
     private var isDraggingGrid: Bool = false
     private var lastDragY: CGFloat = 0
-    
+
+    // Tap detection
+    private var touchStartLocation: CGPoint?
+
+    // Cached data for tap lookup
+    private var cachedState: InventoryState?
+    private var cachedDefs: [String: ItemDef] = [:]
+
     var onClose: (() -> Void)?
 
     // Grid config
@@ -129,6 +136,8 @@ final class InventoryOverlayNode: SKNode {
     }
 
     func render(state: InventoryState, defsById: [String: ItemDef]) {
+        cachedState = state
+        cachedDefs = defsById
         gridNode.removeAllChildren()
 
         // Compute rows for current capacity
@@ -158,9 +167,9 @@ final class InventoryOverlayNode: SKNode {
 
             switch slot {
             case .stack(let defId, let quantity):
-                if let def = defsById[defId] {
-                    let icon = SKSpriteNode(imageNamed: def.iconName)
-                    icon.size = CGSize(width: 44, height: 44)
+                if let def = defsById[defId], let texture = SKTexture(imageNamed: def.iconName) as SKTexture? {
+                    let icon = SKSpriteNode(texture: texture)
+                    icon.size = aspectFitSize(for: texture, maxSize: 44)
                     icon.position = CGPoint(x: slotFrame.midX, y: slotFrame.midY)
                     gridNode.addChild(icon)
 
@@ -173,9 +182,9 @@ final class InventoryOverlayNode: SKNode {
                 }
 
             case .unique(let item):
-                if let def = defsById[item.defId] {
-                    let icon = SKSpriteNode(imageNamed: def.iconName)
-                    icon.size = CGSize(width: 44, height: 44)
+                if let def = defsById[item.defId], let texture = SKTexture(imageNamed: def.iconName) as SKTexture? {
+                    let icon = SKSpriteNode(texture: texture)
+                    icon.size = aspectFitSize(for: texture, maxSize: 44)
                     icon.position = CGPoint(x: slotFrame.midX, y: slotFrame.midY)
                     gridNode.addChild(icon)
                 }
@@ -194,6 +203,7 @@ final class InventoryOverlayNode: SKNode {
         }
 
         let p = touch.location(in: cam)
+        touchStartLocation = p
 
         // Close button
         if closeLabel.contains(p) {
@@ -233,8 +243,29 @@ final class InventoryOverlayNode: SKNode {
     }
 
     func handleTouchEnded(from touch: UITouch, in scene: SKScene) {
-        isDraggingGrid = false
-        lastDragY = 0
+        defer {
+            isDraggingGrid = false
+            lastDragY = 0
+            touchStartLocation = nil
+        }
+
+        guard let cam = scene.camera else { return }
+        let endLocation = touch.location(in: cam)
+
+        // Check if it was a tap (not a drag scroll)
+        guard let startLocation = touchStartLocation else { return }
+        let dx = endLocation.x - startLocation.x
+        let dy = endLocation.y - startLocation.y
+        let distance = sqrt(dx * dx + dy * dy)
+
+        guard distance < 10 else { return }
+
+        // It's a tap - check if it's on a slot with an item
+        guard let index = slotIndex(at: endLocation),
+              let item = itemAt(slotIndex: index) else { return }
+
+        let center = slotCenter(for: index)
+        showTooltip(for: item, at: center)
     }
 
     private func clampScrollOffset() {
@@ -257,5 +288,111 @@ final class InventoryOverlayNode: SKNode {
             return
         }
         contentHeight = CGFloat(rows) * slotSize.height + CGFloat(max(0, rows - 1)) * slotSpacing
+    }
+
+    /// Returns an aspect-fit size for the given texture within the max bounds.
+    private func aspectFitSize(for texture: SKTexture, maxSize: CGFloat) -> CGSize {
+        let textureSize = texture.size()
+        let aspectRatio = textureSize.width / textureSize.height
+        if aspectRatio > 1 {
+            // Landscape: fit to width
+            return CGSize(width: maxSize, height: maxSize / aspectRatio)
+        } else {
+            // Portrait or square: fit to height
+            return CGSize(width: maxSize * aspectRatio, height: maxSize)
+        }
+    }
+
+    // MARK: - Tap Tooltip
+
+    /// Returns the slot index at the given position in camera coordinates, or nil if outside grid.
+    private func slotIndex(at cameraPoint: CGPoint) -> Int? {
+        guard gridViewportRect.contains(cameraPoint) else { return nil }
+        guard let state = cachedState else { return nil }
+
+        // Convert camera coords to grid-local coords
+        let gridLocalX = cameraPoint.x - gridNode.position.x
+        let gridLocalY = cameraPoint.y - gridNode.position.y
+
+        // Each slot: origin at (col * stride, -row * stride - slotSize.height)
+        let strideX = slotSize.width + slotSpacing
+        let strideY = slotSize.height + slotSpacing
+
+        let col = Int(floor(gridLocalX / strideX))
+        let row = Int(floor(-gridLocalY / strideY))
+
+        guard col >= 0, col < columns, row >= 0 else { return nil }
+
+        let index = row * columns + col
+        guard index >= 0, index < state.maxSlots else { return nil }
+        return index
+    }
+
+    /// Returns the ItemDef at the given slot index, or nil if empty or invalid.
+    private func itemAt(slotIndex: Int) -> ItemDef? {
+        guard let state = cachedState,
+              slotIndex >= 0,
+              slotIndex < state.slots.count,
+              let slot = state.slots[slotIndex] else { return nil }
+
+        switch slot {
+        case .stack(let defId, _):
+            return cachedDefs[defId]
+        case .unique(let item):
+            return cachedDefs[item.defId]
+        }
+    }
+
+    /// Returns the center position of the slot in camera coordinates.
+    private func slotCenter(for slotIndex: Int) -> CGPoint {
+        let col = slotIndex % columns
+        let row = slotIndex / columns
+
+        let x = CGFloat(col) * (slotSize.width + slotSpacing)
+        let y = -CGFloat(row) * (slotSize.height + slotSpacing) - slotSize.height
+
+        let slotCenterX = x + slotSize.width / 2
+        let slotCenterY = y + slotSize.height / 2
+
+        return CGPoint(
+            x: gridNode.position.x + slotCenterX,
+            y: gridNode.position.y + slotCenterY
+        )
+    }
+
+    /// Shows a floating tooltip with the item's display name.
+    private func showTooltip(for item: ItemDef, at position: CGPoint) {
+        let label = SKLabelNode(text: item.displayName)
+        label.fontName = "Courier-Bold"
+        label.fontSize = 14
+        label.fontColor = .white
+        label.horizontalAlignmentMode = .center
+        label.verticalAlignmentMode = .center
+        label.zPosition = 300
+
+        let padding: CGFloat = 8
+        let bgWidth = label.frame.width + padding * 2
+        let bgHeight = label.frame.height + padding
+
+        let background = SKShapeNode(rectOf: CGSize(width: bgWidth, height: bgHeight), cornerRadius: 6)
+        background.fillColor = SKColor(white: 0.1, alpha: 0.9)
+        background.strokeColor = SKColor(white: 1.0, alpha: 0.2)
+        background.lineWidth = 1
+        background.zPosition = 299
+
+        let container = SKNode()
+        container.addChild(background)
+        container.addChild(label)
+        container.position = CGPoint(x: position.x, y: position.y + slotSize.height / 2 + 10)
+        container.alpha = 1.0
+        addChild(container)
+
+        let moveUp = SKAction.moveBy(x: 0, y: 35, duration: 1.0)
+        moveUp.timingMode = .easeOut
+        let fadeOut = SKAction.fadeOut(withDuration: 1.0)
+        let group = SKAction.group([moveUp, fadeOut])
+        let remove = SKAction.removeFromParent()
+
+        container.run(SKAction.sequence([group, remove]))
     }
 }
