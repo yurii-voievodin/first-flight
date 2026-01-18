@@ -14,28 +14,15 @@ class SpaceShuttle: SKNode {
         zPosition = -11 // Below player (player is at -10)
         setupSprite()
         setupShadowAndHighlight()
-        setupPhysics()
+        applyPhysics(using: shuttlePolygonPoints())
         if debugEditorEnabled {
             let editor = PolygonDebugEditor(
                 size: renderedSize,
-                baselinePointsProvider: { [weak self] in
-                    return self?.shuttlePolygonPoints() ?? []
-                },
-                currentPointsProvider: { [weak self] in
-                    return self?.currentPolygonPoints() ?? []
-                },
-                onPointsChanged: { [weak self] points, rebuildPhysics in
-                    self?.applyPhysics(using: points)
-                    if rebuildPhysics {
-                        // nothing else for now
-                    }
-                },
-                onPointsCommitted: { [weak self] points in
-                    // Print normalized points for copy/paste
-                    self?.printPointsToConsole(points)
-                }
+                points: shuttlePolygonPoints(),
+                allowEditing: true,
+                debugPrintLabel: "SpaceShuttle"
             )
-            editor.zPosition = 999
+            editor.zPosition = zPosition
             addChild(editor)
             debugEditor = editor
         }
@@ -145,23 +132,10 @@ class SpaceShuttle: SKNode {
         ]
     }
 
-    private func currentPolygonPoints() -> [CGPoint] {
-        return debugEditor?.currentPoints ?? shuttlePolygonPoints()
-    }
-
-    private func setupPhysics() {
-        applyPhysics(using: currentPolygonPoints())
-    }
-
     private func applyPhysics(using points: [CGPoint]) {
-        let path = CGMutablePath()
-        guard let first = points.first else { return }
-        path.move(to: first)
-        for p in points.dropFirst() { path.addLine(to: p) }
-        path.closeSubpath()
-
-        physicsBody = SKPhysicsBody(polygonFrom: path)
-        physicsBody?.categoryBitMask = PhysicsCategory.rock
+        guard let body = makePhysicsBody(from: points) else { return }
+        physicsBody = body
+        physicsBody?.categoryBitMask = PhysicsCategory.spaceShuttle
         physicsBody?.contactTestBitMask = PhysicsCategory.player
         physicsBody?.collisionBitMask = PhysicsCategory.player
         physicsBody?.isDynamic = false
@@ -169,25 +143,125 @@ class SpaceShuttle: SKNode {
         physicsBody?.restitution = 0.1
     }
 
-    // Print normalized points for copy/paste
-    private func printPointsToConsole(_ points: [CGPoint]) {
-        let w = renderedSize.width
-        let h = renderedSize.height
-
-        func fmt(_ v: CGFloat) -> String {
-            return String(format: "%.3f", Double(v))
+    private func makePhysicsBody(from points: [CGPoint]) -> SKPhysicsBody? {
+        guard points.count >= 3 else { return nil }
+        if points.count == 3 {
+            return SKPhysicsBody(polygonFrom: makePath(points))
         }
 
-        print("\n--- SpaceShuttle polygon points (normalized) ---")
-        print("return [")
-        for (i, p) in points.enumerated() {
-            let nx = p.x / w
-            let ny = p.y / h
-            print("    CGPoint(x: w * \(fmt(nx)), y: h * \(fmt(ny))), // \(i)  (\(Int(p.x)), \(Int(p.y)))")
+        let triangles = triangulate(points)
+        guard !triangles.isEmpty else {
+            return SKPhysicsBody(polygonFrom: makePath(points))
         }
-        print("]")
-        print("--- end ---\n")
+
+        let bodies = triangles.map { SKPhysicsBody(polygonFrom: makePath($0)) }
+        return SKPhysicsBody(bodies: bodies)
     }
 
-    // (Touch editing handled by debug editor)
+    private func makePath(_ points: [CGPoint]) -> CGPath {
+        let path = CGMutablePath()
+        guard let first = points.first else { return path }
+        path.move(to: first)
+        for p in points.dropFirst() { path.addLine(to: p) }
+        path.closeSubpath()
+        return path
+    }
+
+    // Ear clipping triangulation for concave polygons.
+    private func triangulate(_ points: [CGPoint]) -> [[CGPoint]] {
+        let epsilon: CGFloat = 0.0001
+        var vertices = points
+        if polygonArea(vertices) < 0 {
+            vertices.reverse()
+        }
+
+        var indices = Array(vertices.indices)
+        var triangles: [[CGPoint]] = []
+        var guardCounter = 0
+
+        while indices.count > 3 && guardCounter < 1000 {
+            var earFound = false
+            let count = indices.count
+
+            for i in 0..<count {
+                let prevIndex = indices[(i - 1 + count) % count]
+                let currIndex = indices[i]
+                let nextIndex = indices[(i + 1) % count]
+
+                let a = vertices[prevIndex]
+                let b = vertices[currIndex]
+                let c = vertices[nextIndex]
+
+                if cross(a, b, c) <= epsilon {
+                    continue
+                }
+
+                var hasPointInside = false
+                for otherIndex in indices where otherIndex != prevIndex && otherIndex != currIndex && otherIndex != nextIndex {
+                    if pointInTriangle(vertices[otherIndex], a, b, c) {
+                        hasPointInside = true
+                        break
+                    }
+                }
+                if hasPointInside {
+                    continue
+                }
+
+                triangles.append([a, b, c])
+                indices.remove(at: i)
+                earFound = true
+                break
+            }
+
+            if !earFound {
+                break
+            }
+            guardCounter += 1
+        }
+
+        if indices.count == 3 {
+            let a = vertices[indices[0]]
+            let b = vertices[indices[1]]
+            let c = vertices[indices[2]]
+            triangles.append([a, b, c])
+        }
+
+        return triangles
+    }
+
+    private func polygonArea(_ points: [CGPoint]) -> CGFloat {
+        guard points.count >= 3 else { return 0 }
+        var area: CGFloat = 0
+        for i in 0..<points.count {
+            let p1 = points[i]
+            let p2 = points[(i + 1) % points.count]
+            area += (p1.x * p2.y) - (p2.x * p1.y)
+        }
+        return area * 0.5
+    }
+
+    private func cross(_ a: CGPoint, _ b: CGPoint, _ c: CGPoint) -> CGFloat {
+        (b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x)
+    }
+
+    private func pointInTriangle(_ p: CGPoint, _ a: CGPoint, _ b: CGPoint, _ c: CGPoint) -> Bool {
+        let v0 = CGPoint(x: c.x - a.x, y: c.y - a.y)
+        let v1 = CGPoint(x: b.x - a.x, y: b.y - a.y)
+        let v2 = CGPoint(x: p.x - a.x, y: p.y - a.y)
+
+        let dot00 = v0.x * v0.x + v0.y * v0.y
+        let dot01 = v0.x * v1.x + v0.y * v1.y
+        let dot02 = v0.x * v2.x + v0.y * v2.y
+        let dot11 = v1.x * v1.x + v1.y * v1.y
+        let dot12 = v1.x * v2.x + v1.y * v2.y
+
+        let denom = (dot00 * dot11 - dot01 * dot01)
+        if abs(denom) < 0.0001 { return false }
+
+        let invDenom = 1 / denom
+        let u = (dot11 * dot02 - dot01 * dot12) * invDenom
+        let v = (dot00 * dot12 - dot01 * dot02) * invDenom
+
+        return u >= 0 && v >= 0 && (u + v) <= 1
+    }
 }

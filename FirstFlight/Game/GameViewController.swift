@@ -12,6 +12,8 @@ import GameplayKit
 final class GameViewController: UIViewController {
 
     private weak var gameScene: GameScene?
+    // Debug mode flag
+    private var showDebugLabels: Bool = ProcessInfo.processInfo.environment["SHOW_DEBUG_LABELS"] == "1"
 
     override func loadView() {
         self.view = SKView()
@@ -34,8 +36,11 @@ final class GameViewController: UIViewController {
         
         view.ignoresSiblingOrder = true
         
-        view.showsFPS = true
-        view.showsNodeCount = true
+        if showDebugLabels {
+            view.showsFPS = true
+            view.showsNodeCount = true
+            view.showsPhysics = true
+        }
     }
 
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {

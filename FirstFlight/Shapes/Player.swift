@@ -442,8 +442,8 @@ final class Player: SKNode {
     private func setupPhysics() {
         physicsBody = SKPhysicsBody(circleOfRadius: bodyRadius)
         physicsBody?.categoryBitMask = PhysicsCategory.player
-        physicsBody?.contactTestBitMask = PhysicsCategory.wall | PhysicsCategory.rock
-        physicsBody?.collisionBitMask = PhysicsCategory.wall | PhysicsCategory.rock
+        physicsBody?.contactTestBitMask = PhysicsCategory.wall | PhysicsCategory.rock | PhysicsCategory.spaceShuttle
+        physicsBody?.collisionBitMask = PhysicsCategory.wall | PhysicsCategory.rock | PhysicsCategory.spaceShuttle
         physicsBody?.isDynamic = true
         physicsBody?.affectedByGravity = false
         physicsBody?.allowsRotation = false

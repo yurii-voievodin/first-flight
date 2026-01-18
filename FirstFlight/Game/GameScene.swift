@@ -555,15 +555,23 @@ final class GameScene: SKScene {
 extension GameScene: SKPhysicsContactDelegate {
     func didBegin(_ contact: SKPhysicsContact) {
         let collision = contact.bodyA.categoryBitMask | contact.bodyB.categoryBitMask
+        let bodyANode = contact.bodyA.node
+        let bodyBNode = contact.bodyB.node
+        let bodyASize = bodyANode?.calculateAccumulatedFrame().size ?? .zero
+        let bodyBSize = bodyBNode?.calculateAccumulatedFrame().size ?? .zero
 
         // Debug logging
         print("🔵 COLLISION DETECTED:")
+        print("  Contact point: \(contact.contactPoint)")
         print("  Body A: \(contact.bodyA.categoryBitMask) (\(categoryName(contact.bodyA.categoryBitMask)))")
+        print("  Body A node: \(String(describing: bodyANode)) size: \(bodyASize)")
         print("  Body B: \(contact.bodyB.categoryBitMask) (\(categoryName(contact.bodyB.categoryBitMask)))")
+        print("  Body B node: \(String(describing: bodyBNode)) size: \(bodyBSize)")
 
         // Check if player collided with wall or rock
         if collision == PhysicsCategory.player | PhysicsCategory.wall ||
-           collision == PhysicsCategory.player | PhysicsCategory.rock {
+           collision == PhysicsCategory.player | PhysicsCategory.rock ||
+           collision == PhysicsCategory.player | PhysicsCategory.spaceShuttle {
             astronaut.stopMovement()
         }
 
@@ -607,6 +615,7 @@ extension GameScene: SKPhysicsContactDelegate {
         case PhysicsCategory.rock: return "Rock"
         case PhysicsCategory.terrain: return "Terrain"
         case PhysicsCategory.blasterBeam: return "BlasterBeam"
+        case PhysicsCategory.spaceShuttle: return "SpaceShuttle"
         default: return "Unknown(\(category))"
         }
     }

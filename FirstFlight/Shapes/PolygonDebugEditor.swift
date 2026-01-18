@@ -2,40 +2,53 @@ import SpriteKit
 
 final class PolygonDebugEditor: SKNode {
     let size: CGSize
+    private let debugPrintLabel: String?
 
     // Public read-only current points used by the owner
     private(set) var currentPoints: [CGPoint]
-
-    private let baselinePointsProvider: () -> [CGPoint]
-    private let currentPointsProvider: () -> [CGPoint]
-    private let onPointsChanged: (_ points: [CGPoint], _ rebuildPhysics: Bool) -> Void
-    private let onPointsCommitted: (_ points: [CGPoint]) -> Void
 
     // Visual toggles
     private let showGrid: Bool = true
     private let showVertexLabels: Bool = true
     private let showSpriteCornerLabels: Bool = true
-    private let showEditorHandles: Bool = true
+    private let showEditorHandles: Bool
     private let showBorder: Bool = true
 
+    private let allowEditing: Bool
+
     private weak var activeHandle: SKNode?
-    private var lastPhysicsRebuildTime: TimeInterval = 0
+
+    static func printNormalizedPoints(_ points: [CGPoint], size: CGSize, label: String) {
+        guard size.width != 0, size.height != 0 else { return }
+
+        func fmt(_ v: CGFloat) -> String {
+            return String(format: "%.3f", Double(v))
+        }
+
+        print("\n--- \(label) polygon points (normalized) ---")
+        print("return [")
+        for (i, p) in points.enumerated() {
+            let nx = p.x / size.width
+            let ny = p.y / size.height
+            print("    CGPoint(x: w * \(fmt(nx)), y: h * \(fmt(ny))), // \(i)  (\(Int(p.x)), \(Int(p.y)))")
+        }
+        print("]")
+        print("--- end ---\n")
+    }
 
     init(
         size: CGSize,
-        baselinePointsProvider: @escaping () -> [CGPoint],
-        currentPointsProvider: @escaping () -> [CGPoint],
-        onPointsChanged: @escaping (_ points: [CGPoint], _ rebuildPhysics: Bool) -> Void,
-        onPointsCommitted: @escaping (_ points: [CGPoint]) -> Void
+        points: [CGPoint],
+        allowEditing: Bool = true,
+        debugPrintLabel: String? = nil
     ) {
         self.size = size
-        self.baselinePointsProvider = baselinePointsProvider
-        self.currentPointsProvider = currentPointsProvider
-        self.onPointsChanged = onPointsChanged
-        self.onPointsCommitted = onPointsCommitted
-        self.currentPoints = currentPointsProvider()
+        self.debugPrintLabel = debugPrintLabel
+        self.allowEditing = allowEditing
+        self.showEditorHandles = allowEditing
+        self.currentPoints = points
         super.init()
-        isUserInteractionEnabled = true
+        isUserInteractionEnabled = allowEditing
         rebuildOverlay()
     }
 
@@ -45,9 +58,6 @@ final class PolygonDebugEditor: SKNode {
 
     private func rebuildOverlay() {
         removeAllChildren()
-
-        // Keep in sync if owner changed points externally
-        currentPoints = currentPointsProvider()
 
         let w = size.width
         let h = size.height
@@ -184,12 +194,8 @@ final class PolygonDebugEditor: SKNode {
     // MARK: - Touch editing
 
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard allowEditing else { return }
         guard let touch = touches.first else { return }
-
-        // Ensure we have a mutable copy based on baseline if current is empty
-        if currentPoints.isEmpty {
-            currentPoints = baselinePointsProvider()
-        }
 
         let loc = touch.location(in: self)
         let nodes = nodes(at: loc)
@@ -202,6 +208,7 @@ final class PolygonDebugEditor: SKNode {
     }
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard allowEditing else { return }
         guard let touch = touches.first,
               let handle = activeHandle,
               let idx = handle.userData?["index"] as? Int,
@@ -213,23 +220,18 @@ final class PolygonDebugEditor: SKNode {
         // Update overlay immediately
         rebuildOverlay()
 
-        // Notify owner; throttle heavy rebuilds
-        onPointsChanged(currentPoints, false)
-
-        let now = touch.timestamp
-        if now - lastPhysicsRebuildTime > 0.12 {
-            lastPhysicsRebuildTime = now
-            onPointsChanged(currentPoints, true)
-        }
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard allowEditing else { return }
         activeHandle = nil
-        onPointsChanged(currentPoints, true)
-        onPointsCommitted(currentPoints)
+        if let label = debugPrintLabel {
+            Self.printNormalizedPoints(currentPoints, size: size, label: label)
+        }
     }
 
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard allowEditing else { return }
         activeHandle = nil
     }
 }
