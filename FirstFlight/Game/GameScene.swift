@@ -21,6 +21,7 @@ final class GameScene: SKScene {
     private var boundaryRocks: [RockFormation] = []
     private var virtualJoystick: VirtualJoystick!
     private var energyBar: EnergyBar!
+    private var spaceShuttle: SpaceShuttle?
 
     // Debug mode flag
     var showDebugLabels: Bool = ProcessInfo.processInfo.environment["SHOW_DEBUG_LABELS"] == "1"
@@ -113,6 +114,12 @@ final class GameScene: SKScene {
             // Update player start position
             let startPosition = MapLoader.shared.getPlayerStartPosition(from: mapData)
             astronaut.position = startPosition
+
+            // Add space shuttle from map data
+            if let shuttle = MapLoader.shared.createSpaceShuttle(from: mapData) {
+                addChild(shuttle)
+                spaceShuttle = shuttle
+            }
 
             // Create all rock formations from JSON
             let rocks = MapLoader.shared.createAllRocks(from: mapData)

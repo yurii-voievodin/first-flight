@@ -140,6 +140,13 @@ class MapLoader {
         }
     }
 
+    func createSpaceShuttle(from mapData: MapData) -> SpaceShuttle? {
+        guard let shuttleData = mapData.spaceShuttle else { return nil }
+        let shuttle = SpaceShuttle(size: shuttleData.size.cgSize)
+        shuttle.position = shuttleData.position.cgPoint
+        return shuttle
+    }
+
     func createAllRocks(from mapData: MapData) -> (boundary: [RockFormation], interior: [RockFormation], signature: [RockFormation]) {
         let boundaryRocks = createBoundaryRocks(from: mapData)
         let interiorRocks = createInteriorRocks(from: mapData)

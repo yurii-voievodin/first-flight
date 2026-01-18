@@ -7,6 +7,7 @@ struct MapData: Codable {
     let interiorRocks: [InteriorRockData]
     let signatureFormations: [SignatureFormationData]
     let lakes: [LakeData]?
+    let spaceShuttle: SpaceShuttleData?
 }
 
 struct MapMetadata: Codable {
@@ -100,4 +101,9 @@ struct LakeData: Codable {
     let position: Position
     let size: Size
     let depth: Double?
+}
+
+struct SpaceShuttleData: Codable {
+    let position: Position
+    let size: Size
 }

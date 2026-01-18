@@ -13,15 +13,10 @@
     },
     "playerStartPosition": {
       "x": 500,
-      "y": 500
+      "y": 150
     }
   },
   "boundaryRocks": [
-    {
-      "position": { "x": 250, "y": 350 },
-      "size": { "width": 150, "height": 120 },
-      "type": "boulder"
-    },
     {
       "position": { "x": 780, "y": 620 },
       "size": { "width": 153, "height": 119 },
@@ -63,11 +58,6 @@
       "type": "overhang"
     },
     {
-      "position": { "x": 580, "y": 700 },
-      "size": { "width": 119, "height": 136 },
-      "type": "cluster"
-    },
-    {
       "position": { "x": 1120, "y": 1580 },
       "size": { "width": 136, "height": 119 },
       "type": "boulder"
@@ -76,11 +66,6 @@
       "position": { "x": 1850, "y": 380 },
       "size": { "width": 144, "height": 128 },
       "type": "overhang"
-    },
-    {
-      "position": { "x": 280, "y": 750 },
-      "size": { "width": 150, "height": 120 },
-      "type": "boulder"
     },
     {
       "position": { "x": 1580, "y": 1780 },
@@ -260,16 +245,6 @@
   ],
   "interiorRocks": [
     {
-      "position": { "x": 400, "y": 300 },
-      "size": { "width": 120, "height": 80 },
-      "type": "boulder"
-    },
-    {
-      "position": { "x": 520, "y": 320 },
-      "size": { "width": 78, "height": 58 },
-      "type": "hydrogenDeposit"
-    },
-    {
       "position": { "x": 980, "y": 520 },
       "size": { "width": 72, "height": 54 },
       "type": "hydrogenDeposit"
@@ -353,26 +328,6 @@
       "position": { "x": 1245, "y": 1065 },
       "size": { "width": 80, "height": 58 },
       "type": "hydrogenDeposit"
-    },
-    {
-      "position": { "x": 600, "y": 450 },
-      "size": { "width": 100, "height": 90 },
-      "type": "cluster"
-    },
-    {
-      "position": { "x": 535, "y": 415 },
-      "size": { "width": 31, "height": 46 },
-      "type": "overhang"
-    },
-    {
-      "position": { "x": 685, "y": 495 },
-      "size": { "width": 57, "height": 42 },
-      "type": "spire"
-    },
-    {
-      "position": { "x": 620, "y": 385 },
-      "size": { "width": 38, "height": 33 },
-      "type": "boulder"
     },
     {
       "position": { "x": 800, "y": 250 },
@@ -663,5 +618,9 @@
       "size": { "width": 200, "height": 140 },
       "depth": 24
     }
-  ]
+  ],
+  "spaceShuttle": {
+    "position": { "x": 500, "y": 500 },
+    "size": { "width": 600, "height": 480 }
+  }
 }
