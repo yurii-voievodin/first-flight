@@ -386,71 +386,27 @@ class RockFormation: SKShapeNode {
         let w = size.width
         let h = size.height
 
-        // Reference-like silhouette: very short base + clustered vertical crystal spikes (one tall center).
+        // Irregular angular rock formation with hard edges
         let pts: [CGPoint] = [
-            // --- Base (rock): narrow and symmetric under the cluster ---
-            CGPoint(x: w * 0.28, y: h * 0.11),
-            CGPoint(x: w * 0.34, y: h * 0.06),
-            CGPoint(x: w * 0.42, y: h * 0.04),
-            CGPoint(x: w * 0.50, y: h * 0.05),
-            CGPoint(x: w * 0.58, y: h * 0.04),
-            CGPoint(x: w * 0.66, y: h * 0.06),
-            CGPoint(x: w * 0.72, y: h * 0.11),
-
-            // Right shoulder up (start the crystal field)
-            CGPoint(x: w * 0.72, y: h * 0.18),
-            CGPoint(x: w * 0.68, y: h * 0.26),
-
-            // Spike 1 (outer-right) – small
-            CGPoint(x: w * 0.66, y: h * 0.32),
-            CGPoint(x: w * 0.68, y: h * 0.70),
-            CGPoint(x: w * 0.62, y: h * 0.34),
-
-            // Valley
-            CGPoint(x: w * 0.60, y: h * 0.40),
-
-            // Spike 2 (inner-right) – medium
-            CGPoint(x: w * 0.62, y: h * 0.44),
-            CGPoint(x: w * 0.62, y: h * 0.88),
-            CGPoint(x: w * 0.56, y: h * 0.46),
-
-            // Valley near center
-            CGPoint(x: w * 0.54, y: h * 0.50),
-
-            // Spike 3 (center) – tallest
-            CGPoint(x: w * 0.54, y: h * 0.54),
-            CGPoint(x: w * 0.50, y: h * 1.00),
-            CGPoint(x: w * 0.46, y: h * 0.54),
-
-            // Valley near center
-            CGPoint(x: w * 0.46, y: h * 0.50),
-
-            // Spike 4 (inner-left) – medium (mirror of inner-right)
-            CGPoint(x: w * 0.44, y: h * 0.46),
-            CGPoint(x: w * 0.38, y: h * 0.88),
-            CGPoint(x: w * 0.38, y: h * 0.44),
-
-            // Valley
-            CGPoint(x: w * 0.40, y: h * 0.40),
-
-            // Spike 5 (outer-left) – small (mirror of outer-right)
-            CGPoint(x: w * 0.38, y: h * 0.34),
-            CGPoint(x: w * 0.32, y: h * 0.70),
-            CGPoint(x: w * 0.34, y: h * 0.32),
-
-            // Left shoulder down
-            CGPoint(x: w * 0.32, y: h * 0.26),
-            CGPoint(x: w * 0.28, y: h * 0.18),
-            CGPoint(x: w * 0.28, y: h * 0.14)
+            // Bottom
+            CGPoint(x: w * 0.25, y: h * 0.05),
+            CGPoint(x: w * 0.70, y: h * 0.08),
+            // Right side
+            CGPoint(x: w * 0.82, y: h * 0.35),
+            CGPoint(x: w * 0.75, y: h * 0.70),
+            // Top
+            CGPoint(x: w * 0.55, y: h * 0.90),
+            CGPoint(x: w * 0.30, y: h * 0.78),
+            // Left side
+            CGPoint(x: w * 0.15, y: h * 0.50),
+            CGPoint(x: w * 0.18, y: h * 0.22)
         ]
 
         guard let first = pts.first else { return path }
         path.move(to: first)
 
-        // Slightly bevel corners by inserting short segments (makes it feel less "polygon tool").
         for i in 1..<pts.count {
-            let p = pts[i]
-            path.addLine(to: p)
+            path.addLine(to: pts[i])
         }
 
         path.closeSubpath()
