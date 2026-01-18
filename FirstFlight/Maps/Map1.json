@@ -138,11 +138,6 @@
       "type": "spire"
     },
     {
-      "position": { "x": 180, "y": 580 },
-      "size": { "width": 119, "height": 153 },
-      "type": "overhang"
-    },
-    {
       "position": { "x": 120, "y": 120 },
       "size": { "width": 145, "height": 115 },
       "type": "boulder"
@@ -353,11 +348,6 @@
       "position": { "x": 1500, "y": 300 },
       "size": { "width": 130, "height": 95 },
       "type": "spire"
-    },
-    {
-      "position": { "x": 300, "y": 700 },
-      "size": { "width": 95, "height": 75 },
-      "type": "overhang"
     },
     {
       "position": { "x": 760, "y": 720 },
