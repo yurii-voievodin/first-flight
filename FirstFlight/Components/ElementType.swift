@@ -183,8 +183,13 @@ enum ItemCatalog {
             )
         }
 
-        // Add non-element items here later (equipment, crystals, quest items, etc.).
-        return elementDefs
+        // Equipment items
+        let equipmentDefs: [ItemDef] = [
+            ItemDef(id: "backpack", kind: .equipment, displayName: "Backpack", iconName: "backpack", maxStack: nil),
+            ItemDef(id: "blaster", kind: .equipment, displayName: "Blaster", iconName: "blaster", maxStack: nil),
+        ]
+
+        return elementDefs + equipmentDefs
     }
 }
 

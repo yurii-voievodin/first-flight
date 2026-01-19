@@ -6,12 +6,14 @@ final class TransferOverlayNode: SKNode {
 
     var onClose: (() -> Void)?
     var onTransfer: (() -> Void)?
+    var onEquip: ((String) -> Void)?
 
     // MARK: - Data
 
     private var playerInventory: Inventory
     private var shuttleInventory: Inventory
     private var itemDefsById: [String: ItemDef]
+    private weak var player: Player?
 
     // MARK: - UI Elements
 
@@ -27,6 +29,14 @@ final class TransferOverlayNode: SKNode {
 
     private let playerGridNode = SKNode()
     private let shuttleGridNode = SKNode()
+
+    // Equipment section
+    private let equipmentSectionLabel = SKLabelNode(text: "Equipment")
+    private let equipmentSlotsNode = SKNode()
+    private var backpackSlotNode = SKShapeNode()
+    private var weaponSlotNode = SKShapeNode()
+    private var backpackSlotRect: CGRect = .zero
+    private var weaponSlotRect: CGRect = .zero
 
     private let playerCropNode = SKCropNode()
     private let shuttleCropNode = SKCropNode()
@@ -69,12 +79,20 @@ final class TransferOverlayNode: SKNode {
         case shuttle
     }
 
+    private enum DragSource {
+        case inventory(panel: PanelSide, slotIndex: Int)
+        case equipment(slot: EquipmentSlot)
+    }
+
+    private var dragSource: DragSource?
+
     // MARK: - Init
 
-    init(playerInventory: Inventory, shuttleInventory: Inventory, itemDefsById: [String: ItemDef]) {
+    init(playerInventory: Inventory, shuttleInventory: Inventory, itemDefsById: [String: ItemDef], player: Player? = nil) {
         self.playerInventory = playerInventory
         self.shuttleInventory = shuttleInventory
         self.itemDefsById = itemDefsById
+        self.player = player
         super.init()
         setupUI()
     }
@@ -94,12 +112,24 @@ final class TransferOverlayNode: SKNode {
         containerNode.addChild(playerTitleLabel)
         containerNode.addChild(shuttleTitleLabel)
         containerNode.addChild(closeLabel)
+        containerNode.addChild(equipmentSlotsNode)
 
         playerCropNode.maskNode = playerMaskNode
         playerCropNode.addChild(playerGridNode)
 
         shuttleCropNode.maskNode = shuttleMaskNode
         shuttleCropNode.addChild(shuttleGridNode)
+
+        // Equipment section label
+        equipmentSectionLabel.fontSize = 12
+        equipmentSectionLabel.fontName = "Courier-Bold"
+        equipmentSectionLabel.fontColor = SKColor(white: 1.0, alpha: 0.6)
+        equipmentSectionLabel.horizontalAlignmentMode = .left
+        equipmentSectionLabel.verticalAlignmentMode = .center
+        equipmentSectionLabel.zPosition = 230
+        equipmentSlotsNode.addChild(equipmentSectionLabel)
+
+        equipmentSlotsNode.zPosition = 220
 
         dimBackground.fillColor = SKColor(white: 0.0, alpha: 0.65)
         dimBackground.strokeColor = .clear
@@ -171,7 +201,7 @@ final class TransferOverlayNode: SKNode {
 
         if isPortrait {
             // Portrait: stack panels vertically
-            panelHeight = min((sceneSize.height - gap * 3) / 2, 280)
+            panelHeight = min((sceneSize.height - gap * 3) / 2, 340)
             let totalHeight = panelHeight * 2 + gap
 
             // Player panel (top)
@@ -225,10 +255,38 @@ final class TransferOverlayNode: SKNode {
             closeLabel.position = CGPoint(x: shuttlePanelRect.maxX - 16, y: shuttlePanelRect.maxY - 24)
         }
 
-        // Grid viewports - each panel has its own viewport
+        // Equipment section layout (between header and inventory grid)
         let padding: CGFloat = 14
+        let equipmentSectionHeight: CGFloat = 90 // Label + slot height + padding
 
-        let playerViewportTopY = playerPanelRect.maxY - headerHeight
+        // Equipment label position
+        let equipmentLabelY = playerPanelRect.maxY - headerHeight - 4
+        equipmentSectionLabel.position = CGPoint(x: playerPanelRect.minX + padding, y: equipmentLabelY)
+
+        // Equipment slots position (below label)
+        let equipmentSlotsY = equipmentLabelY - 40
+        let slotGap: CGFloat = 12
+        let twoSlotsWidth = slotSize.width * 2 + slotGap
+        let slotsStartX = playerPanelRect.midX - twoSlotsWidth / 2
+
+        // Backpack slot (left)
+        backpackSlotRect = CGRect(
+            x: slotsStartX,
+            y: equipmentSlotsY - slotSize.height / 2,
+            width: slotSize.width,
+            height: slotSize.height
+        )
+
+        // Weapon slot (right)
+        weaponSlotRect = CGRect(
+            x: slotsStartX + slotSize.width + slotGap,
+            y: equipmentSlotsY - slotSize.height / 2,
+            width: slotSize.width,
+            height: slotSize.height
+        )
+
+        // Grid viewports - each panel has its own viewport
+        let playerViewportTopY = playerPanelRect.maxY - headerHeight - equipmentSectionHeight
         let playerViewportBottomY = playerPanelRect.minY + padding
         let playerViewportHeight = max(0, playerViewportTopY - playerViewportBottomY)
 
@@ -264,7 +322,70 @@ final class TransferOverlayNode: SKNode {
     func render() {
         renderGrid(playerGridNode, state: playerInventory.state, viewportRect: playerGridViewportRect, isPlayerGrid: true)
         renderGrid(shuttleGridNode, state: shuttleInventory.state, viewportRect: shuttleGridViewportRect, isPlayerGrid: false)
+        renderEquipmentSlots()
         applyScrollAndLayout()
+    }
+
+    private func renderEquipmentSlots() {
+        equipmentSlotsNode.removeAllChildren()
+        equipmentSlotsNode.addChild(equipmentSectionLabel)
+
+        guard let player = player else { return }
+        let equipmentState = player.equipmentManager.state
+
+        // Render backpack slot
+        renderEquipmentSlot(
+            rect: backpackSlotRect,
+            slot: .backpack,
+            item: equipmentState.equippedItems[.backpack],
+            label: "Backpk"
+        )
+
+        // Render weapon slot
+        renderEquipmentSlot(
+            rect: weaponSlotRect,
+            slot: .weapon,
+            item: equipmentState.equippedItems[.weapon],
+            label: "Weapon"
+        )
+    }
+
+    private func renderEquipmentSlot(rect: CGRect, slot: EquipmentSlot, item: UniqueItemInstance?, label: String) {
+        // Slot background
+        let slotBorder = SKShapeNode(rect: rect, cornerRadius: 8)
+
+        if item != nil {
+            // Equipped: golden border
+            slotBorder.strokeColor = SKColor(red: 1.0, green: 0.84, blue: 0.0, alpha: 0.8)
+            slotBorder.lineWidth = 2
+            slotBorder.fillColor = SKColor(white: 1.0, alpha: 0.08)
+        } else {
+            // Empty: dimmed outline (no dashing, just lighter)
+            slotBorder.strokeColor = SKColor(white: 1.0, alpha: 0.2)
+            slotBorder.lineWidth = 1
+            slotBorder.fillColor = SKColor(white: 1.0, alpha: 0.02)
+        }
+        slotBorder.name = "equipSlot_\(slot.rawValue)"
+        equipmentSlotsNode.addChild(slotBorder)
+
+        // Slot label below
+        let slotLabel = SKLabelNode(text: label)
+        slotLabel.fontSize = 9
+        slotLabel.fontName = "Courier"
+        slotLabel.fontColor = SKColor(white: 1.0, alpha: 0.5)
+        slotLabel.horizontalAlignmentMode = .center
+        slotLabel.verticalAlignmentMode = .top
+        slotLabel.position = CGPoint(x: rect.midX, y: rect.minY - 3)
+        equipmentSlotsNode.addChild(slotLabel)
+
+        // Render equipped item icon
+        if let item = item, let def = itemDefsById[item.defId] {
+            let texture = SKTexture(imageNamed: def.iconName)
+            let icon = SKSpriteNode(texture: texture)
+            icon.size = aspectFitSize(for: texture, maxSize: 40)
+            icon.position = CGPoint(x: rect.midX, y: rect.midY)
+            equipmentSlotsNode.addChild(icon)
+        }
     }
 
     private func renderGrid(_ gridNode: SKNode, state: InventoryState, viewportRect: CGRect, isPlayerGrid: Bool) {
@@ -316,6 +437,16 @@ final class TransferOverlayNode: SKNode {
                     icon.size = aspectFitSize(for: texture, maxSize: 40)
                     icon.position = CGPoint(x: slotFrame.midX, y: slotFrame.midY)
                     gridNode.addChild(icon)
+
+                    // Add golden border for equipment items
+                    if def.kind == .equipment {
+                        let goldenBorder = SKShapeNode(rect: slotFrame.insetBy(dx: 2, dy: 2), cornerRadius: 6)
+                        goldenBorder.strokeColor = SKColor(red: 1.0, green: 0.84, blue: 0.0, alpha: 0.8)
+                        goldenBorder.lineWidth = 2
+                        goldenBorder.fillColor = .clear
+                        goldenBorder.zPosition = 1
+                        gridNode.addChild(goldenBorder)
+                    }
                 }
             }
         }
@@ -373,6 +504,14 @@ final class TransferOverlayNode: SKNode {
             return
         }
 
+        // Check equipment slots first (they are within player panel)
+        if let equipSlot = equipmentSlot(at: p) {
+            if let item = player?.equipmentManager.getEquipped(equipSlot) {
+                startDragFromEquipment(slot: equipSlot, item: item, at: p)
+            }
+            return
+        }
+
         // Determine which panel was tapped
         if playerGridViewportRect.contains(p) {
             activePanel = .player
@@ -396,6 +535,41 @@ final class TransferOverlayNode: SKNode {
         } else {
             activePanel = nil
             isDraggingGrid = false
+        }
+    }
+
+    private func equipmentSlot(at point: CGPoint) -> EquipmentSlot? {
+        if backpackSlotRect.contains(point) {
+            return .backpack
+        } else if weaponSlotRect.contains(point) {
+            return .weapon
+        }
+        return nil
+    }
+
+    private func startDragFromEquipment(slot: EquipmentSlot, item: UniqueItemInstance, at position: CGPoint) {
+        guard let def = itemDefsById[item.defId] else { return }
+
+        dragSource = .equipment(slot: slot)
+        dragSourcePanel = nil
+        dragSourceSlotIndex = nil
+
+        let dragNode = DraggedItemNode(itemDef: def, quantity: 1)
+        dragNode.position = position
+        dragNode.zPosition = 500
+        addChild(dragNode)
+        draggedItemNode = dragNode
+
+        // Dim the equipment slot
+        dimEquipmentSlot(slot)
+    }
+
+    private func dimEquipmentSlot(_ slot: EquipmentSlot) {
+        let name = "equipSlot_\(slot.rawValue)"
+        for child in equipmentSlotsNode.children {
+            if child.name == name {
+                child.alpha = 0.3
+            }
         }
     }
 
@@ -432,13 +606,22 @@ final class TransferOverlayNode: SKNode {
             activePanel = nil
             lastDragY = 0
             touchStartLocation = nil
+            dragSource = nil
         }
 
         guard let cam = scene.camera else { return }
         let endLocation = touch.location(in: cam)
 
-        // Handle drop if dragging
-        if let draggedNode = draggedItemNode,
+        // Handle drop from equipment slot
+        if draggedItemNode != nil, let source = dragSource {
+            if case .equipment(let slot) = source {
+                performDropFromEquipment(at: endLocation, fromSlot: slot)
+                return
+            }
+        }
+
+        // Handle drop from inventory
+        if draggedItemNode != nil,
            let sourcePanel = dragSourcePanel,
            let sourceIndex = dragSourceSlotIndex {
             performDrop(at: endLocation, from: sourcePanel, sourceIndex: sourceIndex)
@@ -450,7 +633,17 @@ final class TransferOverlayNode: SKNode {
         let distance = hypot(endLocation.x - startLocation.x, endLocation.y - startLocation.y)
         guard distance < 10 else { return }
 
-        // Show tooltip on tap
+        // Show tooltip on tap for equipment slots
+        if let equipSlot = equipmentSlot(at: endLocation),
+           let item = player?.equipmentManager.getEquipped(equipSlot),
+           let def = itemDefsById[item.defId] {
+            let slotRect = equipSlot == .backpack ? backpackSlotRect : weaponSlotRect
+            let center = CGPoint(x: slotRect.midX, y: slotRect.midY)
+            showTooltip(for: def, at: center)
+            return
+        }
+
+        // Show tooltip on tap for inventory slots
         if let panel = panelAt(endLocation),
            let slotIndex = slotIndex(at: endLocation, in: panel),
            let item = itemAt(slotIndex: slotIndex, in: panel) {
@@ -459,11 +652,52 @@ final class TransferOverlayNode: SKNode {
         }
     }
 
+    private func performDropFromEquipment(at position: CGPoint, fromSlot: EquipmentSlot) {
+        guard let player = player else {
+            render()
+            return
+        }
+
+        // Can only drop to shuttle panel
+        guard let targetPanel = panelAt(position), targetPanel == .shuttle else {
+            render()
+            return
+        }
+
+        // Check if shuttle has space
+        guard shuttleInventory.freeSlots > 0 else {
+            render()
+            return
+        }
+
+        // Unequip the item
+        let item: UniqueItemInstance?
+        switch fromSlot {
+        case .backpack:
+            item = player.unequipBackpack()
+        case .weapon:
+            item = player.unequipBlaster()
+        }
+
+        guard let unequippedItem = item else {
+            render()
+            return
+        }
+
+        // Add to shuttle inventory
+        shuttleInventory.addUnique(defId: unequippedItem.defId, count: 1)
+
+        onEquip?(unequippedItem.defId)
+        onTransfer?()
+        render()
+    }
+
     // MARK: - Drag and Drop
 
     private func startDrag(from panel: PanelSide, slotIndex: Int, slot: InventorySlot, at position: CGPoint) {
         dragSourcePanel = panel
         dragSourceSlotIndex = slotIndex
+        dragSource = .inventory(panel: panel, slotIndex: slotIndex)
 
         let defId: String
         let quantity: Int
@@ -490,6 +724,43 @@ final class TransferOverlayNode: SKNode {
     }
 
     private func performDrop(at position: CGPoint, from sourcePanel: PanelSide, sourceIndex: Int) {
+        let sourceInventory = sourcePanel == .player ? playerInventory : shuttleInventory
+
+        guard let slot = sourceInventory.state.slots[sourceIndex] else {
+            render()
+            return
+        }
+
+        // Check if dropping onto an equipment slot (only from shuttle)
+        if sourcePanel == .shuttle, let targetEquipSlot = equipmentSlot(at: position) {
+            if case .unique(let item) = slot,
+               let def = itemDefsById[item.defId],
+               def.kind == .equipment,
+               let player = player {
+                // Verify item matches the slot type
+                let matchesSlot = (targetEquipSlot == .backpack && item.defId == "backpack") ||
+                                  (targetEquipSlot == .weapon && item.defId == "blaster")
+                if matchesSlot {
+                    // Check if slot is already occupied
+                    if player.equipmentManager.getEquipped(targetEquipSlot) == nil {
+                        // Remove from shuttle and equip
+                        if sourceInventory.removeUnique(instanceId: item.instanceId) {
+                            if targetEquipSlot == .backpack {
+                                player.equipBackpack(item: item)
+                            } else {
+                                player.equipBlaster(item: item)
+                            }
+                            onEquip?(item.defId)
+                            onTransfer?()
+                        }
+                    }
+                }
+            }
+            render()
+            return
+        }
+
+        // Regular inventory transfer
         guard let targetPanel = panelAt(position) else {
             render()
             return
@@ -501,13 +772,7 @@ final class TransferOverlayNode: SKNode {
             return
         }
 
-        let sourceInventory = sourcePanel == .player ? playerInventory : shuttleInventory
         let targetInventory = targetPanel == .player ? playerInventory : shuttleInventory
-
-        guard let slot = sourceInventory.state.slots[sourceIndex] else {
-            render()
-            return
-        }
 
         // Perform transfer
         switch slot {
@@ -525,15 +790,33 @@ final class TransferOverlayNode: SKNode {
             }
 
         case .unique(let item):
-            // Check if target has space
-            guard targetInventory.freeSlots > 0 else {
-                render()
-                return
-            }
-            // Remove from source
-            if sourceInventory.removeUnique(instanceId: item.instanceId) {
-                // Add to target
-                targetInventory.addUnique(defId: item.defId, count: 1)
+            // Check if this is equipment being transferred to player panel (auto-equip)
+            if targetPanel == .player,
+               let def = itemDefsById[item.defId],
+               def.kind == .equipment,
+               let player = player {
+                // Remove from source
+                if sourceInventory.removeUnique(instanceId: item.instanceId) {
+                    // Equip instead of adding to inventory
+                    if item.defId == "backpack" {
+                        player.equipBackpack(item: item)
+                    } else if item.defId == "blaster" {
+                        player.equipBlaster(item: item)
+                    }
+                    onEquip?(item.defId)
+                }
+            } else {
+                // Regular transfer
+                // Check if target has space
+                guard targetInventory.freeSlots > 0 else {
+                    render()
+                    return
+                }
+                // Remove from source
+                if sourceInventory.removeUnique(instanceId: item.instanceId) {
+                    // Add to target
+                    targetInventory.addUnique(defId: item.defId, count: 1)
+                }
             }
         }
 
@@ -545,6 +828,24 @@ final class TransferOverlayNode: SKNode {
         // Clear previous highlights
         clearAllHighlights()
 
+        // Check if dragging from equipment slot
+        if let source = dragSource, case .equipment = source {
+            // Can only drop to shuttle
+            if shuttlePanelRect.contains(position) {
+                shuttlePanel.strokeColor = SKColor(red: 0.3, green: 0.8, blue: 0.3, alpha: 0.8)
+                shuttlePanel.lineWidth = 3
+            }
+            return
+        }
+
+        // Check if dragging equipment to equipment slot
+        if let sourcePanel = dragSourcePanel,
+           sourcePanel == .shuttle,
+           let targetEquipSlot = equipmentSlot(at: position) {
+            highlightEquipmentSlot(targetEquipSlot)
+            return
+        }
+
         // Highlight drop zone if over different panel
         guard let targetPanel = panelAt(position),
               let sourcePanel = dragSourcePanel,
@@ -555,11 +856,24 @@ final class TransferOverlayNode: SKNode {
         panelNode.lineWidth = 3
     }
 
+    private func highlightEquipmentSlot(_ slot: EquipmentSlot) {
+        let name = "equipSlot_\(slot.rawValue)"
+        for child in equipmentSlotsNode.children {
+            if let shapeNode = child as? SKShapeNode, shapeNode.name == name {
+                shapeNode.strokeColor = SKColor(red: 0.3, green: 0.8, blue: 0.3, alpha: 0.9)
+                shapeNode.lineWidth = 3
+            }
+        }
+    }
+
     private func clearAllHighlights() {
         playerPanel.strokeColor = SKColor(white: 1.0, alpha: 0.15)
         playerPanel.lineWidth = 2
         shuttlePanel.strokeColor = SKColor(white: 1.0, alpha: 0.15)
         shuttlePanel.lineWidth = 2
+
+        // Re-render equipment slots to reset their styling
+        renderEquipmentSlots()
     }
 
     private func dimSlot(at index: Int, in panel: PanelSide) {

@@ -64,12 +64,13 @@ final class Player: SKNode {
 
     // Body parts
     private var body: SKSpriteNode!
-    private var backpack: SKSpriteNode!
+    private var backpack: SKSpriteNode?
     private var head: SKSpriteNode!
     private var helmetGlass: SKSpriteNode!
 
     // Equipment
-    private let blaster = Blaster()
+    private var blaster: Blaster?
+    let equipmentManager: EquipmentManager
 
     // Inventory
     let inventory: Inventory
@@ -102,12 +103,14 @@ final class Player: SKNode {
         [leftUpperArm, leftElbow, leftForearm, leftWrist, leftHand]
     }
 
-    init(inventory: Inventory) {
+    init(inventory: Inventory, equipmentManager: EquipmentManager) {
         self.inventory = inventory
+        self.equipmentManager = equipmentManager
         super.init()
         configureBaseLayer()
         setupBodyParts()
         setupPhysics()
+        updateEquipmentVisuals()
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
@@ -115,13 +118,6 @@ final class Player: SKNode {
     private func setupBodyParts() {
         // Body (torso) - main body part with rounded corners
         let bodySize = CGSize(width: 24, height: 32)
-
-        // Backpack is intentionally narrower than the torso
-        let backpackSize = CGSize(width: bodySize.width - 2, height: bodySize.height - 6)
-        backpack = makeSprite(named: TextureName.backpack, size: backpackSize)
-        backpack.position = backpackBasePosition
-        backpack.zPosition = 0.2
-        addChild(backpack)
 
         body = makeSprite(named: TextureName.body, size: bodySize)
         body.position = CGPoint(x: 0, y: 0)
@@ -197,7 +193,7 @@ final class Player: SKNode {
         rightHand.zPosition = 0.4
         rightWrist.addChild(rightHand)
 
-        leftHand.addChild(blaster)
+        // Blaster is added when equipped via equipBlaster()
 
         // Left Thigh - anchor at hip
         let thighSize = CGSize(width: 10, height: 16)
@@ -268,12 +264,12 @@ final class Player: SKNode {
 
     private func applyAppearance(for direction: FacingDirection) {
         // Reset to a neutral front-facing look before applying directional tweaks.
-        backpack.isHidden = false
-        backpack.alpha = 1
-        backpack.xScale = 1
-        backpack.yScale = 1
-        backpack.position = backpackBasePosition
-        backpack.zPosition = 0.2
+        backpack?.isHidden = false
+        backpack?.alpha = 1
+        backpack?.xScale = 1
+        backpack?.yScale = 1
+        backpack?.position = backpackBasePosition
+        backpack?.zPosition = 0.2
 
         helmetGlass.isHidden = false
         helmetGlass.alpha = 1
@@ -303,30 +299,30 @@ final class Player: SKNode {
 
         switch direction {
         case .up:
-            backpack.zPosition = 1.6
-            backpack.position = CGPoint(x: 0, y: -1)
+            backpack?.zPosition = 1.6
+            backpack?.position = CGPoint(x: 0, y: -1)
             helmetGlass.isHidden = true
             leftKnee.isHidden = true
             rightKnee.isHidden = true
             blasterOrientation = .up
         case .down:
-            backpack.isHidden = true
+            backpack?.isHidden = true
             blasterOrientation = .down
         case .right:
-            backpack.alpha = 0.75
-            backpack.zPosition = 0.9
-            backpack.xScale = 0.7
-            backpack.position = CGPoint(x: -3, y: -2)
+            backpack?.alpha = 0.75
+            backpack?.zPosition = 0.9
+            backpack?.xScale = 0.7
+            backpack?.position = CGPoint(x: -3, y: -2)
             helmetGlass.alpha = 0.85
             helmetGlass.xScale = 0.75
             helmetGlass.position = CGPoint(x: 4.2, y: 2)
             blasterOrientation = .right
         case .left:
             // No xScale mirroring - create left-facing appearance manually
-            backpack.alpha = 0.75
-            backpack.zPosition = 0.9
-            backpack.xScale = 0.7
-            backpack.position = CGPoint(x: 3, y: -2) // Flipped horizontally (positive x)
+            backpack?.alpha = 0.75
+            backpack?.zPosition = 0.9
+            backpack?.xScale = 0.7
+            backpack?.position = CGPoint(x: 3, y: -2) // Flipped horizontally (positive x)
             helmetGlass.alpha = 0.85
             helmetGlass.xScale = 0.75
             helmetGlass.position = CGPoint(x: -4.2, y: 2) // Flipped horizontally (negative x)
@@ -334,7 +330,7 @@ final class Player: SKNode {
             blasterOrientation = .left
         }
         
-        blaster.update(for: blasterOrientation)
+        blaster?.update(for: blasterOrientation)
     }
 
     private func blasterOrientation(for direction: FacingDirection) -> Blaster.Orientation {
@@ -483,18 +479,18 @@ final class Player: SKNode {
     }
 
     func startFiringBlaster(at angle: CGFloat, distance: CGFloat) {
-        guard !isFiring else { return }
+        guard !isFiring, let blaster = blaster else { return }
 
         isFiring = true
 
         leftArm.forEach { node in
             // Stop walk animation for left arm
             node.removeAction(forKey: .walk)
-            
+
             // Stop reset actions that may be running
             node.removeAction(forKey: .reset)
         }
-        
+
         poseLeftArmForAiming(angle: angle)
         blaster.startBeam(distance: distance)
     }
@@ -502,17 +498,17 @@ final class Player: SKNode {
     func stopFiringBlaster() {
         guard isFiring else { return }
         isFiring = false
-        blaster.stopBeam()
-        blaster.update(for: blasterOrientation(for: facingDirection))
+        blaster?.stopBeam()
+        blaster?.update(for: blasterOrientation(for: facingDirection))
         resetLeftArmPose(manageWalkCycle: true, animated: true)
     }
 
     func spawnBeamDebris(in scene: SKScene, count: Int) {
-        blaster.spawnBeamDebris(in: scene, count: count)
+        blaster?.spawnBeamDebris(in: scene, count: count)
     }
 
     var isBeamVisibleForTesting: Bool {
-        blaster.isBeamVisibleForTesting
+        blaster?.isBeamVisibleForTesting ?? false
     }
 
     // MARK: - Animation
@@ -789,6 +785,65 @@ final class Player: SKNode {
     func setMaxEnergy(_ newMax: CGFloat) {
         maxEnergy = max(1, newMax)
         currentEnergy = min(currentEnergy, maxEnergy)
+    }
+
+    // MARK: - Equipment
+
+    var hasBlaster: Bool {
+        blaster != nil
+    }
+
+    func updateEquipmentVisuals() {
+        // Backpack visibility
+        if equipmentManager.hasBackpack {
+            if backpack == nil {
+                let backpackSize = CGSize(width: 22, height: 26)
+                let newBackpack = makeSprite(named: TextureName.backpack, size: backpackSize)
+                newBackpack.position = backpackBasePosition
+                newBackpack.zPosition = 0.2
+                addChild(newBackpack)
+                backpack = newBackpack
+                applyAppearance(for: facingDirection)
+            }
+        } else {
+            backpack?.removeFromParent()
+            backpack = nil
+        }
+
+        // Blaster visibility
+        if equipmentManager.hasWeapon {
+            if blaster == nil {
+                let newBlaster = Blaster()
+                leftHand.addChild(newBlaster)
+                blaster = newBlaster
+                newBlaster.update(for: blasterOrientation(for: facingDirection))
+            }
+        } else {
+            blaster?.removeFromParent()
+            blaster = nil
+        }
+    }
+
+    func equipBackpack(item: UniqueItemInstance) {
+        equipmentManager.equip(item, to: .backpack)
+        updateEquipmentVisuals()
+    }
+
+    func unequipBackpack() -> UniqueItemInstance? {
+        let item = equipmentManager.unequip(.backpack)
+        updateEquipmentVisuals()
+        return item
+    }
+
+    func equipBlaster(item: UniqueItemInstance) {
+        equipmentManager.equip(item, to: .weapon)
+        updateEquipmentVisuals()
+    }
+
+    func unequipBlaster() -> UniqueItemInstance? {
+        let item = equipmentManager.unequip(.weapon)
+        updateEquipmentVisuals()
+        return item
     }
 }
 

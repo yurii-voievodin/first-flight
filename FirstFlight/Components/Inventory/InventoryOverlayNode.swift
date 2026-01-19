@@ -13,8 +13,17 @@ final class InventoryOverlayNode: SKNode {
     private let cropNode = SKCropNode()
     private let maskNode = SKShapeNode()
 
+    // Equipment section
+    private let equipmentSectionLabel = SKLabelNode(text: "Equipment")
+    private let equipmentSlotsNode = SKNode()
+    private var backpackSlotRect: CGRect = .zero
+    private var weaponSlotRect: CGRect = .zero
+
     private var panelRect: CGRect = .zero
     private var gridViewportRect: CGRect = .zero
+
+    // Player reference for equipment state
+    private weak var player: Player?
 
     // Scrolling
     private var scrollOffsetY: CGFloat = 0
@@ -45,6 +54,7 @@ final class InventoryOverlayNode: SKNode {
         addChild(cropNode)
         addChild(titleLabel)
         addChild(closeLabel)
+        addChild(equipmentSlotsNode)
 
         // Mask node is used only for cropping; do not add it as a child, otherwise it will render.
         cropNode.maskNode = maskNode
@@ -66,9 +76,18 @@ final class InventoryOverlayNode: SKNode {
         closeLabel.horizontalAlignmentMode = .center
         closeLabel.verticalAlignmentMode = .center
 
+        // Equipment section label
+        equipmentSectionLabel.fontSize = 12
+        equipmentSectionLabel.fontName = "Courier-Bold"
+        equipmentSectionLabel.fontColor = SKColor(white: 1.0, alpha: 0.6)
+        equipmentSectionLabel.horizontalAlignmentMode = .left
+        equipmentSectionLabel.verticalAlignmentMode = .center
+        equipmentSlotsNode.addChild(equipmentSectionLabel)
+
         dimBackground.zPosition = 200
         panel.zPosition = 210
         cropNode.zPosition = 220
+        equipmentSlotsNode.zPosition = 220
         titleLabel.zPosition = 230
         closeLabel.zPosition = 230
 
@@ -114,11 +133,38 @@ final class InventoryOverlayNode: SKNode {
         titleLabel.position = CGPoint(x: panelRect.minX + 18, y: panelRect.maxY - 28)
         closeLabel.position = CGPoint(x: panelRect.maxX - 18, y: panelRect.maxY - 28)
 
-        // Grid viewport (inside the panel, below the header)
+        // Grid viewport (inside the panel, below the header and equipment section)
         let padding: CGFloat = 18
         let headerHeight: CGFloat = 64
+        let equipmentSectionHeight: CGFloat = 90
 
-        let viewportTopY = panelRect.maxY - headerHeight
+        // Equipment section layout (between header and inventory grid)
+        let equipmentLabelY = panelRect.maxY - headerHeight - 4
+        equipmentSectionLabel.position = CGPoint(x: panelRect.minX + padding, y: equipmentLabelY)
+
+        // Equipment slots position (below label)
+        let equipmentSlotsY = equipmentLabelY - 40
+        let slotGap: CGFloat = 12
+        let twoSlotsWidth = slotSize.width * 2 + slotGap
+        let slotsStartX = panelRect.midX - twoSlotsWidth / 2
+
+        // Backpack slot (left)
+        backpackSlotRect = CGRect(
+            x: slotsStartX,
+            y: equipmentSlotsY - slotSize.height / 2,
+            width: slotSize.width,
+            height: slotSize.height
+        )
+
+        // Weapon slot (right)
+        weaponSlotRect = CGRect(
+            x: slotsStartX + slotSize.width + slotGap,
+            y: equipmentSlotsY - slotSize.height / 2,
+            width: slotSize.width,
+            height: slotSize.height
+        )
+
+        let viewportTopY = panelRect.maxY - headerHeight - equipmentSectionHeight
         let viewportBottomY = panelRect.minY + padding
         viewportHeight = max(0, viewportTopY - viewportBottomY)
 
@@ -135,10 +181,14 @@ final class InventoryOverlayNode: SKNode {
         applyScrollAndLayout()
     }
 
-    func render(state: InventoryState, defsById: [String: ItemDef]) {
+    func render(state: InventoryState, defsById: [String: ItemDef], player: Player? = nil) {
         cachedState = state
         cachedDefs = defsById
+        self.player = player
         gridNode.removeAllChildren()
+
+        // Render equipment slots
+        renderEquipmentSlots()
 
         // Compute rows for current capacity
         let totalSlots = state.maxSlots
@@ -193,6 +243,70 @@ final class InventoryOverlayNode: SKNode {
 
         // If panel is too small for all rows, we can add paging/scroll later.
         _ = rows
+    }
+
+    private func renderEquipmentSlots() {
+        // Clear previous content except the label
+        for child in equipmentSlotsNode.children where child !== equipmentSectionLabel {
+            child.removeFromParent()
+        }
+
+        guard let player = player else { return }
+        let equipmentState = player.equipmentManager.state
+
+        // Render backpack slot
+        renderEquipmentSlot(
+            rect: backpackSlotRect,
+            slot: .backpack,
+            item: equipmentState.equippedItems[.backpack],
+            label: "Backpk"
+        )
+
+        // Render weapon slot
+        renderEquipmentSlot(
+            rect: weaponSlotRect,
+            slot: .weapon,
+            item: equipmentState.equippedItems[.weapon],
+            label: "Weapon"
+        )
+    }
+
+    private func renderEquipmentSlot(rect: CGRect, slot: EquipmentSlot, item: UniqueItemInstance?, label: String) {
+        // Slot background
+        let slotBorder = SKShapeNode(rect: rect, cornerRadius: 10)
+
+        if item != nil {
+            // Equipped: golden border
+            slotBorder.strokeColor = SKColor(red: 1.0, green: 0.84, blue: 0.0, alpha: 0.8)
+            slotBorder.lineWidth = 2
+            slotBorder.fillColor = SKColor(white: 1.0, alpha: 0.08)
+        } else {
+            // Empty: dimmed outline
+            slotBorder.strokeColor = SKColor(white: 1.0, alpha: 0.2)
+            slotBorder.lineWidth = 1
+            slotBorder.fillColor = SKColor(white: 1.0, alpha: 0.02)
+        }
+        slotBorder.name = "equipSlot_\(slot.rawValue)"
+        equipmentSlotsNode.addChild(slotBorder)
+
+        // Slot label below
+        let slotLabel = SKLabelNode(text: label)
+        slotLabel.fontSize = 9
+        slotLabel.fontName = "Courier"
+        slotLabel.fontColor = SKColor(white: 1.0, alpha: 0.5)
+        slotLabel.horizontalAlignmentMode = .center
+        slotLabel.verticalAlignmentMode = .top
+        slotLabel.position = CGPoint(x: rect.midX, y: rect.minY - 3)
+        equipmentSlotsNode.addChild(slotLabel)
+
+        // Render equipped item icon
+        if let item = item, let def = cachedDefs[item.defId] {
+            let texture = SKTexture(imageNamed: def.iconName)
+            let icon = SKSpriteNode(texture: texture)
+            icon.size = aspectFitSize(for: texture, maxSize: 44)
+            icon.position = CGPoint(x: rect.midX, y: rect.midY)
+            equipmentSlotsNode.addChild(icon)
+        }
     }
 
     func handleTouch(from touch: UITouch, in scene: SKScene) {
@@ -260,12 +374,31 @@ final class InventoryOverlayNode: SKNode {
 
         guard distance < 10 else { return }
 
+        // Check equipment slots first
+        if let equipSlot = equipmentSlot(at: endLocation),
+           let item = player?.equipmentManager.getEquipped(equipSlot),
+           let def = cachedDefs[item.defId] {
+            let slotRect = equipSlot == .backpack ? backpackSlotRect : weaponSlotRect
+            let center = CGPoint(x: slotRect.midX, y: slotRect.midY)
+            showTooltip(for: def, at: center)
+            return
+        }
+
         // It's a tap - check if it's on a slot with an item
         guard let index = slotIndex(at: endLocation),
               let item = itemAt(slotIndex: index) else { return }
 
         let center = slotCenter(for: index)
         showTooltip(for: item, at: center)
+    }
+
+    private func equipmentSlot(at point: CGPoint) -> EquipmentSlot? {
+        if backpackSlotRect.contains(point) {
+            return .backpack
+        } else if weaponSlotRect.contains(point) {
+            return .weapon
+        }
+        return nil
     }
 
     private func clampScrollOffset() {

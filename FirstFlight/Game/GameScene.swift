@@ -10,6 +10,7 @@ import SpriteKit
 final class GameScene: SKScene {
     private var inventory: Inventory!
     private var shuttleInventory: Inventory!
+    private var equipmentManager: EquipmentManager!
     private var astronaut: Player!
 
     private var itemDefsById: [String: ItemDef] = [:]
@@ -76,11 +77,38 @@ final class GameScene: SKScene {
         inventory = Inventory(state: playerState, defs: defs)
 
         // Shuttle inventory (24 slots - double player capacity)
-        let shuttleState = (try? InventoryStorage.loadOrCreate(for: .shuttle, defaultMaxSlots: 24))
+        var shuttleState = (try? InventoryStorage.loadOrCreate(for: .shuttle, defaultMaxSlots: 24))
             ?? InventoryState(maxSlots: 24)
+
+        // Equipment state
+        let equipmentState = (try? EquipmentStorage.loadOrCreate()) ?? EquipmentState()
+        equipmentManager = EquipmentManager(state: equipmentState)
+
+        // First launch detection: if equipment storage doesn't exist and shuttle has no equipment items,
+        // add starting equipment to shuttle inventory
+        let isFirstLaunch = !EquipmentStorage.exists()
+        if isFirstLaunch {
+            // Add backpack to shuttle
+            if let backpackDef = itemDefsById["backpack"] {
+                let backpackItem = UniqueItemInstance(instanceId: UUID(), defId: backpackDef.id)
+                if let emptySlot = shuttleState.slots.firstIndex(where: { $0 == nil }) {
+                    shuttleState.slots[emptySlot] = .unique(item: backpackItem)
+                }
+            }
+            // Add blaster to shuttle
+            if let blasterDef = itemDefsById["blaster"] {
+                let blasterItem = UniqueItemInstance(instanceId: UUID(), defId: blasterDef.id)
+                if let emptySlot = shuttleState.slots.firstIndex(where: { $0 == nil }) {
+                    shuttleState.slots[emptySlot] = .unique(item: blasterItem)
+                }
+            }
+            // Save initial equipment state to mark first launch complete
+            try? EquipmentStorage.save(equipmentState)
+        }
+
         shuttleInventory = Inventory(state: shuttleState, defs: defs)
 
-        astronaut = Player(inventory: inventory)
+        astronaut = Player(inventory: inventory, equipmentManager: equipmentManager)
 
         // Position is set by loadMapFromJSON() (playerStartPosition)
         if astronaut.parent == nil {
@@ -392,7 +420,8 @@ final class GameScene: SKScene {
             return
         }
 
-        // Check if tap hit a rock
+        // Check if tap hit a rock (requires blaster to fire)
+        guard astronaut.hasBlaster else { return }
         for node in tappedNodes {
             if let rock = node as? RockFormation {
                 startFiringAtTarget(rock)
@@ -422,7 +451,7 @@ final class GameScene: SKScene {
         }
         overlay.zPosition = 10_000
         overlay.layout(for: size)
-        overlay.render(state: inventory.state, defsById: itemDefsById)
+        overlay.render(state: inventory.state, defsById: itemDefsById, player: astronaut)
         gameCamera?.addChild(overlay)
         inventoryOverlay = overlay
     }
@@ -437,13 +466,19 @@ final class GameScene: SKScene {
         let overlay = TransferOverlayNode(
             playerInventory: inventory,
             shuttleInventory: shuttleInventory,
-            itemDefsById: itemDefsById
+            itemDefsById: itemDefsById,
+            player: astronaut
         )
         overlay.onClose = { [weak self] in
             self?.transferOverlay = nil
             self?.saveInventories()
+            self?.saveEquipment()
         }
         overlay.onTransfer = { [weak self] in
+            self?.saveInventories()
+        }
+        overlay.onEquip = { [weak self] _ in
+            self?.saveEquipment()
             self?.saveInventories()
         }
         overlay.zPosition = 10_000
@@ -456,6 +491,10 @@ final class GameScene: SKScene {
     private func saveInventories() {
         try? InventoryStorage.save(inventory.state, for: .player)
         try? InventoryStorage.save(shuttleInventory.state, for: .shuttle)
+    }
+
+    private func saveEquipment() {
+        try? EquipmentStorage.save(equipmentManager.state)
     }
 
     private func updateCameraConstraints() {
