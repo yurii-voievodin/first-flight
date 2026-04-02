@@ -76,6 +76,48 @@ final class GameScene: SKScene {
                 }
             }
             try? EquipmentStorage.save(equipmentState)
+            try? InventoryStorage.save(shuttleState, for: .shuttle)
+        }
+
+        // Migration: ensure backpack & blaster exist somewhere for old installs
+        // that missed the first-launch grant
+        let hasBackpack = equipmentState.equippedItems[.backpack] != nil
+            || playerState.slots.contains(where: { slot in
+                if case .unique(let item) = slot, item.defId == "backpack" { return true }
+                return false
+            })
+            || shuttleState.slots.contains(where: { slot in
+                if case .unique(let item) = slot, item.defId == "backpack" { return true }
+                return false
+            })
+
+        let hasBlaster = equipmentState.equippedItems[.weapon] != nil
+            || playerState.slots.contains(where: { slot in
+                if case .unique(let item) = slot, item.defId == "blaster" { return true }
+                return false
+            })
+            || shuttleState.slots.contains(where: { slot in
+                if case .unique(let item) = slot, item.defId == "blaster" { return true }
+                return false
+            })
+
+        var needsShuttleSave = false
+        if !hasBackpack {
+            let item = UniqueItemInstance(instanceId: UUID(), defId: "backpack")
+            if let emptySlot = shuttleState.slots.firstIndex(where: { $0 == nil }) {
+                shuttleState.slots[emptySlot] = .unique(item: item)
+                needsShuttleSave = true
+            }
+        }
+        if !hasBlaster {
+            let item = UniqueItemInstance(instanceId: UUID(), defId: "blaster")
+            if let emptySlot = shuttleState.slots.firstIndex(where: { $0 == nil }) {
+                shuttleState.slots[emptySlot] = .unique(item: item)
+                needsShuttleSave = true
+            }
+        }
+        if needsShuttleSave {
+            try? InventoryStorage.save(shuttleState, for: .shuttle)
         }
 
         shuttleInventory = Inventory(state: shuttleState, defs: defs)
