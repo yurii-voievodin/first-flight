@@ -95,11 +95,6 @@ final class UIManager {
         guard let player, deltaTime > 0 else { return }
         guard energyBar.isRecharging else { return }
 
-        guard player.isInWater else {
-            energyBar.stopRecharging()
-            return
-        }
-
         let rechargeAmount = energyRechargePerSecond * CGFloat(deltaTime)
         player.addEnergy(rechargeAmount)
         energyBar.update(currentEnergy: player.currentEnergy, maxEnergy: player.maxEnergy)
@@ -107,11 +102,6 @@ final class UIManager {
         if player.currentEnergy >= player.maxEnergy {
             energyBar.checkEnergyFull()
         }
-    }
-
-    func updateRechargeButtonVisibility() {
-        guard let player else { return }
-        energyBar.updateRechargeButtonVisibility(isInWater: player.isInWater)
     }
 
     // MARK: - Overlays
@@ -182,6 +172,10 @@ final class UIManager {
         if transferOverlay != nil {
             transferOverlay?.removeFromParent()
             transferOverlay = nil
+            energyBar.hideRechargeButton()
+            energyBar.removeFromParent()
+            energyBar.zPosition = 100
+            camera.addChild(energyBar)
             return
         }
 
@@ -192,9 +186,14 @@ final class UIManager {
             player: player
         )
         overlay.onClose = { [weak self] in
-            self?.transferOverlay = nil
-            self?.onSaveInventories?()
-            self?.onSaveEquipment?()
+            guard let self else { return }
+            self.transferOverlay = nil
+            self.energyBar.hideRechargeButton()
+            self.energyBar.removeFromParent()
+            self.energyBar.zPosition = 100
+            self.camera?.addChild(self.energyBar)
+            self.onSaveInventories?()
+            self.onSaveEquipment?()
         }
         overlay.onTransfer = { [weak self] in
             self?.onSaveInventories?()
@@ -208,5 +207,11 @@ final class UIManager {
         overlay.render()
         camera.addChild(overlay)
         transferOverlay = overlay
+
+        // Move energy bar into the overlay so it renders on top and receives input
+        energyBar.removeFromParent()
+        energyBar.zPosition = 250
+        overlay.addChild(energyBar)
+        energyBar.showRechargeButton()
     }
 }

@@ -106,33 +106,26 @@ class EnergyBar: SKNode {
         rechargeButton.setActive(false)
     }
 
-    func updateRechargeButtonVisibility(isInWater: Bool) {
-        let shouldShow = isInWater && currentEnergy < maxEnergy
-
-        if shouldShow && rechargeButton.isHidden {
-            // Show button with fade-in
-            rechargeButton.isHidden = false
-            rechargeButton.alpha = 0
-            let fadeIn = SKAction.fadeIn(withDuration: 0.2)
-            rechargeButton.run(fadeIn)
-
-            // Reset to active state when showing
-            if !isRecharging {
-                rechargeButton.setActive(true)
-            }
-        } else if !shouldShow && !rechargeButton.isHidden {
-            // Hide button with fade-out
-            let fadeOut = SKAction.fadeOut(withDuration: 0.2)
-            let hide = SKAction.run { [weak self] in
-                self?.rechargeButton.isHidden = true
-            }
-            rechargeButton.run(SKAction.sequence([fadeOut, hide]))
+    func showRechargeButton() {
+        guard currentEnergy < maxEnergy, rechargeButton.isHidden else { return }
+        rechargeButton.isHidden = false
+        rechargeButton.alpha = 0
+        rechargeButton.run(SKAction.fadeIn(withDuration: 0.2))
+        if !isRecharging {
+            rechargeButton.setActive(true)
         }
+    }
 
-        // If player exits water while recharging, stop recharging
-        if !isInWater && isRecharging {
+    func hideRechargeButton() {
+        guard !rechargeButton.isHidden else { return }
+        if isRecharging {
             stopRecharging()
         }
+        let fadeOut = SKAction.fadeOut(withDuration: 0.2)
+        let hide = SKAction.run { [weak self] in
+            self?.rechargeButton.isHidden = true
+        }
+        rechargeButton.run(SKAction.sequence([fadeOut, hide]))
     }
 
     func stopRecharging() {

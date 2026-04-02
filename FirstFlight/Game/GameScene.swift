@@ -378,7 +378,6 @@ final class GameScene: SKScene {
             cameraController.applyJitter()
         }
         uiManager.updateEnergyRecharge(deltaTime: deltaTime)
-        uiManager.updateRechargeButtonVisibility()
     }
 
     private func updateCharacterMovement() {
