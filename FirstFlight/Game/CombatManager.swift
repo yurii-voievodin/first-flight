@@ -20,7 +20,9 @@ final class CombatManager {
 
     // Targeting
     private(set) var currentTarget: RockFormation?
+    #if os(iOS)
     private let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+    #endif
     private var hapticAccumulator: TimeInterval = 0
     private let hapticInterval: TimeInterval = 0.1
 
@@ -40,7 +42,9 @@ final class CombatManager {
 
         currentTarget = rock
         hapticAccumulator = 0
+        #if os(iOS)
         impactFeedback.prepare()
+        #endif
 
         let endPoint = beamEndPoint(towards: rock, from: player, in: scene)
         let dx = endPoint.x - player.position.x
@@ -71,11 +75,13 @@ final class CombatManager {
         }
 
         // Haptic feedback
+        #if os(iOS)
         hapticAccumulator += deltaTime
         while hapticAccumulator >= hapticInterval {
             hapticAccumulator -= hapticInterval
             impactFeedback.impactOccurred()
         }
+        #endif
 
         // Drain energy
         let energyDrain = energyDrainPerSecond * CGFloat(deltaTime)

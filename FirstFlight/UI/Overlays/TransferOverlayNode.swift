@@ -482,10 +482,7 @@ final class TransferOverlayNode: SKNode {
 
     // MARK: - Touch Handling
 
-    func handleTouchBegan(from touch: UITouch, in scene: SKScene) {
-        guard let cam = scene.camera else { return }
-
-        let p = touch.location(in: cam)
+    func handlePointerBegan(at p: CGPoint) {
         touchStartLocation = p
 
         // Close button
@@ -573,9 +570,7 @@ final class TransferOverlayNode: SKNode {
         }
     }
 
-    func handleTouchMoved(from touch: UITouch, in scene: SKScene) {
-        guard let cam = scene.camera else { return }
-        let p = touch.location(in: cam)
+    func handlePointerMoved(at p: CGPoint) {
 
         // Update dragged item position
         if let draggedNode = draggedItemNode {
@@ -599,7 +594,7 @@ final class TransferOverlayNode: SKNode {
         applyScrollAndLayout()
     }
 
-    func handleTouchEnded(from touch: UITouch, in scene: SKScene) {
+    func handlePointerEnded(at endLocation: CGPoint) {
         defer {
             cleanupDrag()
             isDraggingGrid = false
@@ -608,9 +603,6 @@ final class TransferOverlayNode: SKNode {
             touchStartLocation = nil
             dragSource = nil
         }
-
-        guard let cam = scene.camera else { return }
-        let endLocation = touch.location(in: cam)
 
         // Handle drop from equipment slot
         if draggedItemNode != nil, let source = dragSource {

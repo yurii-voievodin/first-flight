@@ -34,7 +34,9 @@ final class UIManager {
     private func setupJoystick() {
         virtualJoystick = VirtualJoystick()
         virtualJoystick.zPosition = 100
+        #if os(iOS)
         camera?.addChild(virtualJoystick)
+        #endif
         updateJoystickPosition()
     }
 
@@ -60,7 +62,11 @@ final class UIManager {
     private func updateJoystickPosition() {
         guard let view = scene?.view, virtualJoystick != nil else { return }
 
+        #if os(iOS)
         let safeArea = view.safeAreaInsets
+        #else
+        let safeArea = NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
+        #endif
         let joystickRadius: CGFloat = 40
         let margin: CGFloat = 20
 
@@ -113,43 +119,37 @@ final class UIManager {
         inventoryOverlay != nil || transferOverlay != nil
     }
 
-    func handleOverlayTouchBegan(_ touch: UITouch) -> Bool {
-        guard let scene else { return false }
-
+    func handleOverlayPointerBegan(at point: CGPoint) -> Bool {
         if let overlay = transferOverlay {
-            overlay.handleTouchBegan(from: touch, in: scene)
+            overlay.handlePointerBegan(at: point)
             return true
         }
         if let overlay = inventoryOverlay {
-            overlay.handleTouch(from: touch, in: scene)
+            overlay.handlePointerBegan(at: point)
             return true
         }
         return false
     }
 
-    func handleOverlayTouchMoved(_ touch: UITouch) -> Bool {
-        guard let scene else { return false }
-
+    func handleOverlayPointerMoved(at point: CGPoint) -> Bool {
         if let overlay = transferOverlay {
-            overlay.handleTouchMoved(from: touch, in: scene)
+            overlay.handlePointerMoved(at: point)
             return true
         }
         if let overlay = inventoryOverlay {
-            overlay.handleTouchMoved(from: touch, in: scene)
+            overlay.handlePointerMoved(at: point)
             return true
         }
         return false
     }
 
-    func handleOverlayTouchEnded(_ touch: UITouch) -> Bool {
-        guard let scene else { return false }
-
+    func handleOverlayPointerEnded(at point: CGPoint) -> Bool {
         if let overlay = transferOverlay {
-            overlay.handleTouchEnded(from: touch, in: scene)
+            overlay.handlePointerEnded(at: point)
             return true
         }
         if let overlay = inventoryOverlay {
-            overlay.handleTouchEnded(from: touch, in: scene)
+            overlay.handlePointerEnded(at: point)
             return true
         }
         return false

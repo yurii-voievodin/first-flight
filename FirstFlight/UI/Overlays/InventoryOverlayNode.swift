@@ -309,14 +309,7 @@ final class InventoryOverlayNode: SKNode {
         }
     }
 
-    func handleTouch(from touch: UITouch, in scene: SKScene) {
-        guard let cam = scene.camera else {
-            onClose?()
-            removeFromParent()
-            return
-        }
-
-        let p = touch.location(in: cam)
+    func handlePointerBegan(at p: CGPoint) {
         touchStartLocation = p
 
         // Close button
@@ -333,7 +326,7 @@ final class InventoryOverlayNode: SKNode {
             return
         }
 
-        // Begin drag-scrolling if the touch starts inside the grid viewport
+        // Begin drag-scrolling if the pointer starts inside the grid viewport
         if gridViewportRect.contains(p) {
             isDraggingGrid = true
             lastDragY = p.y
@@ -342,29 +335,21 @@ final class InventoryOverlayNode: SKNode {
         }
     }
 
-    func handleTouchMoved(from touch: UITouch, in scene: SKScene) {
-        guard isDraggingGrid, let cam = scene.camera else { return }
-        let p = touch.location(in: cam)
+    func handlePointerMoved(at p: CGPoint) {
+        guard isDraggingGrid else { return }
         let dy = p.y - lastDragY
         lastDragY = p.y
 
-        // Drag scrolling (UIScrollView-style): content follows the finger.
-        // dy is in SpriteKit coords (positive = finger moved up).
-        // Finger up  => grid up  (scroll down)
-        // Finger down => grid down (scroll up)
         scrollOffsetY += dy
         applyScrollAndLayout()
     }
 
-    func handleTouchEnded(from touch: UITouch, in scene: SKScene) {
+    func handlePointerEnded(at endLocation: CGPoint) {
         defer {
             isDraggingGrid = false
             lastDragY = 0
             touchStartLocation = nil
         }
-
-        guard let cam = scene.camera else { return }
-        let endLocation = touch.location(in: cam)
 
         // Check if it was a tap (not a drag scroll)
         guard let startLocation = touchStartLocation else { return }

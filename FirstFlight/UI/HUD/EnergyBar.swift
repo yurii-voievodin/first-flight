@@ -76,18 +76,12 @@ class EnergyBar: SKNode {
     }
 
     private func setupIcon() {
-        let config = UIImage.SymbolConfiguration(pointSize: iconSize, weight: .medium)
-        guard let image = UIImage(systemName: "bolt.fill", withConfiguration: config) else { return }
+        guard let texture = sfSymbolTexture(
+            name: "bolt.fill",
+            pointSize: iconSize,
+            tintColor: SKColor(white: 1.0, alpha: 0.6)
+        ) else { return }
 
-        // Render the SF Symbol to a texture
-        let renderer = UIGraphicsImageRenderer(size: CGSize(width: iconSize, height: iconSize))
-        let renderedImage = renderer.image { _ in
-            // Tint the image with light color
-            let tintColor = UIColor(white: 1.0, alpha: 0.6)
-            image.withTintColor(tintColor, renderingMode: .alwaysOriginal).draw(in: CGRect(x: 0, y: 0, width: iconSize, height: iconSize))
-        }
-
-        let texture = SKTexture(image: renderedImage)
         iconNode = SKSpriteNode(texture: texture, size: CGSize(width: iconSize, height: iconSize))
         iconNode.position = CGPoint(x: barWidth / 2 + iconSpacing, y: 0)
         iconNode.zPosition = 2

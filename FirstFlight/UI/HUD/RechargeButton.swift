@@ -38,17 +38,12 @@ class RechargeButton: SKNode {
 
     private func setupIcon() {
         let iconSize = buttonSize * 0.6
-        let config = UIImage.SymbolConfiguration(pointSize: iconSize, weight: .medium)
-        guard let image = UIImage(systemName: "arrow.2.circlepath", withConfiguration: config) else { return }
+        guard let texture = sfSymbolTexture(
+            name: "arrow.2.circlepath",
+            pointSize: iconSize,
+            tintColor: SKColor(white: 1.0, alpha: 0.8)
+        ) else { return }
 
-        let renderer = UIGraphicsImageRenderer(size: CGSize(width: iconSize, height: iconSize))
-        let renderedImage = renderer.image { _ in
-            let tintColor = UIColor(white: 1.0, alpha: 0.8)
-            image.withTintColor(tintColor, renderingMode: .alwaysOriginal)
-                .draw(in: CGRect(x: 0, y: 0, width: iconSize, height: iconSize))
-        }
-
-        let texture = SKTexture(image: renderedImage)
         iconNode.texture = texture
         iconNode.size = CGSize(width: iconSize, height: iconSize)
         iconNode.zPosition = 1
@@ -68,42 +63,57 @@ class RechargeButton: SKNode {
         }
     }
 
-    // MARK: - Touch Handling
+    // MARK: - Input Handling
 
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard isButtonActive, let touch = touches.first else { return }
-        let location = touch.location(in: self)
-
-        // Check if touch is within button circle
+    private func handlePointerDown(at location: CGPoint) {
+        guard isButtonActive else { return }
         let distance = hypot(location.x, location.y)
         if distance <= buttonSize / 2 {
-            // Visual feedback - slight press effect
             let scaleDown = SKAction.scale(to: 0.9, duration: 0.05)
             backgroundCircle.run(scaleDown)
             iconNode.run(scaleDown)
         }
     }
 
-    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
-        // Restore scale
+    private func handlePointerUp(at location: CGPoint) {
         let scaleUp = SKAction.scale(to: 1.0, duration: 0.1)
         backgroundCircle.run(scaleUp)
         iconNode.run(scaleUp)
 
-        guard isButtonActive, let touch = touches.first else { return }
-        let location = touch.location(in: self)
-
-        // Check if touch ended within button
+        guard isButtonActive else { return }
         let distance = hypot(location.x, location.y)
         if distance <= buttonSize / 2 {
             onTap?()
         }
     }
 
-    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-        // Restore scale if touch was cancelled
+    private func handlePointerCancelled() {
         let scaleUp = SKAction.scale(to: 1.0, duration: 0.1)
         backgroundCircle.run(scaleUp)
         iconNode.run(scaleUp)
     }
+
+    #if os(iOS)
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first else { return }
+        handlePointerDown(at: touch.location(in: self))
+    }
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first else { return }
+        handlePointerUp(at: touch.location(in: self))
+    }
+
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        handlePointerCancelled()
+    }
+    #elseif os(macOS)
+    override func mouseDown(with event: NSEvent) {
+        handlePointerDown(at: event.location(in: self))
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        handlePointerUp(at: event.location(in: self))
+    }
+    #endif
 }

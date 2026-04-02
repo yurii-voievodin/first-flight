@@ -191,38 +191,29 @@ final class PolygonDebugEditor: SKNode {
         }
     }
 
-    // MARK: - Touch editing
+    // MARK: - Input editing
 
-    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+    private func handleEditPointerDown(at loc: CGPoint) {
         guard allowEditing else { return }
-        guard let touch = touches.first else { return }
-
-        let loc = touch.location(in: self)
-        let nodes = nodes(at: loc)
-
-        if let handle = nodes.first(where: { $0.name?.hasPrefix("poly-handle-") == true }) {
+        let hitNodes = nodes(at: loc)
+        if let handle = hitNodes.first(where: { $0.name?.hasPrefix("poly-handle-") == true }) {
             activeHandle = handle
         } else {
             activeHandle = nil
         }
     }
 
-    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard allowEditing else { return }
-        guard let touch = touches.first,
+    private func handleEditPointerMoved(at loc: CGPoint) {
+        guard allowEditing,
               let handle = activeHandle,
               let idx = handle.userData?["index"] as? Int,
               idx >= 0, idx < currentPoints.count else { return }
 
-        let loc = touch.location(in: self)
         currentPoints[idx] = loc
-
-        // Update overlay immediately
         rebuildOverlay()
-
     }
 
-    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+    private func handleEditPointerUp() {
         guard allowEditing else { return }
         activeHandle = nil
         if let label = debugPrintLabel {
@@ -230,8 +221,35 @@ final class PolygonDebugEditor: SKNode {
         }
     }
 
-    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
-        guard allowEditing else { return }
-        activeHandle = nil
+    #if os(iOS)
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first else { return }
+        handleEditPointerDown(at: touch.location(in: self))
     }
+
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first else { return }
+        handleEditPointerMoved(at: touch.location(in: self))
+    }
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        handleEditPointerUp()
+    }
+
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        handleEditPointerUp()
+    }
+    #elseif os(macOS)
+    override func mouseDown(with event: NSEvent) {
+        handleEditPointerDown(at: event.location(in: self))
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        handleEditPointerMoved(at: event.location(in: self))
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        handleEditPointerUp()
+    }
+    #endif
 }

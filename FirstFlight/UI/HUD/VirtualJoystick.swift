@@ -48,13 +48,13 @@ class VirtualJoystick: SKNode {
         fatalError("init(coder:) has not been implemented")
     }
 
-    // MARK: - Touch Handling
+    // MARK: - Input Handling
 
+    #if os(iOS)
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
         let location = touch.location(in: self)
 
-        // Check if touch is within outer circle
         let distance = hypot(location.x, location.y)
         if distance <= outerRadius {
             isActive = true
@@ -76,6 +76,42 @@ class VirtualJoystick: SKNode {
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
         resetJoystick()
     }
+    #endif
+
+    #if os(macOS)
+    private var pressedKeys: Set<UInt16> = []
+
+    // Key codes: W=13, A=0, S=1, D=2
+    func handleKeyDown(_ keyCode: UInt16) {
+        pressedKeys.insert(keyCode)
+        updateKeyboardDirection()
+    }
+
+    func handleKeyUp(_ keyCode: UInt16) {
+        pressedKeys.remove(keyCode)
+        updateKeyboardDirection()
+    }
+
+    private func updateKeyboardDirection() {
+        var dx: CGFloat = 0
+        var dy: CGFloat = 0
+
+        if pressedKeys.contains(0)  { dx -= 1 } // A
+        if pressedKeys.contains(2)  { dx += 1 } // D
+        if pressedKeys.contains(13) { dy += 1 } // W
+        if pressedKeys.contains(1)  { dy -= 1 } // S
+
+        if dx == 0 && dy == 0 {
+            currentDirection = .zero
+            innerKnob.position = .zero
+        } else {
+            let len = hypot(dx, dy)
+            currentDirection = CGVector(dx: dx / len, dy: dy / len)
+            innerKnob.position = CGPoint(x: currentDirection.dx * maxKnobDistance,
+                                         y: currentDirection.dy * maxKnobDistance)
+        }
+    }
+    #endif
 
     private func updateKnobPosition(touchLocation: CGPoint) {
         var direction = CGVector(dx: touchLocation.x, dy: touchLocation.y)

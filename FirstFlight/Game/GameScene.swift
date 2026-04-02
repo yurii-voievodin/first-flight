@@ -264,28 +264,73 @@ final class GameScene: SKScene {
         catch { print("Failed to save equipment: \(error)") }
     }
 
-    // MARK: - Touch Handling
+    // MARK: - Input Handling
 
+    private func pointerLocation(in node: SKNode, from point: CGPoint) -> CGPoint {
+        guard let cam = camera else { return point }
+        return cam.convert(point, from: node)
+    }
+
+    private func handlePointerBegan(at scenePoint: CGPoint) {
+        guard let cam = camera else { return }
+        let camPoint = convert(scenePoint, to: cam)
+        if uiManager.handleOverlayPointerBegan(at: camPoint) { return }
+        handleTap(at: scenePoint)
+    }
+
+    private func handlePointerMoved(at scenePoint: CGPoint) {
+        guard let cam = camera else { return }
+        let camPoint = convert(scenePoint, to: cam)
+        _ = uiManager.handleOverlayPointerMoved(at: camPoint)
+    }
+
+    private func handlePointerEnded(at scenePoint: CGPoint) {
+        guard let cam = camera else { return }
+        let camPoint = convert(scenePoint, to: cam)
+        _ = uiManager.handleOverlayPointerEnded(at: camPoint)
+    }
+
+    #if os(iOS)
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
-        if uiManager.handleOverlayTouchBegan(touch) { return }
-        handleTap(at: touch.location(in: self))
+        handlePointerBegan(at: touch.location(in: self))
     }
 
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
-        _ = uiManager.handleOverlayTouchMoved(touch)
+        handlePointerMoved(at: touch.location(in: self))
     }
 
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
-        _ = uiManager.handleOverlayTouchEnded(touch)
+        handlePointerEnded(at: touch.location(in: self))
     }
 
     override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
-        _ = uiManager.handleOverlayTouchEnded(touch)
+        handlePointerEnded(at: touch.location(in: self))
     }
+    #elseif os(macOS)
+    override func mouseDown(with event: NSEvent) {
+        handlePointerBegan(at: event.location(in: self))
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        handlePointerMoved(at: event.location(in: self))
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        handlePointerEnded(at: event.location(in: self))
+    }
+
+    override func keyDown(with event: NSEvent) {
+        uiManager.virtualJoystick.handleKeyDown(event.keyCode)
+    }
+
+    override func keyUp(with event: NSEvent) {
+        uiManager.virtualJoystick.handleKeyUp(event.keyCode)
+    }
+    #endif
 
     private func handleTap(at location: CGPoint) {
         let tappedNodes = nodes(at: location)

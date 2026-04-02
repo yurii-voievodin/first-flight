@@ -107,11 +107,11 @@ class SmallRock: SKShapeNode {
     private func setupVisuals(variation: SmallRockVariation) {
         switch variation {
         case .pebble:
-            fillColor = .systemGray2
-            strokeColor = .systemGray2
+            fillColor = SKColor(white: 0.68, alpha: 1.0)
+            strokeColor = SKColor(white: 0.68, alpha: 1.0)
         case .stone:
-            fillColor = .systemGray3
-            strokeColor = .systemGray3
+            fillColor = SKColor(white: 0.78, alpha: 1.0)
+            strokeColor = SKColor(white: 0.78, alpha: 1.0)
         case .chip:
             fillColor = .systemBrown.withAlphaComponent(0.8)
             strokeColor = .systemBrown.withAlphaComponent(0.8)
