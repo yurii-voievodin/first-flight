@@ -643,12 +643,20 @@ final class Player: SKNode {
 
     private static let jetpackParticleTexture: SKTexture = {
         let size = 16
+        #if os(macOS)
         let image = NSImage(size: NSSize(width: size, height: size), flipped: false) { rect in
             let ctx = NSGraphicsContext.current!.cgContext
             ctx.setFillColor(CGColor.white)
             ctx.fillEllipse(in: rect)
             return true
         }
+        #else
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: size, height: size))
+        let image = renderer.image { ctx in
+            ctx.cgContext.setFillColor(CGColor(gray: 1.0, alpha: 1.0))
+            ctx.cgContext.fillEllipse(in: CGRect(x: 0, y: 0, width: size, height: size))
+        }
+        #endif
         return SKTexture(image: image)
     }()
 
