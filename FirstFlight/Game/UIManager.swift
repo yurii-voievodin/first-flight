@@ -64,14 +64,15 @@ final class UIManager {
 
         #if os(iOS)
         let safeArea = view.safeAreaInsets
+        let bottomInset = safeArea.bottom
         #else
-        let safeArea = NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
+        let bottomInset: CGFloat = 30
         #endif
         let joystickRadius: CGFloat = 40
         let margin: CGFloat = 20
 
         let xPosition: CGFloat = 0
-        let yPosition = -view.bounds.height / 2 + safeArea.bottom + joystickRadius + margin
+        let yPosition = -view.bounds.height / 2 + bottomInset + joystickRadius + margin
 
         virtualJoystick.position = CGPoint(x: xPosition, y: yPosition)
     }

@@ -38,6 +38,11 @@ final class CameraController {
         camera.constraints = [edgeConstraint]
     }
 
+    func applyJitter(intensity: CGFloat = 0.5) {
+        camera.position.x += CGFloat.random(in: -intensity...intensity)
+        camera.position.y += CGFloat.random(in: -intensity...intensity)
+    }
+
     func shake(intensity: CGFloat = 2, duration: TimeInterval = 0.15) {
         let camShake = SKAction.customAction(withDuration: duration) { [weak self] _, t in
             guard let cam = self?.camera else { return }

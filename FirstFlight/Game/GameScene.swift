@@ -374,6 +374,9 @@ final class GameScene: SKScene {
         updateCharacterMovement()
         cameraController.follow(astronaut)
         combatManager.update(deltaTime: deltaTime)
+        if astronaut.isFiring {
+            cameraController.applyJitter()
+        }
         uiManager.updateEnergyRecharge(deltaTime: deltaTime)
         uiManager.updateRechargeButtonVisibility()
     }
