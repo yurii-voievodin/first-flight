@@ -30,6 +30,7 @@ class EquipmentManager {
     }
 
     func save() {
-        try? EquipmentStorage.save(state)
+        do { try EquipmentStorage.save(state) }
+        catch { print("Failed to save equipment: \(error)") }
     }
 }

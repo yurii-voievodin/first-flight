@@ -17,12 +17,8 @@ final class Inventory {
         self.state = state
         self.defs = Dictionary(uniqueKeysWithValues: defs.map { ($0.id, $0) })
 
-        // Safety: ensure slots array matches maxSlots
-        if self.state.slots.count != self.state.maxSlots {
-            let trimmed = Array(self.state.slots.prefix(self.state.maxSlots))
-            let paddingCount = max(0, self.state.maxSlots - trimmed.count)
-            self.state.slots = trimmed + Array(repeating: nil, count: paddingCount)
-        }
+        assert(self.state.slots.count == self.state.maxSlots,
+               "InventoryState.slots.count (\(self.state.slots.count)) != maxSlots (\(self.state.maxSlots)). Normalize in InventoryStorage before constructing Inventory.")
     }
 
     // MARK: - Capacity

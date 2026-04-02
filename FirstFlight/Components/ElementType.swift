@@ -167,12 +167,12 @@ enum ElementType: String, CaseIterable, Codable, Hashable {
 /// You can move it later into a dedicated file (e.g. `ItemCatalog.swift`).
 enum ItemCatalog {
 
-    /// Inventory item definitions used by `Inventory`.
+    /// All item definitions available in the game.
     ///
     /// Notes:
     /// - `id` is based on `ElementType.rawValue` (e.g. "iron").
     /// - `iconName` matches your current texture naming: `UIImage(named: "<rawValue>")`.
-    static func makeAllDefs() -> [ItemDef] {
+    static let allDefs: [ItemDef] = {
         let elementDefs: [ItemDef] = ElementType.allCases.map { element in
             ItemDef(
                 id: element.rawValue,
@@ -183,14 +183,16 @@ enum ItemCatalog {
             )
         }
 
-        // Equipment items
         let equipmentDefs: [ItemDef] = [
             ItemDef(id: "backpack", kind: .equipment, displayName: "Backpack", iconName: "backpack", maxStack: nil),
             ItemDef(id: "blaster", kind: .equipment, displayName: "Blaster", iconName: "blaster", maxStack: nil),
         ]
 
         return elementDefs + equipmentDefs
-    }
+    }()
+
+    /// Lookup table keyed by item ID for O(1) access.
+    static let defsById: [String: ItemDef] = Dictionary(uniqueKeysWithValues: allDefs.map { ($0.id, $0) })
 }
 
 // MARK: - Crafting Examples

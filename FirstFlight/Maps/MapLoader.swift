@@ -1,5 +1,5 @@
 import Foundation
-import SpriteKit
+import CoreGraphics
 
 enum MapLoadError: Error {
     case fileNotFound(String)
@@ -46,116 +46,6 @@ class MapLoader {
             throw MapLoadError.parsingError("Unknown parsing error: \(error.localizedDescription)")
         }
     }
-
-    // MARK: - Rock Formation Creation
-
-    func createBoundaryRocks(from mapData: MapData) -> [RockFormation] {
-        var rocks: [RockFormation] = []
-
-        for boundaryRock in mapData.boundaryRocks {
-            let seed = rockSeed(x: boundaryRock.position.x, y: boundaryRock.position.y, extra: 1)
-
-            let rock = RockFormation(
-                type: boundaryRock.rockFormationType,
-                size: boundaryRock.size.cgSize,
-                position: boundaryRock.position.cgPoint,
-                seed: seed
-            )
-            rock.applyProceduralTextures(seed: seed)
-
-            // Add debug info
-            rock.debugInfo["type"] = boundaryRock.type
-            rock.debugInfo["position"] = "(\(Int(boundaryRock.position.x)), \(Int(boundaryRock.position.y)))"
-
-            rocks.append(rock)
-        }
-
-        return rocks
-    }
-
-    func createInteriorRocks(from mapData: MapData) -> [RockFormation] {
-        var rocks: [RockFormation] = []
-
-        for interiorRock in mapData.interiorRocks {
-            let seed = rockSeed(x: interiorRock.position.x, y: interiorRock.position.y, extra: 2)
-
-            let rock = RockFormation(
-                type: interiorRock.rockFormationType,
-                size: interiorRock.size.cgSize,
-                position: interiorRock.position.cgPoint,
-                seed: seed
-            )
-
-            // Apply rotation if specified
-            if let rotation = interiorRock.rotation {
-                rock.zRotation = CGFloat(rotation * .pi / 180) // Convert degrees to radians
-            }
-            rock.applyProceduralTextures(seed: seed)
-
-            // Add debug info
-            rock.debugInfo["type"] = interiorRock.type
-            rock.debugInfo["position"] = "(\(Int(interiorRock.position.x)), \(Int(interiorRock.position.y)))"
-
-            rocks.append(rock)
-        }
-
-        return rocks
-    }
-
-    func createSignatureFormations(from mapData: MapData) -> [RockFormation] {
-        var rocks: [RockFormation] = []
-
-        for signatureFormation in mapData.signatureFormations {
-            let seed = rockSeed(x: signatureFormation.position.x, y: signatureFormation.position.y, extra: 3)
-
-            let rock = RockFormation(
-                type: signatureFormation.rockFormationType,
-                size: signatureFormation.size.cgSize,
-                position: signatureFormation.position.cgPoint,
-                seed: seed
-            )
-            rock.applyProceduralTextures(seed: seed)
-
-            // Add debug info
-            rock.debugInfo["type"] = signatureFormation.type
-            rock.debugInfo["position"] = "(\(Int(signatureFormation.position.x)), \(Int(signatureFormation.position.y)))"
-
-            rocks.append(rock)
-        }
-
-        return rocks
-    }
-
-    func createLakes(from mapData: MapData) -> [LakeNode] {
-        guard let lakeData = mapData.lakes else {
-            return []
-        }
-
-        return lakeData.map { data in
-            LakeNode(
-                position: data.position.cgPoint,
-                size: data.size.cgSize,
-                depth: CGFloat(data.depth ?? 1.0)
-            )
-        }
-    }
-
-    func createSpaceShuttle(from mapData: MapData, inventory: Inventory) -> SpaceShuttle? {
-        guard let shuttleData = mapData.spaceShuttle else { return nil }
-        let shuttle = SpaceShuttle(scale: CGFloat(shuttleData.scale), inventory: inventory)
-        shuttle.position = shuttleData.position.cgPoint
-        return shuttle
-    }
-
-    func createAllRocks(from mapData: MapData) -> (boundary: [RockFormation], interior: [RockFormation], signature: [RockFormation]) {
-        let boundaryRocks = createBoundaryRocks(from: mapData)
-        let interiorRocks = createInteriorRocks(from: mapData)
-        let signatureRocks = createSignatureFormations(from: mapData)
-
-        return (boundary: boundaryRocks, interior: interiorRocks, signature: signatureRocks)
-    }
-
-    // MARK: - Map Information
 
     // MARK: - Tile Grid (grid-first maps)
 

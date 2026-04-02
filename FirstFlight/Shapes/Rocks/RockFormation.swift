@@ -9,6 +9,9 @@ enum RockFormationType: String {
     case hydrogenDeposit
 }
 
+/// Uses identity-based Hashable (inherited from NSObject) — relied upon by
+/// Set<RockFormation> and Dictionary<RockFormation, ...> in GameScene.
+/// Do not override hash(into:) or == without updating those collections.
 class RockFormation: SKShapeNode {
     /// Extra collision padding so the player can't get too close (helps avoid head/rock z-overlap issues)
     private static let collisionPadding: CGFloat = 8
