@@ -55,6 +55,7 @@ final class Player: SKNode {
     private(set) var isFiring = false
     private(set) var isWalking = false
     private(set) var isInWater = false
+    private(set) var isJumping = false
     private var lastWalkingDirection: FacingDirection?
 
     // MARK: - Energy System
@@ -482,6 +483,57 @@ final class Player: SKNode {
 
         // Stop walking animation
         stopWalkingAnimation()
+    }
+
+    // MARK: - Jump
+
+    func jump() {
+        guard !isJumping else { return }
+        isJumping = true
+
+        let riseTime: TimeInterval = 0.2
+        let fallTime: TimeInterval = 0.2
+        let squashTime: TimeInterval = 0.08
+        let jumpHeight: CGFloat = 30.0
+
+        // Rise: move up + scale up
+        let riseMove = SKAction.moveBy(x: 0, y: jumpHeight, duration: riseTime)
+        riseMove.timingMode = .easeOut
+        let rise = SKAction.group([riseMove])
+
+        // Fall: move back down + scale back
+        let fallMove = SKAction.moveBy(x: 0, y: -jumpHeight, duration: fallTime)
+        fallMove.timingMode = .easeIn
+        let fallScale = SKAction.scale(to: 1.0, duration: fallTime)
+        fallScale.timingMode = .easeIn
+        let fall = SKAction.group([fallMove, fallScale])
+
+        // Leg tuck during rise
+        let tuckAngle: CGFloat = 0.3
+        let tuckLegs = SKAction.run { [weak self] in
+            guard let self else { return }
+            let tuck = SKAction.rotate(toAngle: tuckAngle, duration: riseTime)
+            tuck.timingMode = .easeOut
+            let tuckRight = SKAction.rotate(toAngle: -tuckAngle, duration: riseTime)
+            tuckRight.timingMode = .easeOut
+            self.leftThigh.run(tuck, withKey: "jumpTuck")
+            self.rightThigh.run(tuckRight, withKey: "jumpTuck")
+        }
+        let resetLegs = SKAction.run { [weak self] in
+            guard let self else { return }
+            let reset = SKAction.rotate(toAngle: 0, duration: fallTime)
+            reset.timingMode = .easeIn
+            self.leftThigh.run(reset, withKey: "jumpTuck")
+            self.rightThigh.run(reset, withKey: "jumpTuck")
+        }
+
+        let sequence = SKAction.sequence([
+            SKAction.group([rise, tuckLegs]),
+            SKAction.group([fall, resetLegs]),
+            SKAction.run { [weak self] in self?.isJumping = false }
+        ])
+
+        run(sequence, withKey: "jump")
     }
 
     func startFiringBlaster(at angle: CGFloat, distance: CGFloat) {

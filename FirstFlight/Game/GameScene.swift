@@ -150,6 +150,9 @@ final class GameScene: SKScene {
         )
         uiManager.onSaveInventories = { [weak self] in self?.saveInventories() }
         uiManager.onSaveEquipment = { [weak self] in self?.saveEquipment() }
+        #if os(macOS)
+        uiManager.virtualJoystick.onJump = { [weak self] in self?.astronaut.jump() }
+        #endif
 
         // Combat
         combatManager = CombatManager(scene: self, player: astronaut, energyBar: uiManager.energyBar)
