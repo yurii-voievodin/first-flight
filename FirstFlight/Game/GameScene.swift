@@ -151,7 +151,8 @@ final class GameScene: SKScene {
         uiManager.onSaveInventories = { [weak self] in self?.saveInventories() }
         uiManager.onSaveEquipment = { [weak self] in self?.saveEquipment() }
         #if os(macOS)
-        uiManager.virtualJoystick.onJump = { [weak self] in self?.astronaut.jump() }
+        uiManager.virtualJoystick.onJumpStart = { [weak self] in self?.handleJumpStart() }
+        uiManager.virtualJoystick.onJumpEnd = { [weak self] in self?.handleJumpEnd() }
         #endif
 
         // Combat
@@ -402,6 +403,39 @@ final class GameScene: SKScene {
             astronaut.stopMovement()
         }
     }
+
+    // MARK: - Jump
+
+    #if os(macOS)
+    private func handleJumpStart() {
+        guard !astronaut.isJumping else { return }
+
+        if astronaut.equipmentManager.hasBackpack {
+            // Start normal jump immediately, but schedule jetpack transition
+            astronaut.jump()
+            let jetpackDelay = SKAction.sequence([
+                SKAction.wait(forDuration: 0.15),
+                SKAction.run { [weak self] in
+                    guard let self else { return }
+                    // If still jumping (space held), transition to jetpack
+                    if self.astronaut.isJumping && !self.astronaut.isJetpackJumping {
+                        self.astronaut.jetpackJump()
+                    }
+                }
+            ])
+            run(jetpackDelay, withKey: "jetpackHoldTimer")
+        } else {
+            astronaut.jump()
+        }
+    }
+
+    private func handleJumpEnd() {
+        removeAction(forKey: "jetpackHoldTimer")
+        if astronaut.isJetpackJumping {
+            astronaut.endJetpackJump()
+        }
+    }
+    #endif
 
     // MARK: - Rock Destruction
 

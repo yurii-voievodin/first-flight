@@ -80,12 +80,13 @@ class VirtualJoystick: SKNode {
 
     #if os(macOS)
     private var pressedKeys: Set<UInt16> = []
-    var onJump: (() -> Void)?
+    var onJumpStart: (() -> Void)?
+    var onJumpEnd: (() -> Void)?
 
     // Key codes: W=13, A=0, S=1, D=2, Space=49
     func handleKeyDown(_ keyCode: UInt16) {
         if keyCode == 49 {
-            onJump?()
+            onJumpStart?()
             return
         }
         pressedKeys.insert(keyCode)
@@ -93,6 +94,10 @@ class VirtualJoystick: SKNode {
     }
 
     func handleKeyUp(_ keyCode: UInt16) {
+        if keyCode == 49 {
+            onJumpEnd?()
+            return
+        }
         pressedKeys.remove(keyCode)
         updateKeyboardDirection()
     }

@@ -56,6 +56,9 @@ final class Player: SKNode {
     private(set) var isWalking = false
     private(set) var isInWater = false
     private(set) var isJumping = false
+    private(set) var isJetpackJumping = false
+    private var jetpackJumpHeight: CGFloat = 0
+    private var jetpackEmitters: [SKEmitterNode] = []
     private var lastWalkingDirection: FacingDirection?
 
     // MARK: - Energy System
@@ -493,20 +496,15 @@ final class Player: SKNode {
 
         let riseTime: TimeInterval = 0.2
         let fallTime: TimeInterval = 0.2
-        let squashTime: TimeInterval = 0.08
         let jumpHeight: CGFloat = 30.0
 
-        // Rise: move up + scale up
+        // Rise: move up
         let riseMove = SKAction.moveBy(x: 0, y: jumpHeight, duration: riseTime)
         riseMove.timingMode = .easeOut
-        let rise = SKAction.group([riseMove])
 
-        // Fall: move back down + scale back
+        // Fall: move back down
         let fallMove = SKAction.moveBy(x: 0, y: -jumpHeight, duration: fallTime)
         fallMove.timingMode = .easeIn
-        let fallScale = SKAction.scale(to: 1.0, duration: fallTime)
-        fallScale.timingMode = .easeIn
-        let fall = SKAction.group([fallMove, fallScale])
 
         // Leg tuck during rise
         let tuckAngle: CGFloat = 0.3
@@ -528,12 +526,177 @@ final class Player: SKNode {
         }
 
         let sequence = SKAction.sequence([
-            SKAction.group([rise, tuckLegs]),
-            SKAction.group([fall, resetLegs]),
+            SKAction.group([riseMove, tuckLegs]),
+            SKAction.group([fallMove, resetLegs]),
             SKAction.run { [weak self] in self?.isJumping = false }
         ])
 
         run(sequence, withKey: "jump")
+    }
+
+    func cancelJump() {
+        guard isJumping, !isJetpackJumping else { return }
+        removeAction(forKey: "jump")
+        leftThigh.removeAction(forKey: "jumpTuck")
+        rightThigh.removeAction(forKey: "jumpTuck")
+        // Reset position to pre-jump state
+        let resetDuration: TimeInterval = 0.05
+        run(SKAction.moveTo(y: position.y - 30.0, duration: resetDuration))
+        leftThigh.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
+        rightThigh.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
+        isJumping = false
+    }
+
+    // MARK: - Jetpack Jump
+
+    func jetpackJump() {
+        // Cancel any in-progress normal jump first
+        if isJumping {
+            removeAction(forKey: "jump")
+            leftThigh.removeAction(forKey: "jumpTuck")
+            rightThigh.removeAction(forKey: "jumpTuck")
+            // Snap back to ground before starting jetpack
+            leftThigh.run(SKAction.rotate(toAngle: 0, duration: 0.05))
+            rightThigh.run(SKAction.rotate(toAngle: 0, duration: 0.05))
+        }
+
+        isJumping = true
+        isJetpackJumping = true
+        startJetpackEmitter()
+
+        let riseTime: TimeInterval = 0.3
+        let jetpackHeight: CGFloat = 50.0
+        jetpackJumpHeight = jetpackHeight
+
+        // Rise phase
+        let riseMove = SKAction.moveBy(x: 0, y: jetpackHeight, duration: riseTime)
+        riseMove.timingMode = .easeOut
+
+        // Tuck legs for flight
+        let tuckAngle: CGFloat = 0.4
+        let tuckLegs = SKAction.run { [weak self] in
+            guard let self else { return }
+            let tuck = SKAction.rotate(toAngle: tuckAngle, duration: riseTime)
+            tuck.timingMode = .easeOut
+            let tuckRight = SKAction.rotate(toAngle: -tuckAngle, duration: riseTime)
+            tuckRight.timingMode = .easeOut
+            self.leftThigh.run(tuck, withKey: "jumpTuck")
+            self.rightThigh.run(tuckRight, withKey: "jumpTuck")
+        }
+
+        // Hover bob animation (repeats until ended)
+        let bobUp = SKAction.moveBy(x: 0, y: 4, duration: 0.3)
+        bobUp.timingMode = .easeInEaseOut
+        let bobDown = SKAction.moveBy(x: 0, y: -4, duration: 0.3)
+        bobDown.timingMode = .easeInEaseOut
+        let bob = SKAction.repeatForever(SKAction.sequence([bobUp, bobDown]))
+
+        // Auto-land after max 2s total flight
+        let autoLand = SKAction.sequence([
+            SKAction.wait(forDuration: 2.0 - riseTime),
+            SKAction.run { [weak self] in self?.endJetpackJump() }
+        ])
+
+        let sequence = SKAction.sequence([
+            SKAction.group([
+                riseMove,
+                tuckLegs
+            ]),
+            SKAction.group([bob, autoLand])
+        ])
+
+        run(sequence, withKey: "jetpackJump")
+    }
+
+    func endJetpackJump() {
+        guard isJetpackJumping else { return }
+        isJetpackJumping = false
+        stopJetpackEmitter()
+
+        removeAction(forKey: "jetpackJump")
+
+        let descentTime: TimeInterval = 0.4
+
+        // Descend back to ground
+        let descend = SKAction.moveTo(y: position.y - jetpackJumpHeight, duration: descentTime)
+        descend.timingMode = .easeIn
+
+        // Reset legs
+        let resetLegs = SKAction.run { [weak self] in
+            guard let self else { return }
+            let reset = SKAction.rotate(toAngle: 0, duration: descentTime)
+            reset.timingMode = .easeIn
+            self.leftThigh.run(reset, withKey: "jumpTuck")
+            self.rightThigh.run(reset, withKey: "jumpTuck")
+        }
+
+        let sequence = SKAction.sequence([
+            SKAction.group([descend, resetLegs]),
+            SKAction.run { [weak self] in
+                self?.isJumping = false
+                self?.jetpackJumpHeight = 0
+            }
+        ])
+
+        run(sequence, withKey: "jetpackLanding")
+    }
+
+    private static let jetpackParticleTexture: SKTexture = {
+        let size = 16
+        let image = NSImage(size: NSSize(width: size, height: size), flipped: false) { rect in
+            let ctx = NSGraphicsContext.current!.cgContext
+            ctx.setFillColor(CGColor.white)
+            ctx.fillEllipse(in: rect)
+            return true
+        }
+        return SKTexture(image: image)
+    }()
+
+    private func makeJetpackEmitter(at position: CGPoint) -> SKEmitterNode {
+        let emitter = SKEmitterNode()
+        emitter.particleTexture = Self.jetpackParticleTexture
+        emitter.particleBirthRate = 80
+        emitter.particleLifetime = 0.4
+        emitter.particleLifetimeRange = 0.1
+        emitter.emissionAngle = -.pi / 2 // downward
+        emitter.emissionAngleRange = 0.4
+        emitter.particleSpeed = 50
+        emitter.particleSpeedRange = 15
+        emitter.particleAlpha = 0.9
+        emitter.particleAlphaSpeed = -1.8
+        emitter.particleScale = 0.15
+        emitter.particleScaleRange = 0.05
+        emitter.particleScaleSpeed = -0.2
+        emitter.particleColor = SKColor(red: 0.4, green: 0.7, blue: 1.0, alpha: 1.0)
+        emitter.particleColorBlendFactor = 1.0
+        emitter.particleColorSequence = SKKeyframeSequence(
+            keyframeValues: [
+                SKColor(red: 0.9, green: 0.95, blue: 1.0, alpha: 1.0),
+                SKColor(red: 0.3, green: 0.6, blue: 1.0, alpha: 0.8),
+                SKColor(red: 0.4, green: 0.4, blue: 0.5, alpha: 0.0)
+            ],
+            times: [0, 0.4, 1.0]
+        )
+        emitter.particleBlendMode = .alpha
+        emitter.position = position
+        emitter.zPosition = 3
+        return emitter
+    }
+
+    private func startJetpackEmitter() {
+        let left = makeJetpackEmitter(at: CGPoint(x: -5, y: -20))
+        let right = makeJetpackEmitter(at: CGPoint(x: 5, y: -20))
+        addChild(left)
+        addChild(right)
+        jetpackEmitters = [left, right]
+    }
+
+    private func stopJetpackEmitter() {
+        for emitter in jetpackEmitters {
+            emitter.particleBirthRate = 0
+            emitter.run(.sequence([.wait(forDuration: 0.4), .removeFromParent()]))
+        }
+        jetpackEmitters = []
     }
 
     func startFiringBlaster(at angle: CGFloat, distance: CGFloat) {
