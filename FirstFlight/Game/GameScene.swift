@@ -185,7 +185,7 @@ final class GameScene: SKScene {
             addChild(tileMap.createNode())
 
             if showDebugLabels {
-                Logger.game.debug("Loaded: tileSize: \(tileMap.tileSize.width)x\(tileMap.tileSize.height), columns: \(tileMap.tileColumns), rows: \(tileMap.tileRows), scene.size: \(size.width)x\(size.height)")
+                Logger.game.debug("Loaded: tileSize: \(tileMap.tileSize), columns: \(tileMap.tileColumns), rows: \(tileMap.tileRows), scene.size: \(self.size.width)x\(self.size.height)")
             }
 
             astronaut.position = MapLoader.shared.getPlayerStartPosition(from: mapData)
@@ -487,7 +487,7 @@ extension GameScene: SKPhysicsContactDelegate {
             let bodyBNode = contact.bodyB.node
             let bodyASize = bodyANode?.calculateAccumulatedFrame().size ?? .zero
             let bodyBSize = bodyBNode?.calculateAccumulatedFrame().size ?? .zero
-            Logger.physics.debug("COLLISION: point: \(contact.contactPoint.x),\(contact.contactPoint.y) bodyA: \(contact.bodyA.categoryBitMask) (\(categoryName(contact.bodyA.categoryBitMask))) node: \(String(describing: bodyANode)) size: \(bodyASize.width)x\(bodyASize.height) bodyB: \(contact.bodyB.categoryBitMask) (\(categoryName(contact.bodyB.categoryBitMask))) node: \(String(describing: bodyBNode)) size: \(bodyBSize.width)x\(bodyBSize.height)")
+            Logger.physics.debug("COLLISION: point: \(contact.contactPoint.x),\(contact.contactPoint.y) bodyA: \(contact.bodyA.categoryBitMask) (\(self.categoryName(contact.bodyA.categoryBitMask))) node: \(String(describing: bodyANode)) size: \(bodyASize.width)x\(bodyASize.height) bodyB: \(contact.bodyB.categoryBitMask) (\(self.categoryName(contact.bodyB.categoryBitMask))) node: \(String(describing: bodyBNode)) size: \(bodyBSize.width)x\(bodyBSize.height)")
         }
 
         if collision == PhysicsCategory.player | PhysicsCategory.wall ||
