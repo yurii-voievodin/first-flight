@@ -6,6 +6,7 @@
 //
 
 import SpriteKit
+import OSLog
 
 final class GameScene: SKScene {
     private var inventory: Inventory!
@@ -184,10 +185,7 @@ final class GameScene: SKScene {
             addChild(tileMap.createNode())
 
             if showDebugLabels {
-                print("Loaded:")
-                print("  tileSize: \(tileMap.tileSize)")
-                print("  columns: \(tileMap.tileColumns), rows: \(tileMap.tileRows)")
-                print("  scene.size: \(size)")
+                Logger.game.debug("Loaded: tileSize: \(tileMap.tileSize.width)x\(tileMap.tileSize.height), columns: \(tileMap.tileColumns), rows: \(tileMap.tileRows), scene.size: \(size.width)x\(size.height)")
             }
 
             astronaut.position = MapLoader.shared.getPlayerStartPosition(from: mapData)
@@ -230,7 +228,7 @@ final class GameScene: SKScene {
             for smallRock in smallRocks { addChild(smallRock) }
 
         } catch {
-            print("ERROR: Failed to load Map1.json: \(error.localizedDescription)")
+            Logger.game.error("Failed to load Map1.json: \(error.localizedDescription)")
             showMapLoadError(error)
         }
     }
@@ -258,14 +256,14 @@ final class GameScene: SKScene {
 
     private func saveInventories() {
         do { try InventoryStorage.save(inventory.state, for: .player) }
-        catch { print("Failed to save player inventory: \(error)") }
+        catch { Logger.persistence.error("Failed to save player inventory: \(error)") }
         do { try InventoryStorage.save(shuttleInventory.state, for: .shuttle) }
-        catch { print("Failed to save shuttle inventory: \(error)") }
+        catch { Logger.persistence.error("Failed to save shuttle inventory: \(error)") }
     }
 
     private func saveEquipment() {
         do { try EquipmentStorage.save(equipmentManager.state) }
-        catch { print("Failed to save equipment: \(error)") }
+        catch { Logger.persistence.error("Failed to save equipment: \(error)") }
     }
 
     // MARK: - Input Handling
@@ -489,12 +487,7 @@ extension GameScene: SKPhysicsContactDelegate {
             let bodyBNode = contact.bodyB.node
             let bodyASize = bodyANode?.calculateAccumulatedFrame().size ?? .zero
             let bodyBSize = bodyBNode?.calculateAccumulatedFrame().size ?? .zero
-            print("COLLISION DETECTED:")
-            print("  Contact point: \(contact.contactPoint)")
-            print("  Body A: \(contact.bodyA.categoryBitMask) (\(categoryName(contact.bodyA.categoryBitMask)))")
-            print("  Body A node: \(String(describing: bodyANode)) size: \(bodyASize)")
-            print("  Body B: \(contact.bodyB.categoryBitMask) (\(categoryName(contact.bodyB.categoryBitMask)))")
-            print("  Body B node: \(String(describing: bodyBNode)) size: \(bodyBSize)")
+            Logger.physics.debug("COLLISION: point: \(contact.contactPoint.x),\(contact.contactPoint.y) bodyA: \(contact.bodyA.categoryBitMask) (\(categoryName(contact.bodyA.categoryBitMask))) node: \(String(describing: bodyANode)) size: \(bodyASize.width)x\(bodyASize.height) bodyB: \(contact.bodyB.categoryBitMask) (\(categoryName(contact.bodyB.categoryBitMask))) node: \(String(describing: bodyBNode)) size: \(bodyBSize.width)x\(bodyBSize.height)")
         }
 
         if collision == PhysicsCategory.player | PhysicsCategory.wall ||

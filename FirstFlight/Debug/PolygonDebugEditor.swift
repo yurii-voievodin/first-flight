@@ -1,4 +1,5 @@
 import SpriteKit
+import OSLog
 
 final class PolygonDebugEditor: SKNode {
     let size: CGSize
@@ -25,15 +26,14 @@ final class PolygonDebugEditor: SKNode {
             return String(format: "%.3f", Double(v))
         }
 
-        print("\n--- \(label) polygon points (normalized) ---")
-        print("return [")
+        var lines = "\n--- \(label) polygon points (normalized) ---\nreturn ["
         for (i, p) in points.enumerated() {
             let nx = p.x / size.width
             let ny = p.y / size.height
-            print("    CGPoint(x: w * \(fmt(nx)), y: h * \(fmt(ny))), // \(i)  (\(Int(p.x)), \(Int(p.y)))")
+            lines += "\n    CGPoint(x: w * \(fmt(nx)), y: h * \(fmt(ny))), // \(i)  (\(Int(p.x)), \(Int(p.y)))"
         }
-        print("]")
-        print("--- end ---\n")
+        lines += "\n]\n--- end ---"
+        Logger.debug.info("\(lines)")
     }
 
     init(

@@ -1,4 +1,5 @@
 import Foundation
+import OSLog
 
 class EquipmentManager {
     private(set) var state: EquipmentState
@@ -31,6 +32,6 @@ class EquipmentManager {
 
     func save() {
         do { try EquipmentStorage.save(state) }
-        catch { print("Failed to save equipment: \(error)") }
+        catch { Logger.persistence.error("Failed to save equipment: \(error)") }
     }
 }
