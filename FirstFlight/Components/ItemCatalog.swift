@@ -28,5 +28,5 @@ enum ItemCatalog {
     }()
 
     /// Lookup table keyed by item ID for O(1) access.
-    static let defsById: [String: ItemDef] = Dictionary(uniqueKeysWithValues: allDefs.map { ($0.id, $0) })
+    static let defsById: [String: ItemDef] = Dictionary(allDefs.map { ($0.id, $0) }, uniquingKeysWith: { _, last in last })
 }

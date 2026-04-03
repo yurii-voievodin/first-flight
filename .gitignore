@@ -6,7 +6,7 @@
 ._*
 
 # Custom folder icons
-Icon
+Icon
 
 # Volume root files
 .DocumentRevisions-V100
@@ -41,25 +41,5 @@ playground.xcworkspace
 *.xcuserstate
 *.xcscmblueprint
 
-
-### Swift
-# Xcode user settings
-xcuserdata/
-
-# Xcode build data
-DerivedData/
-
-# Swift/Obj-C specific
-*.hmap
-
-# App packaging
-*.ipa
-*.dSYM.zip
-*.dSYM
-
-# Playgrounds
-timeline.xctimeline
-playground.xcworkspace
-
-# Swift Package Manager
+### Swift Package Manager
 # Package.resolved

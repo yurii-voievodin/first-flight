@@ -7,10 +7,6 @@ class SpaceShuttle: SKNode {
     // MARK: - Inventory
     private(set) var inventory: Inventory
 
-    // MARK: - Debug editor (optional)
-    private let debugEditorEnabled: Bool = false
-    private var debugEditor: PolygonDebugEditor?
-
     init(scale: CGFloat = 0.6, inventory: Inventory) {
         self.shuttleScale = scale
         self.inventory = inventory
@@ -19,17 +15,6 @@ class SpaceShuttle: SKNode {
         setupSprite()
         setupShadowAndHighlight()
         applyPhysics(using: shuttlePolygonPoints())
-        if debugEditorEnabled {
-            let editor = PolygonDebugEditor(
-                size: renderedSize,
-                points: shuttlePolygonPoints(),
-                allowEditing: true,
-                debugPrintLabel: "SpaceShuttle"
-            )
-            editor.zPosition = zPosition
-            addChild(editor)
-            debugEditor = editor
-        }
     }
 
     required init?(coder aDecoder: NSCoder) {

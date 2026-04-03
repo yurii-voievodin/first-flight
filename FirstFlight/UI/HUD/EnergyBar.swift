@@ -7,7 +7,7 @@ class EnergyBar: SKNode {
     private let iconSize: CGFloat = 16
     private let iconSpacing: CGFloat = 12
 
-    private var iconNode: SKSpriteNode!
+    private var iconNode: SKSpriteNode?
     private var backgroundBar: SKShapeNode!
     private var fillBar: SKShapeNode!
     private var fillCropNode: SKCropNode!
@@ -82,10 +82,11 @@ class EnergyBar: SKNode {
             tintColor: SKColor(white: 1.0, alpha: 0.6)
         ) else { return }
 
-        iconNode = SKSpriteNode(texture: texture, size: CGSize(width: iconSize, height: iconSize))
-        iconNode.position = CGPoint(x: barWidth / 2 + iconSpacing, y: 0)
-        iconNode.zPosition = 2
-        addChild(iconNode)
+        let node = SKSpriteNode(texture: texture, size: CGSize(width: iconSize, height: iconSize))
+        node.position = CGPoint(x: barWidth / 2 + iconSpacing, y: 0)
+        node.zPosition = 2
+        addChild(node)
+        iconNode = node
     }
 
     private func setupRechargeButton() {

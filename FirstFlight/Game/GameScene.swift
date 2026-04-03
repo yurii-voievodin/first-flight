@@ -379,7 +379,7 @@ final class GameScene: SKScene {
     }
 
     private func updateCharacterMovement() {
-        let joystick = uiManager.virtualJoystick!
+        guard let joystick = uiManager.virtualJoystick else { return }
         let direction = joystick.currentDirection
 
         guard let aimAngle = joystick.currentAngle else {

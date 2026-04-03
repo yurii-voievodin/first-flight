@@ -190,9 +190,7 @@ final class InventoryOverlayNode: SKNode {
         // Render equipment slots
         renderEquipmentSlots()
 
-        // Compute rows for current capacity
         let totalSlots = state.maxSlots
-        let rows = Int(ceil(Double(totalSlots) / Double(columns)))
         updateContentMetrics(totalSlots: totalSlots)
         applyScrollAndLayout()
 
@@ -217,7 +215,9 @@ final class InventoryOverlayNode: SKNode {
 
             switch slot {
             case .stack(let defId, let quantity):
-                if let def = defsById[defId], let texture = SKTexture(imageNamed: def.iconName) as SKTexture? {
+                if let def = defsById[defId] {
+                    let texture = SKTexture(imageNamed: def.iconName)
+                    guard texture.size().width > 0 else { continue }
                     let icon = SKSpriteNode(texture: texture)
                     icon.size = aspectFitSize(for: texture, maxSize: 44)
                     icon.position = CGPoint(x: slotFrame.midX, y: slotFrame.midY)
@@ -232,7 +232,8 @@ final class InventoryOverlayNode: SKNode {
                 }
 
             case .unique(let item):
-                if let def = defsById[item.defId], let texture = SKTexture(imageNamed: def.iconName) as SKTexture? {
+                if let def = defsById[item.defId] {
+                    let texture = SKTexture(imageNamed: def.iconName)
                     let icon = SKSpriteNode(texture: texture)
                     icon.size = aspectFitSize(for: texture, maxSize: 44)
                     icon.position = CGPoint(x: slotFrame.midX, y: slotFrame.midY)
@@ -241,8 +242,6 @@ final class InventoryOverlayNode: SKNode {
             }
         }
 
-        // If panel is too small for all rows, we can add paging/scroll later.
-        _ = rows
     }
 
     private func renderEquipmentSlots() {

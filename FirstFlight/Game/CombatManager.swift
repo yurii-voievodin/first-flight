@@ -17,6 +17,7 @@ final class CombatManager {
     // Element extraction
     private var extractionProgress: [RockFormation: CGFloat] = [:]
     private let damagePerElement: CGFloat = 10
+    private let maxExtractionsPerFrame: Int = 3
 
     // Targeting
     private(set) var currentTarget: RockFormation?
@@ -51,6 +52,8 @@ final class CombatManager {
         let dy = endPoint.y - player.position.y
         let angle = atan2(dy, dx)
         let distance = hypot(dx, dy)
+
+        guard distance > 1 else { return }
 
         player.startFiringBlaster(at: angle, distance: distance)
     }
@@ -103,8 +106,10 @@ final class CombatManager {
             }
 
             extractionProgress[rock, default: 0] += damage
-            while extractionProgress[rock, default: 0] >= damagePerElement {
+            var extractionsThisFrame = 0
+            while extractionProgress[rock, default: 0] >= damagePerElement, extractionsThisFrame < maxExtractionsPerFrame {
                 extractionProgress[rock, default: 0] -= damagePerElement
+                extractionsThisFrame += 1
                 if let element = rock.extractRandomElement() {
                     let added = player.inventory.add(element, amount: 1)
                     if added > 0 {

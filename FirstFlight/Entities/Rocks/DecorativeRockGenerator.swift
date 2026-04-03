@@ -110,6 +110,8 @@ struct DecorativeRockGenerator {
         let minY = margin
         let maxY = max(margin, sceneSize.height - margin)
 
+        guard minX < maxX, minY < maxY else { return nil }
+
         for _ in 0..<attempts {
             let p = CGPoint(
                 x: CGFloat.random(in: minX...maxX),

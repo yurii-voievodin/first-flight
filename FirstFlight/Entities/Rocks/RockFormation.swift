@@ -139,17 +139,23 @@ class RockFormation: SKShapeNode {
 
         guard remaining > 0, !composition.isEmpty else { return result }
 
-        // Distribute remaining elements according to composition
+        let totalWeight = composition.values.reduce(0, +)
+        guard totalWeight > 0 else { return result }
+
+        // Distribute remaining elements according to normalized composition weights
+        var distributed = 0
         for (element, weight) in composition {
-            let amount = Int(Float(remaining) * weight)
+            let amount = Int(Float(remaining) * (weight / totalWeight))
             if amount > 0 {
                 result[element] = amount
+                distributed += amount
             }
         }
 
-        // Ensure at least 1 element if we have remaining yield
-        if result.isEmpty, let firstElement = composition.keys.first {
-            result[firstElement] = remaining
+        // Assign any rounding remainder to the first element
+        let remainder = remaining - distributed
+        if remainder > 0, let firstElement = composition.keys.first {
+            result[firstElement, default: 0] += remainder
         }
 
         extractedTotal = totalYield

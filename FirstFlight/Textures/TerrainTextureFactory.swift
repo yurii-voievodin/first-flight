@@ -1,6 +1,7 @@
 import SpriteKit
 import CoreImage
 import CoreImage.CIFilterBuiltins
+import OSLog
 
 final class TerrainTextureFactory {
     private let ciContext: CIContext
@@ -139,6 +140,7 @@ final class TerrainTextureFactory {
 
         // Render → SKTexture
         guard let cg = ciContext.createCGImage(finalTuned, from: extent) else {
+            Logger.game.error("Failed to create terrain texture for extent \(String(describing: extent))")
             return SKTexture()
         }
         let tex = SKTexture(cgImage: cg)
