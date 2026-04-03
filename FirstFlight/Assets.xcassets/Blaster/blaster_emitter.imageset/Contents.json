@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "blaster_emitter.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

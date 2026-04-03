@@ -6,298 +6,517 @@
 //
 
 import SpriteKit
+import OSLog
 
-fileprivate protocol ControllableEntity: AnyObject {
-    func moveTo(position: CGPoint)
-    func stopMovement()
-}
-
-extension Player: ControllableEntity {}
-extension Spider: ControllableEntity {}
-
-
-class GameScene: SKScene {
-
-    private enum CharacterSelection {
-        case astronaut
-        case spider
-    }
-
+final class GameScene: SKScene {
+    private var inventory: Inventory!
+    private var shuttleInventory: Inventory!
+    private var equipmentManager: EquipmentManager!
     private var astronaut: Player!
-    private var spiderCharacter: Spider!
-    private var activeCharacter: (SKNode & ControllableEntity)?
-    private var activeSelection: CharacterSelection = .astronaut
+
     private var gameCamera: SKCameraNode!
-    private var walls: [SKSpriteNode] = []
     private var rockFormations: [RockFormation] = []
+    private var lakes: [LakeNode] = []
     private var boundaryRocks: [RockFormation] = []
+    private var spaceShuttle: SpaceShuttle?
+
+    private var cameraController: CameraController!
+    private var combatManager: CombatManager!
+    private var uiManager: UIManager!
 
     // Debug mode flag
-    var showDebugLabels: Bool = false
+    var showDebugLabels: Bool = ProcessInfo.processInfo.environment["SHOW_DEBUG_LABELS"] == "1"
+
+    private var lastUpdateTime: TimeInterval = 0
+
+    // Map size (stored separately because scene.size changes with scaleMode)
+    private var mapSize: CGSize = .zero
 
     override func didMove(to view: SKView) {
         setupScene()
         createCharacters()
         loadMapFromJSON()
-        setupCamera()
-        updateCameraConstraints() // Apply constraints after view is available
+        setupManagers()
     }
 
     private func setupScene() {
-        // Set fixed map size of 2000x2000 for larger exploration area
-        size = CGSize(width: 2000, height: 2000)
         physicsWorld.gravity = CGVector(dx: 0, dy: 0)
         physicsWorld.contactDelegate = self
-
-        // Set background to grey (this will be the color outside map walls)
-        backgroundColor = SKColor.systemGray4
-
-        // Create a large grey background that extends beyond scene bounds
-        let largeBackgroundSize = CGSize(width: size.width * 2, height: size.height * 2)
-        let largeBackground = SKSpriteNode(color: .systemGray4, size: largeBackgroundSize)
-        largeBackground.position = CGPoint(x: size.width / 2, y: size.height / 2)
-        largeBackground.zPosition = -100
-        addChild(largeBackground)
     }
 
     private func createCharacters() {
-        astronaut = Player()
-        astronaut.position = CGPoint(x: size.width * 0.25, y: size.height * 0.25)
-        addChild(astronaut)
-        activeCharacter = astronaut
-        activeSelection = .astronaut
+        let defs = ItemCatalog.allDefs
 
-        spiderCharacter = Spider()
-        spiderCharacter.zPosition = astronaut.zPosition
-        spiderCharacter.position = astronaut.position
+        // Player inventory (12 slots)
+        let playerState = (try? InventoryStorage.loadOrCreate(for: .player, defaultMaxSlots: 12))
+            ?? InventoryState(maxSlots: 12)
+        inventory = Inventory(state: playerState, defs: defs)
+
+        // Shuttle inventory (24 slots - double player capacity)
+        var shuttleState = (try? InventoryStorage.loadOrCreate(for: .shuttle, defaultMaxSlots: 24))
+            ?? InventoryState(maxSlots: 24)
+
+        // Equipment state
+        let equipmentState = (try? EquipmentStorage.loadOrCreate()) ?? EquipmentState()
+        equipmentManager = EquipmentManager(state: equipmentState)
+
+        // First launch detection: if equipment storage doesn't exist,
+        // add starting equipment to shuttle inventory
+        let isFirstLaunch = !EquipmentStorage.exists()
+        if isFirstLaunch {
+            if let backpackDef = ItemCatalog.defsById[ItemID.backpack] {
+                let backpackItem = UniqueItemInstance(instanceId: UUID(), defId: backpackDef.id)
+                if let emptySlot = shuttleState.slots.firstIndex(where: { $0 == nil }) {
+                    shuttleState.slots[emptySlot] = .unique(item: backpackItem)
+                }
+            }
+            if let blasterDef = ItemCatalog.defsById[ItemID.blaster] {
+                let blasterItem = UniqueItemInstance(instanceId: UUID(), defId: blasterDef.id)
+                if let emptySlot = shuttleState.slots.firstIndex(where: { $0 == nil }) {
+                    shuttleState.slots[emptySlot] = .unique(item: blasterItem)
+                }
+            }
+            try? EquipmentStorage.save(equipmentState)
+            try? InventoryStorage.save(shuttleState, for: .shuttle)
+        }
+
+        // Migration: ensure backpack & blaster exist somewhere for old installs
+        // that missed the first-launch grant
+        let hasBackpack = equipmentState.equippedItems[.backpack] != nil
+            || playerState.slots.contains(where: { slot in
+                if case .unique(let item) = slot, item.defId == ItemID.backpack { return true }
+                return false
+            })
+            || shuttleState.slots.contains(where: { slot in
+                if case .unique(let item) = slot, item.defId == ItemID.backpack { return true }
+                return false
+            })
+
+        let hasBlaster = equipmentState.equippedItems[.weapon] != nil
+            || playerState.slots.contains(where: { slot in
+                if case .unique(let item) = slot, item.defId == ItemID.blaster { return true }
+                return false
+            })
+            || shuttleState.slots.contains(where: { slot in
+                if case .unique(let item) = slot, item.defId == ItemID.blaster { return true }
+                return false
+            })
+
+        var needsShuttleSave = false
+        if !hasBackpack {
+            let item = UniqueItemInstance(instanceId: UUID(), defId: ItemID.backpack)
+            if let emptySlot = shuttleState.slots.firstIndex(where: { $0 == nil }) {
+                shuttleState.slots[emptySlot] = .unique(item: item)
+                needsShuttleSave = true
+            }
+        }
+        if !hasBlaster {
+            let item = UniqueItemInstance(instanceId: UUID(), defId: ItemID.blaster)
+            if let emptySlot = shuttleState.slots.firstIndex(where: { $0 == nil }) {
+                shuttleState.slots[emptySlot] = .unique(item: item)
+                needsShuttleSave = true
+            }
+        }
+        if needsShuttleSave {
+            try? InventoryStorage.save(shuttleState, for: .shuttle)
+        }
+
+        shuttleInventory = Inventory(state: shuttleState, defs: defs)
+
+        astronaut = Player(inventory: inventory, equipmentManager: equipmentManager)
+
+        if astronaut.parent == nil {
+            addChild(astronaut)
+        }
+    }
+
+    private func setupManagers() {
+        // Camera
+        gameCamera = SKCameraNode()
+        camera = gameCamera
+        addChild(gameCamera)
+        gameCamera.position = astronaut.position
+
+        cameraController = CameraController(camera: gameCamera, scene: self)
+        cameraController.setMapSize(mapSize)
+        cameraController.updateConstraints()
+
+        // UI
+        uiManager = UIManager(
+            scene: self,
+            camera: gameCamera,
+            player: astronaut,
+            inventory: inventory,
+            shuttleInventory: shuttleInventory
+        )
+        uiManager.onSaveInventories = { [weak self] in self?.saveInventories() }
+        uiManager.onSaveEquipment = { [weak self] in self?.saveEquipment() }
+        #if os(macOS)
+        uiManager.virtualJoystick.onJumpStart = { [weak self] in self?.handleJumpStart() }
+        uiManager.virtualJoystick.onJumpEnd = { [weak self] in self?.handleJumpEnd() }
+        #endif
+
+        // Combat
+        combatManager = CombatManager(scene: self, player: astronaut, energyBar: uiManager.energyBar)
+        combatManager.onRockDestroyed = { [weak self] rock in self?.destroyRock(rock) }
     }
 
     private func loadMapFromJSON() {
         do {
-            // Try to load Map1.json
             let mapData = try MapLoader.shared.loadMap(named: "Map1")
 
-            // Update map size if different from default
-            let mapSize = MapLoader.shared.getMapSize(from: mapData)
-            if mapSize != self.size {
-                self.size = mapSize
-                setupScene() // Re-setup scene with new size
+            let grid = MapLoader.shared.getTileGrid(from: mapData)
+            let tileMap = TileMap(grid: grid)
+
+            mapSize = CGSize(
+                width: CGFloat(tileMap.tileColumns) * tileMap.tileSize,
+                height: CGFloat(tileMap.tileRows) * tileMap.tileSize
+            )
+            size = mapSize
+
+            // Invisible physics boundary
+            let mapRect = CGRect(origin: .zero, size: mapSize)
+            let boundary = SKNode()
+            boundary.physicsBody = SKPhysicsBody(edgeLoopFrom: mapRect)
+            boundary.physicsBody?.categoryBitMask = PhysicsCategory.wall
+            boundary.physicsBody?.collisionBitMask = PhysicsCategory.player
+            addChild(boundary)
+
+            tileMap.createNode { [weak self] node in
+                self?.addChild(node)
             }
 
-            // Update player start position
-            let startPosition = MapLoader.shared.getPlayerStartPosition(from: mapData)
-            astronaut.position = startPosition
-            spiderCharacter.position = startPosition
+            if showDebugLabels {
+                Logger.game.debug("Loaded: tileSize: \(tileMap.tileSize), columns: \(tileMap.tileColumns), rows: \(tileMap.tileRows), scene.size: \(self.size.width)x\(self.size.height)")
+            }
 
-            // Create all rock formations from JSON
-            let rocks = MapLoader.shared.createAllRocks(from: mapData)
+            astronaut.position = MapLoader.shared.getPlayerStartPosition(from: mapData)
 
-            // Add boundary rocks
+            if let shuttle = MapNodeFactory.createSpaceShuttle(from: mapData, inventory: shuttleInventory) {
+                addChild(shuttle)
+                spaceShuttle = shuttle
+            }
+
+            let rocks = MapNodeFactory.createAllRocks(from: mapData)
+
             boundaryRocks = rocks.boundary
             for rock in boundaryRocks {
                 addChild(rock)
-                if showDebugLabels {
-                    rock.addDebugLabel()
-                }
+                if showDebugLabels { rock.addDebugLabel() }
             }
 
-            // Add interior rocks
             for rock in rocks.interior {
                 addChild(rock)
                 rockFormations.append(rock)
-                if showDebugLabels {
-                    rock.addDebugLabel()
-                }
+                if showDebugLabels { rock.addDebugLabel() }
             }
 
-            // Add signature formations
             for rock in rocks.signature {
                 addChild(rock)
                 rockFormations.append(rock)
-                if showDebugLabels {
-                    rock.addDebugLabel()
-                }
+                if showDebugLabels { rock.addDebugLabel() }
             }
 
-            // Print map info for debugging
-            let mapInfo = MapLoader.shared.getMapInfo(from: mapData)
-            print("Loaded map: \(mapInfo.name) v\(mapInfo.version) - \(mapInfo.description)")
-            print("Total rocks: \(rocks.boundary.count) boundary, \(rocks.interior.count) interior, \(rocks.signature.count) signature")
+            lakes = MapNodeFactory.createLakes(from: mapData)
+            for lake in lakes { addChild(lake) }
+
+            let rockGenerator = DecorativeRockGenerator(sceneSize: size)
+            let smallRocks = rockGenerator.generateDecorativeSmallRocks(
+                totalCount: 150,
+                anchoredFraction: 0.8,
+                interiorRocks: rocks.interior,
+                lakes: lakes
+            )
+            for smallRock in smallRocks { addChild(smallRock) }
 
         } catch {
-            print("ERROR: Failed to load Map1.json: \(error.localizedDescription)")
-            print("Cannot start game without valid map data.")
-            fatalError("Map loading failed - no valid map data available")
+            Logger.game.error("Failed to load Map1.json: \(error.localizedDescription)")
+            showMapLoadError(error)
         }
     }
 
+    private func showMapLoadError(_ error: Error) {
+        backgroundColor = .black
+        let label = SKLabelNode(text: "Failed to load map")
+        label.fontColor = .red
+        label.fontSize = 24
+        label.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        label.zPosition = 10_000
+        addChild(label)
 
-    private func setupCamera() {
-        gameCamera = SKCameraNode()
-        camera = gameCamera
-        addChild(gameCamera)
-
-        if let activeCharacter = activeCharacter {
-            gameCamera.position = activeCharacter.position
-        }
+        let detail = SKLabelNode(text: error.localizedDescription)
+        detail.fontColor = .gray
+        detail.fontSize = 14
+        detail.position = CGPoint(x: size.width / 2, y: size.height / 2 - 30)
+        detail.zPosition = 10_000
+        detail.preferredMaxLayoutWidth = size.width - 40
+        detail.numberOfLines = 0
+        addChild(detail)
     }
 
-    private func updateCameraConstraints() {
-        guard let view = view else { return }
+    // MARK: - Persistence
 
-        // Account for viewport size when constraining camera position
-        let viewportWidth = view.bounds.width
-        let viewportHeight = view.bounds.height
-
-        // Camera position must be constrained so viewport edges don't exceed scene bounds
-        let xRange = SKRange(lowerLimit: viewportWidth / 2, upperLimit: size.width - viewportWidth / 2)
-        let yRange = SKRange(lowerLimit: viewportHeight / 2, upperLimit: size.height - viewportHeight / 2)
-        let edgeConstraint = SKConstraint.positionX(xRange, y: yRange)
-        edgeConstraint.referenceNode = self
-
-        gameCamera.constraints = [edgeConstraint]
+    private func saveInventories() {
+        do { try InventoryStorage.save(inventory.state, for: .player) }
+        catch { Logger.persistence.error("Failed to save player inventory: \(error)") }
+        do { try InventoryStorage.save(shuttleInventory.state, for: .shuttle) }
+        catch { Logger.persistence.error("Failed to save shuttle inventory: \(error)") }
     }
 
-    func touchDown(atPoint pos : CGPoint) {
-        // Конвертуємо координати дотику з екрана в світові координати сцени
-        let worldPos = convertPoint(fromView: pos)
-        activeCharacter?.moveTo(position: worldPos)
-
-        // Show tap indicator
-        showTapIndicator(at: worldPos)
+    private func saveEquipment() {
+        do { try EquipmentStorage.save(equipmentManager.state) }
+        catch { Logger.persistence.error("Failed to save equipment: \(error)") }
     }
 
-    func toggleCharacterSelection() {
-        guard activeCharacter != nil else { return }
-        let nextSelection: CharacterSelection = activeSelection == .astronaut ? .spider : .astronaut
-        switchToCharacter(nextSelection)
+    // MARK: - Input Handling
+
+    private func handlePointerBegan(at scenePoint: CGPoint) {
+        guard let cam = camera else { return }
+        let camPoint = convert(scenePoint, to: cam)
+        if uiManager.handleOverlayPointerBegan(at: camPoint) { return }
+        handleTap(at: scenePoint)
     }
 
-    var toggleButtonTitle: String {
-        "⇄"
+    private func handlePointerMoved(at scenePoint: CGPoint) {
+        guard let cam = camera else { return }
+        let camPoint = convert(scenePoint, to: cam)
+        _ = uiManager.handleOverlayPointerMoved(at: camPoint)
     }
 
-    var isBlasterAvailable: Bool {
-        activeSelection == .astronaut
+    private func handlePointerEnded(at scenePoint: CGPoint) {
+        guard let cam = camera else { return }
+        let camPoint = convert(scenePoint, to: cam)
+        _ = uiManager.handleOverlayPointerEnded(at: camPoint)
     }
 
-    func beginBlasterBeam() {
-        guard activeSelection == .astronaut, let astronaut else { return }
-        astronaut.startFiringBlaster()
-    }
-
-    func endBlasterBeam() {
-        guard let astronaut else { return }
-        astronaut.stopFiringBlaster()
-    }
-
-    private func showTapIndicator(at position: CGPoint) {
-        let radius: CGFloat = 20.0 // Match player size
-        let circlePath = CGPath(ellipseIn: CGRect(x: -radius, y: -radius, width: radius * 2, height: radius * 2), transform: nil)
-
-        let indicator = SKShapeNode(path: circlePath)
-        indicator.fillColor = .white.withAlphaComponent(0.5)
-        indicator.strokeColor = .clear
-        indicator.position = position
-        indicator.zPosition = 10 // Above most elements
-
-        addChild(indicator)
-
-        // Fade out and remove
-        let fadeOut = SKAction.fadeOut(withDuration: 0.5)
-        let remove = SKAction.removeFromParent()
-        let sequence = SKAction.sequence([fadeOut, remove])
-
-        indicator.run(sequence)
-    }
-
+    #if os(iOS)
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
-        for t in touches {
-            if let view = view {
-                self.touchDown(atPoint: t.location(in: view))
+        guard let touch = touches.first else { return }
+        handlePointerBegan(at: touch.location(in: self))
+    }
+
+    override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first else { return }
+        handlePointerMoved(at: touch.location(in: self))
+    }
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first else { return }
+        handlePointerEnded(at: touch.location(in: self))
+    }
+
+    override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first else { return }
+        handlePointerEnded(at: touch.location(in: self))
+    }
+    #elseif os(macOS)
+    override func mouseDown(with event: NSEvent) {
+        handlePointerBegan(at: event.location(in: self))
+    }
+
+    override func mouseDragged(with event: NSEvent) {
+        handlePointerMoved(at: event.location(in: self))
+    }
+
+    override func mouseUp(with event: NSEvent) {
+        handlePointerEnded(at: event.location(in: self))
+    }
+
+    override func keyDown(with event: NSEvent) {
+        uiManager.virtualJoystick.handleKeyDown(event.keyCode)
+    }
+
+    override func keyUp(with event: NSEvent) {
+        uiManager.virtualJoystick.handleKeyUp(event.keyCode)
+    }
+    #endif
+
+    private func handleTap(at location: CGPoint) {
+        let tappedNodes = nodes(at: location)
+        if tappedNodes.contains(where: { $0 === astronaut || $0.inParentHierarchy(astronaut) }) {
+            uiManager.toggleInventoryOverlay()
+            return
+        }
+
+        if let shuttle = spaceShuttle,
+           let bodyAtLocation = physicsWorld.body(at: location),
+           bodyAtLocation === shuttle.physicsBody {
+            uiManager.toggleTransferOverlay()
+            return
+        }
+
+        guard astronaut.hasBlaster else { return }
+        for node in tappedNodes {
+            if let rock = node as? RockFormation {
+                combatManager.startFiring(at: rock)
+                return
             }
         }
     }
 
+    override func didChangeSize(_ oldSize: CGSize) {
+        super.didChangeSize(oldSize)
+        uiManager?.updateLayout(for: size)
+        cameraController?.updateConstraints()
+    }
+
+    // MARK: - Game Loop
+
     override func update(_ currentTime: TimeInterval) {
-        updateCamera()
+        let deltaTime = lastUpdateTime == 0 ? 0 : currentTime - lastUpdateTime
+        lastUpdateTime = currentTime
+
+        updateCharacterMovement()
+        cameraController.follow(astronaut)
+        combatManager.update(deltaTime: deltaTime)
+        if astronaut.isFiring {
+            cameraController.applyJitter()
+        }
+        uiManager.updateEnergyRecharge(deltaTime: deltaTime)
     }
 
-    private func updateCamera() {
-        // Simply follow the player - SKConstraint will handle bounds
-        let currentX = gameCamera.position.x
-        let currentY = gameCamera.position.y
-        let lerpFactor: CGFloat = 0.1
+    private func updateCharacterMovement() {
+        guard let joystick = uiManager.virtualJoystick else { return }
+        let direction = joystick.currentDirection
 
-        guard let activeCharacter = activeCharacter else { return }
-
-        let newX = currentX + (activeCharacter.position.x - currentX) * lerpFactor
-        let newY = currentY + (activeCharacter.position.y - currentY) * lerpFactor
-
-        gameCamera.position = CGPoint(x: newX, y: newY)
-    }
-
-    private func switchToCharacter(_ selection: CharacterSelection) {
-        guard selection != activeSelection else { return }
-        guard let currentCharacter = activeCharacter else { return }
-
-        if activeSelection == .astronaut, let astronaut {
-            astronaut.stopFiringBlaster()
+        guard let aimAngle = joystick.currentAngle else {
+            astronaut.stopMovement()
+            return
         }
 
-        let currentPosition = currentCharacter.position
-        currentCharacter.stopMovement()
-        currentCharacter.removeFromParent()
+        if combatManager.currentTarget == nil {
+            astronaut.updatePlayerDirection(angle: aimAngle)
+        }
 
-        let newCharacter = character(for: selection)
-        newCharacter.position = currentPosition
-        addChild(newCharacter)
-        activeCharacter = newCharacter
-        activeSelection = selection
-        activeCharacter?.stopMovement()
-        gameCamera?.position = currentPosition
+        let magnitude = hypot(direction.dx, direction.dy)
+        let movementThreshold: CGFloat = 0.5
+
+        if magnitude > movementThreshold || astronaut.isWalking {
+            if combatManager.currentTarget != nil {
+                combatManager.stopFiring()
+            }
+            astronaut.moveInDirection(direction: direction)
+        } else {
+            astronaut.stopMovement()
+        }
     }
 
-    private func character(for selection: CharacterSelection) -> (SKNode & ControllableEntity) {
-        switch selection {
-        case .astronaut:
-            return astronaut
-        case .spider:
-            return spiderCharacter
+    // MARK: - Jump
+
+    #if os(macOS)
+    private func handleJumpStart() {
+        guard !astronaut.isJumping else { return }
+
+        if astronaut.equipmentManager.hasBackpack {
+            // Start normal jump immediately, but schedule jetpack transition
+            astronaut.jump()
+            let jetpackDelay = SKAction.sequence([
+                SKAction.wait(forDuration: 0.15),
+                SKAction.run { [weak self] in
+                    guard let self else { return }
+                    // If still jumping (space held), transition to jetpack
+                    if self.astronaut.isJumping && !self.astronaut.isJetpackJumping {
+                        self.astronaut.jetpackJump()
+                    }
+                }
+            ])
+            run(jetpackDelay, withKey: ActionKey.jetpackHoldTimer)
+        } else {
+            astronaut.jump()
         }
+    }
+
+    private func handleJumpEnd() {
+        removeAction(forKey: ActionKey.jetpackHoldTimer)
+        if astronaut.isJetpackJumping {
+            astronaut.endJetpackJump()
+        }
+    }
+    #endif
+
+    // MARK: - Rock Destruction
+
+    private func destroyRock(_ rock: RockFormation) {
+        if let index = rockFormations.firstIndex(of: rock) {
+            rockFormations.remove(at: index)
+        }
+
+        if combatManager.currentTarget === rock {
+            combatManager.stopFiring()
+        }
+
+        // Extract remaining elements
+        let remainingElements = rock.extractAllRemaining()
+        if !remainingElements.isEmpty {
+            var actuallyAdded: [ElementType: Int] = [:]
+            for (element, amount) in remainingElements {
+                guard amount > 0 else { continue }
+                let added = astronaut.inventory.add(element, amount: amount)
+                if added > 0 {
+                    actuallyAdded[element, default: 0] += added
+                }
+            }
+            if !actuallyAdded.isEmpty {
+                ElementPopup.spawn(elements: actuallyAdded, at: rock.centerPosition, in: self)
+            }
+        }
+
+        rock.spawnDestructionParticles(in: self)
+
+        // Camera shake if near the player
+        let center = rock.centerPosition
+        if hypot(center.x - astronaut.position.x, center.y - astronaut.position.y) < 220 {
+            cameraController.shake()
+        }
+
+        rock.performDestructionAnimation { }
     }
 }
+
+// MARK: - Physics Contact
 
 extension GameScene: SKPhysicsContactDelegate {
     func didBegin(_ contact: SKPhysicsContact) {
         let collision = contact.bodyA.categoryBitMask | contact.bodyB.categoryBitMask
 
-        // Debug logging
-        print("🔵 COLLISION DETECTED:")
-        print("  Body A: \(contact.bodyA.categoryBitMask) (\(categoryName(contact.bodyA.categoryBitMask)))")
-        print("  Body B: \(contact.bodyB.categoryBitMask) (\(categoryName(contact.bodyB.categoryBitMask)))")
-        print("  Combined: \(collision)")
-
-        // Check if player collided with wall or rock
-        if collision == PhysicsCategory.player | PhysicsCategory.wall ||
-           collision == PhysicsCategory.player | PhysicsCategory.rock {
-            print("  ➡️ Player collision - stopping movement")
-            activeCharacter?.stopMovement()
+        if showDebugLabels {
+            let bodyANode = contact.bodyA.node
+            let bodyBNode = contact.bodyB.node
+            let bodyASize = bodyANode?.calculateAccumulatedFrame().size ?? .zero
+            let bodyBSize = bodyBNode?.calculateAccumulatedFrame().size ?? .zero
+            Logger.physics.debug("COLLISION: point: \(contact.contactPoint.x),\(contact.contactPoint.y) bodyA: \(contact.bodyA.categoryBitMask) (\(self.categoryName(contact.bodyA.categoryBitMask))) node: \(String(describing: bodyANode)) size: \(bodyASize.width)x\(bodyASize.height) bodyB: \(contact.bodyB.categoryBitMask) (\(self.categoryName(contact.bodyB.categoryBitMask))) node: \(String(describing: bodyBNode)) size: \(bodyBSize.width)x\(bodyBSize.height)")
         }
 
-        // Check if blaster beam hit a rock
-        if collision == PhysicsCategory.blasterBeam | PhysicsCategory.rock {
-            print("  ➡️ Beam-Rock collision detected!")
-            // Determine which body is the rock
-            let rockBody = contact.bodyA.categoryBitMask == PhysicsCategory.rock ? contact.bodyA : contact.bodyB
+        if collision == PhysicsCategory.player | PhysicsCategory.wall ||
+           collision == PhysicsCategory.player | PhysicsCategory.rock ||
+           collision == PhysicsCategory.player | PhysicsCategory.spaceShuttle {
+            astronaut.stopMovement()
+        }
 
-            // Get the rock node
+        if collision == PhysicsCategory.blasterBeam | PhysicsCategory.rock {
+            let rockBody = contact.bodyA.categoryBitMask == PhysicsCategory.rock ? contact.bodyA : contact.bodyB
             if let rock = rockBody.node as? RockFormation {
-                print("  ✅ Destroying rock")
-                destroyRock(rock)
-            } else {
-                print("  ❌ Rock node not found")
+                combatManager.rocksBeingDamaged.insert(rock)
             }
+        }
+
+        if collision == PhysicsCategory.player | PhysicsCategory.terrain {
+            astronaut.setInWater(true)
+        }
+    }
+
+    func didEnd(_ contact: SKPhysicsContact) {
+        let collision = contact.bodyA.categoryBitMask | contact.bodyB.categoryBitMask
+
+        if collision == PhysicsCategory.blasterBeam | PhysicsCategory.rock {
+            let rockBody = contact.bodyA.categoryBitMask == PhysicsCategory.rock ? contact.bodyA : contact.bodyB
+            if let rock = rockBody.node as? RockFormation {
+                combatManager.rocksBeingDamaged.remove(rock)
+            }
+        }
+
+        if collision == PhysicsCategory.player | PhysicsCategory.terrain {
+            astronaut.setInWater(false)
         }
     }
 
@@ -308,23 +527,37 @@ extension GameScene: SKPhysicsContactDelegate {
         case PhysicsCategory.rock: return "Rock"
         case PhysicsCategory.terrain: return "Terrain"
         case PhysicsCategory.blasterBeam: return "BlasterBeam"
+        case PhysicsCategory.spaceShuttle: return "SpaceShuttle"
         default: return "Unknown(\(category))"
         }
     }
+}
 
-    private func destroyRock(_ rock: RockFormation) {
-        // Remove from rockFormations array
-        if let index = rockFormations.firstIndex(of: rock) {
-            rockFormations.remove(at: index)
-        }
+// MARK: - Testing Hooks
 
-        // Create destruction animation
-        let fadeOut = SKAction.fadeOut(withDuration: 0.3)
-        let scaleDown = SKAction.scale(to: 0.1, duration: 0.3)
-        let group = SKAction.group([fadeOut, scaleDown])
-        let remove = SKAction.removeFromParent()
-        let sequence = SKAction.sequence([group, remove])
+extension GameScene {
+    var playerForTesting: Player { astronaut }
+    var targetableRocksForTesting: [RockFormation] { rockFormations }
+    var currentTargetForTesting: RockFormation? { combatManager.currentTarget }
+    var cameraPositionForTesting: CGPoint { gameCamera.position }
 
-        rock.run(sequence)
+    func handleTapForTesting(at location: CGPoint) {
+        handleTap(at: location)
+    }
+
+    func beginDamagingRockForTesting(_ rock: RockFormation) {
+        combatManager.rocksBeingDamaged.insert(rock)
+    }
+
+    func stopFiringForTesting() {
+        combatManager.stopFiring()
+    }
+
+    func setJoystickDirectionForTesting(_ direction: CGVector) {
+        uiManager?.virtualJoystick?.currentDirection = direction
+    }
+
+    func setPlayerPositionForTesting(_ position: CGPoint) {
+        astronaut.position = position
     }
 }

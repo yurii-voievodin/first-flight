@@ -1,279 +1,378 @@
 {
   "metadata": {
-    "name": "Map1",
     "version": "1.0",
-    "description": "First custom map with organic boundaries and diverse rock formations",
+    "tileGrid": {
+      "tileSize": 128,
+      "columns": 16,
+      "rows": 16,
+      "origin": "bottom_left"
+    },
     "mapSize": {
-      "width": 2000,
-      "height": 2000
+      "width": 2048,
+      "height": 2048
     },
     "playerStartPosition": {
       "x": 500,
-      "y": 500
+      "y": 150
     }
   },
   "boundaryRocks": [
     {
-      "position": { "x": 250, "y": 350 },
-      "size": { "width": 150, "height": 120 },
-      "type": "boulder",
-      "thickness": 120
-    },
-    {
       "position": { "x": 780, "y": 620 },
-      "size": { "width": 180, "height": 140 },
-      "type": "cluster",
-      "thickness": 140
+      "size": { "width": 153, "height": 119 },
+      "type": "cluster"
     },
     {
       "position": { "x": 1350, "y": 180 },
       "size": { "width": 160, "height": 110 },
-      "type": "boulder",
-      "thickness": 130
+      "type": "boulder"
     },
     {
       "position": { "x": 450, "y": 1250 },
-      "size": { "width": 200, "height": 160 },
-      "type": "overhang",
-      "thickness": 150
+      "size": { "width": 170, "height": 136 },
+      "type": "overhang"
     },
     {
       "position": { "x": 1620, "y": 1420 },
       "size": { "width": 140, "height": 100 },
-      "type": "boulder",
-      "thickness": 110
+      "type": "boulder"
     },
     {
       "position": { "x": 920, "y": 280 },
       "size": { "width": 170, "height": 130 },
-      "type": "cluster",
-      "thickness": 135
+      "type": "cluster"
     },
     {
       "position": { "x": 1750, "y": 950 },
       "size": { "width": 160, "height": 120 },
-      "type": "boulder",
-      "thickness": 125
+      "type": "boulder"
     },
     {
       "position": { "x": 320, "y": 1680 },
-      "size": { "width": 180, "height": 140 },
-      "type": "spire",
-      "thickness": 140
+      "size": { "width": 153, "height": 119 },
+      "type": "spire"
     },
     {
-      "position": { "x": 1480, "y": 560 },
+      "position": { "x": 1480, "y": 620 },
       "size": { "width": 150, "height": 110 },
-      "type": "boulder",
-      "thickness": 115
-    },
-    {
-      "position": { "x": 580, "y": 890 },
-      "size": { "width": 140, "height": 160 },
-      "type": "cluster",
-      "thickness": 130
+      "type": "overhang"
     },
     {
       "position": { "x": 1120, "y": 1580 },
-      "size": { "width": 160, "height": 140 },
-      "type": "boulder",
-      "thickness": 135
+      "size": { "width": 136, "height": 119 },
+      "type": "boulder"
     },
     {
       "position": { "x": 1850, "y": 380 },
-      "size": { "width": 170, "height": 150 },
-      "type": "overhang",
-      "thickness": 145
-    },
-    {
-      "position": { "x": 280, "y": 750 },
-      "size": { "width": 150, "height": 120 },
-      "type": "boulder",
-      "thickness": 120
+      "size": { "width": 144, "height": 128 },
+      "type": "overhang"
     },
     {
       "position": { "x": 1580, "y": 1780 },
-      "size": { "width": 180, "height": 140 },
-      "type": "cluster",
-      "thickness": 140
+      "size": { "width": 153, "height": 119 },
+      "type": "cluster"
     },
     {
-      "position": { "x": 820, "y": 1420 },
+      "position": { "x": 820, "y": 1445 },
       "size": { "width": 160, "height": 130 },
-      "type": "boulder",
-      "thickness": 130
+      "type": "spire"
     },
     {
       "position": { "x": 1320, "y": 820 },
       "size": { "width": 140, "height": 110 },
-      "type": "spire",
-      "thickness": 115
-    },
-    {
-      "position": { "x": 480, "y": 520 },
-      "size": { "width": 170, "height": 140 },
-      "type": "boulder",
-      "thickness": 135
+      "type": "boulder"
     },
     {
       "position": { "x": 1680, "y": 280 },
       "size": { "width": 160, "height": 120 },
-      "type": "cluster",
-      "thickness": 125
+      "type": "cluster"
     },
     {
       "position": { "x": 950, "y": 1720 },
-      "size": { "width": 180, "height": 150 },
-      "type": "overhang",
-      "thickness": 145
+      "size": { "width": 153, "height": 128 },
+      "type": "overhang"
     },
     {
       "position": { "x": 220, "y": 1180 },
       "size": { "width": 150, "height": 120 },
-      "type": "boulder",
-      "thickness": 120
+      "type": "cluster"
     },
     {
       "position": { "x": 1420, "y": 1250 },
       "size": { "width": 170, "height": 130 },
-      "type": "cluster",
-      "thickness": 130
+      "type": "boulder"
     },
     {
       "position": { "x": 720, "y": 180 },
-      "size": { "width": 160, "height": 140 },
-      "type": "boulder",
-      "thickness": 135
+      "size": { "width": 136, "height": 119 },
+      "type": "overhang"
     },
     {
       "position": { "x": 1180, "y": 420 },
       "size": { "width": 140, "height": 110 },
-      "type": "spire",
-      "thickness": 115
+      "type": "spire"
     },
     {
       "position": { "x": 380, "y": 1520 },
-      "size": { "width": 160, "height": 150 },
-      "type": "boulder",
-      "thickness": 140
+      "size": { "width": 136, "height": 128 },
+      "type": "boulder"
     },
     {
       "position": { "x": 1780, "y": 1580 },
       "size": { "width": 170, "height": 130 },
-      "type": "cluster",
-      "thickness": 135
+      "type": "cluster"
     },
     {
       "position": { "x": 620, "y": 1080 },
       "size": { "width": 150, "height": 140 },
-      "type": "overhang",
-      "thickness": 140
+      "type": "overhang"
     },
     {
       "position": { "x": 1520, "y": 720 },
       "size": { "width": 180, "height": 120 },
-      "type": "boulder",
-      "thickness": 125
-    },
-    {
-      "position": { "x": 880, "y": 1180 },
-      "size": { "width": 160, "height": 160 },
-      "type": "cluster",
-      "thickness": 145
+      "type": "boulder"
     },
     {
       "position": { "x": 1280, "y": 1650 },
       "size": { "width": 150, "height": 130 },
-      "type": "boulder",
-      "thickness": 130
+      "type": "spire"
     },
     {
-      "position": { "x": 180, "y": 580 },
-      "size": { "width": 140, "height": 180 },
-      "type": "cluster",
-      "thickness": 140
+      "position": { "x": 120, "y": 120 },
+      "size": { "width": 145, "height": 115 },
+      "type": "boulder"
+    },
+    {
+      "position": { "x": 380, "y": 100 },
+      "size": { "width": 130, "height": 105 },
+      "type": "cluster"
+    },
+    {
+      "position": { "x": 650, "y": 90 },
+      "size": { "width": 140, "height": 110 },
+      "type": "overhang"
+    },
+    {
+      "position": { "x": 1050, "y": 110 },
+      "size": { "width": 155, "height": 120 },
+      "type": "spire"
+    },
+    {
+      "position": { "x": 1550, "y": 95 },
+      "size": { "width": 135, "height": 115 },
+      "type": "boulder"
+    },
+    {
+      "position": { "x": 1850, "y": 120 },
+      "size": { "width": 150, "height": 125 },
+      "type": "cluster"
+    },
+    {
+      "position": { "x": 100, "y": 1950 },
+      "size": { "width": 140, "height": 110 },
+      "type": "overhang"
+    },
+    {
+      "position": { "x": 400, "y": 1920 },
+      "size": { "width": 155, "height": 120 },
+      "type": "boulder"
+    },
+    {
+      "position": { "x": 700, "y": 1945 },
+      "size": { "width": 130, "height": 105 },
+      "type": "cluster"
+    },
+    {
+      "position": { "x": 1100, "y": 1930 },
+      "size": { "width": 145, "height": 115 },
+      "type": "spire"
+    },
+    {
+      "position": { "x": 1450, "y": 1950 },
+      "size": { "width": 160, "height": 125 },
+      "type": "overhang"
+    },
+    {
+      "position": { "x": 1800, "y": 1920 },
+      "size": { "width": 135, "height": 110 },
+      "type": "boulder"
+    },
+    {
+      "position": { "x": 90, "y": 350 },
+      "size": { "width": 130, "height": 115 },
+      "type": "cluster"
+    },
+    {
+      "position": { "x": 110, "y": 800 },
+      "size": { "width": 145, "height": 120 },
+      "type": "spire"
+    },
+    {
+      "position": { "x": 95, "y": 1450 },
+      "size": { "width": 140, "height": 110 },
+      "type": "boulder"
+    },
+    {
+      "position": { "x": 1950, "y": 150 },
+      "size": { "width": 135, "height": 115 },
+      "type": "overhang"
+    },
+    {
+      "position": { "x": 1930, "y": 600 },
+      "size": { "width": 150, "height": 120 },
+      "type": "spire"
+    },
+    {
+      "position": { "x": 1945, "y": 1100 },
+      "size": { "width": 140, "height": 110 },
+      "type": "cluster"
+    },
+    {
+      "position": { "x": 1920, "y": 1450 },
+      "size": { "width": 155, "height": 125 },
+      "type": "boulder"
+    },
+    {
+      "position": { "x": 1935, "y": 1750 },
+      "size": { "width": 130, "height": 105 },
+      "type": "overhang"
     }
   ],
   "interiorRocks": [
     {
-      "position": { "x": 400, "y": 300 },
-      "size": { "width": 120, "height": 80 },
-      "type": "boulder"
+      "position": { "x": 980, "y": 520 },
+      "size": { "width": 72, "height": 54 },
+      "type": "hydrogenDeposit"
     },
     {
-      "position": { "x": 600, "y": 450 },
-      "size": { "width": 100, "height": 90 },
-      "type": "cluster"
+      "position": { "x": 860, "y": 980 },
+      "size": { "width": 76, "height": 56 },
+      "type": "hydrogenDeposit"
     },
     {
-      "position": { "x": 535, "y": 415 },
-      "size": { "width": 28, "height": 42 },
-      "type": "boulder"
+      "position": { "x": 420, "y": 1180 },
+      "size": { "width": 70, "height": 52 },
+      "type": "hydrogenDeposit"
     },
     {
-      "position": { "x": 685, "y": 495 },
-      "size": { "width": 52, "height": 38 },
-      "type": "boulder"
+      "position": { "x": 1240, "y": 1320 },
+      "size": { "width": 80, "height": 60 },
+      "type": "hydrogenDeposit"
     },
     {
-      "position": { "x": 620, "y": 385 },
-      "size": { "width": 35, "height": 30 },
-      "type": "boulder"
+      "position": { "x": 1540, "y": 980 },
+      "size": { "width": 74, "height": 55 },
+      "type": "hydrogenDeposit"
+    },
+    {
+      "position": { "x": 980, "y": 1480 },
+      "size": { "width": 76, "height": 58 },
+      "type": "hydrogenDeposit"
+    },
+    {
+      "position": { "x": 1040, "y": 1560 },
+      "size": { "width": 70, "height": 52 },
+      "type": "hydrogenDeposit"
+    },
+    {
+      "position": { "x": 920, "y": 1565 },
+      "size": { "width": 82, "height": 60 },
+      "type": "hydrogenDeposit"
+    },
+    {
+      "position": { "x": 1520, "y": 520 },
+      "size": { "width": 78, "height": 56 },
+      "type": "hydrogenDeposit"
+    },
+    {
+      "position": { "x": 1605, "y": 585 },
+      "size": { "width": 72, "height": 54 },
+      "type": "hydrogenDeposit"
+    },
+    {
+      "position": { "x": 1685, "y": 520 },
+      "size": { "width": 80, "height": 58 },
+      "type": "hydrogenDeposit"
+    },
+    {
+      "position": { "x": 360, "y": 1560 },
+      "size": { "width": 74, "height": 55 },
+      "type": "hydrogenDeposit"
+    },
+    {
+      "position": { "x": 290, "y": 1650 },
+      "size": { "width": 70, "height": 52 },
+      "type": "hydrogenDeposit"
+    },
+    {
+      "position": { "x": 430, "y": 1665 },
+      "size": { "width": 82, "height": 60 },
+      "type": "hydrogenDeposit"
+    },
+    {
+      "position": { "x": 1320, "y": 980 },
+      "size": { "width": 76, "height": 56 },
+      "type": "hydrogenDeposit"
+    },
+    {
+      "position": { "x": 1405, "y": 1060 },
+      "size": { "width": 72, "height": 54 },
+      "type": "hydrogenDeposit"
+    },
+    {
+      "position": { "x": 1245, "y": 1065 },
+      "size": { "width": 80, "height": 58 },
+      "type": "hydrogenDeposit"
     },
     {
       "position": { "x": 800, "y": 250 },
       "size": { "width": 140, "height": 100 },
-      "type": "boulder"
+      "type": "cluster"
     },
     {
       "position": { "x": 1200, "y": 400 },
       "size": { "width": 110, "height": 85 },
-      "type": "cluster"
+      "type": "overhang"
     },
     {
       "position": { "x": 1145, "y": 365 },
-      "size": { "width": 38, "height": 48 },
+      "size": { "width": 42, "height": 53 },
       "type": "boulder"
     },
     {
       "position": { "x": 1295, "y": 425 },
-      "size": { "width": 45, "height": 32 },
-      "type": "boulder"
+      "size": { "width": 50, "height": 35 },
+      "type": "cluster"
     },
     {
       "position": { "x": 1500, "y": 300 },
       "size": { "width": 130, "height": 95 },
-      "type": "boulder"
+      "type": "spire"
     },
     {
-      "position": { "x": 300, "y": 700 },
-      "size": { "width": 95, "height": 75 },
-      "type": "boulder"
-    },
-    {
-      "position": { "x": 700, "y": 800 },
+      "position": { "x": 760, "y": 720 },
       "size": { "width": 115, "height": 90 },
-      "type": "cluster"
+      "type": "boulder"
     },
     {
       "position": { "x": 640, "y": 755 },
       "size": { "width": 55, "height": 40 },
-      "type": "boulder"
+      "type": "cluster"
     },
     {
       "position": { "x": 805, "y": 835 },
-      "size": { "width": 32, "height": 48 },
-      "type": "boulder"
+      "size": { "width": 35, "height": 53 },
+      "type": "spire"
     },
     {
       "position": { "x": 715, "y": 880 },
-      "size": { "width": 25, "height": 28 },
-      "type": "boulder"
+      "size": { "width": 28, "height": 31 },
+      "type": "overhang"
     },
     {
       "position": { "x": 765, "y": 770 },
-      "size": { "width": 38, "height": 35 },
-      "type": "boulder"
+      "size": { "width": 42, "height": 38 },
+      "type": "cluster"
     },
     {
       "position": { "x": 1100, "y": 650 },
@@ -283,12 +382,12 @@
     {
       "position": { "x": 1400, "y": 750 },
       "size": { "width": 125, "height": 95 },
-      "type": "cluster"
+      "type": "spire"
     },
     {
       "position": { "x": 1330, "y": 710 },
       "size": { "width": 60, "height": 35 },
-      "type": "boulder"
+      "type": "overhang"
     },
     {
       "position": { "x": 1510, "y": 785 },
@@ -297,58 +396,53 @@
     },
     {
       "position": { "x": 1380, "y": 825 },
-      "size": { "width": 30, "height": 38 },
-      "type": "boulder"
+      "size": { "width": 33, "height": 42 },
+      "type": "cluster"
     },
     {
-      "position": { "x": 1600, "y": 600 },
+      "position": { "x": 1600, "y": 700 },
       "size": { "width": 90, "height": 70 },
-      "type": "boulder"
-    },
-    {
-      "position": { "x": 400, "y": 1100 },
-      "size": { "width": 110, "height": 85 },
-      "type": "boulder"
+      "type": "overhang"
     },
     {
       "position": { "x": 650, "y": 1200 },
       "size": { "width": 100, "height": 75 },
-      "type": "cluster"
+      "type": "boulder"
     },
     {
       "position": { "x": 595, "y": 1165 },
-      "size": { "width": 48, "height": 38 },
-      "type": "boulder"
+      "size": { "width": 53, "height": 42 },
+      "type": "cluster"
     },
     {
       "position": { "x": 745, "y": 1235 },
-      "size": { "width": 28, "height": 42 },
-      "type": "boulder"
+      "size": { "width": 31, "height": 46 },
+      "type": "spire"
     },
     {
       "position": { "x": 900, "y": 1050 },
       "size": { "width": 120, "height": 90 },
-      "type": "boulder"
+      "type": "overhang"
     },
     {
       "position": { "x": 1200, "y": 1150 },
       "size": { "width": 95, "height": 80 },
-      "type": "cluster"
+      "type": "boulder"
     },
     {
       "position": { "x": 1150, "y": 1115 },
-      "size": { "width": 42, "height": 30 },
-      "type": "boulder"
+      "size": { "width": 46, "height": 33 },
+      "type": "cluster"
     },
     {
       "position": { "x": 1285, "y": 1180 },
-      "size": { "width": 32, "height": 45 },
-      "type": "boulder"
+      "size": { "width": 35, "height": 50 },
+      "type": "spire"
     },
     {
       "position": { "x": 1220, "y": 1085 },
-      "size": { "width": 25, "height": 32 },
-      "type": "boulder"
+      "size": { "width": 28, "height": 35 },
+      "type": "overhang"
     },
     {
       "position": { "x": 1500, "y": 1000 },
@@ -358,226 +452,165 @@
     {
       "position": { "x": 350, "y": 1400 },
       "size": { "width": 105, "height": 80 },
-      "type": "boulder"
+      "type": "cluster"
     },
     {
       "position": { "x": 600, "y": 1500 },
       "size": { "width": 90, "height": 70 },
-      "type": "cluster"
+      "type": "spire"
     },
     {
       "position": { "x": 550, "y": 1465 },
-      "size": { "width": 45, "height": 35 },
-      "type": "boulder"
+      "size": { "width": 50, "height": 38 },
+      "type": "overhang"
     },
     {
       "position": { "x": 680, "y": 1535 },
-      "size": { "width": 28, "height": 38 },
+      "size": { "width": 31, "height": 42 },
       "type": "boulder"
     },
     {
       "position": { "x": 620, "y": 1545 },
-      "size": { "width": 32, "height": 25 },
-      "type": "boulder"
+      "size": { "width": 35, "height": 28 },
+      "type": "cluster"
     },
     {
-      "position": { "x": 850, "y": 1350 },
+      "position": { "x": 790, "y": 1350 },
       "size": { "width": 125, "height": 95 },
-      "type": "boulder"
+      "type": "spire"
     },
     {
       "position": { "x": 1150, "y": 1450 },
       "size": { "width": 100, "height": 75 },
-      "type": "cluster"
+      "type": "overhang"
     },
     {
-      "position": { "x": 1095, "y": 1415 },
+      "position": { "x": 1095, "y": 1450 },
       "size": { "width": 52, "height": 40 },
       "type": "boulder"
     },
     {
       "position": { "x": 1240, "y": 1485 },
-      "size": { "width": 35, "height": 28 },
-      "type": "boulder"
+      "size": { "width": 38, "height": 31 },
+      "type": "cluster"
     },
     {
       "position": { "x": 1400, "y": 1300 },
       "size": { "width": 110, "height": 85 },
-      "type": "boulder"
+      "type": "spire"
     }
   ],
   "signatureFormations": [
     {
-      "name": "Central Cave System",
-      "description": "Large cave system perfect for exploration",
       "position": { "x": 1000, "y": 1000 },
-      "size": { "width": 300, "height": 200 },
-      "type": "cave",
-      "properties": {
-        "isLandmark": "true",
-        "difficulty": "moderate"
-      }
+      "size": { "width": 255, "height": 170 },
+      "type": "cave"
     },
     {
-      "name": "Western Overhang",
-      "description": "Dramatic overhang providing shelter",
-      "position": { "x": 400, "y": 1000 },
-      "size": { "width": 250, "height": 180 },
-      "type": "overhang",
-      "properties": {
-        "isLandmark": "true",
-        "difficulty": "easy"
-      }
+      "position": { "x": 80, "y": 1180 },
+      "size": { "width": 212, "height": 153 },
+      "type": "overhang"
     },
     {
-      "name": "Eastern Rock Maze - North",
-      "description": "First cluster of the eastern maze",
       "position": { "x": 1600, "y": 800 },
-      "size": { "width": 200, "height": 150 },
-      "type": "cluster",
-      "properties": {
-        "isLandmark": "true",
-        "difficulty": "hard",
-        "group": "eastern_maze"
-      }
+      "size": { "width": 170, "height": 128 },
+      "type": "cluster"
     },
     {
-      "name": "Eastern Rock Maze - North Companion 1",
-      "description": "Boulder near north cluster",
       "position": { "x": 1525, "y": 755 },
       "size": { "width": 85, "height": 55 },
-      "type": "boulder",
-      "properties": {
-        "group": "eastern_maze"
-      }
+      "type": "boulder"
     },
     {
-      "name": "Eastern Rock Maze - North Companion 2",
-      "description": "Boulder near north cluster",
       "position": { "x": 1795, "y": 835 },
       "size": { "width": 58, "height": 68 },
-      "type": "boulder",
-      "properties": {
-        "group": "eastern_maze"
-      }
+      "type": "spire"
     },
     {
-      "name": "Eastern Rock Maze - North Companion 3",
-      "description": "Boulder near north cluster",
       "position": { "x": 1640, "y": 740 },
       "size": { "width": 48, "height": 52 },
-      "type": "boulder",
-      "properties": {
-        "group": "eastern_maze"
-      }
+      "type": "overhang"
     },
     {
-      "name": "Eastern Rock Maze - Central",
-      "description": "Central cluster of the eastern maze",
       "position": { "x": 1500, "y": 650 },
-      "size": { "width": 180, "height": 160 },
-      "type": "cluster",
-      "properties": {
-        "isLandmark": "true",
-        "difficulty": "hard",
-        "group": "eastern_maze"
-      }
+      "size": { "width": 153, "height": 136 },
+      "type": "boulder"
     },
     {
-      "name": "Eastern Rock Maze - Central Companion 1",
-      "description": "Boulder near central cluster",
       "position": { "x": 1425, "y": 605 },
       "size": { "width": 72, "height": 48 },
-      "type": "boulder",
-      "properties": {
-        "group": "eastern_maze"
-      }
+      "type": "cluster"
     },
     {
-      "name": "Eastern Rock Maze - Central Companion 2",
-      "description": "Boulder near central cluster",
       "position": { "x": 1675, "y": 695 },
       "size": { "width": 55, "height": 75 },
-      "type": "boulder",
-      "properties": {
-        "group": "eastern_maze"
-      }
+      "type": "spire"
     },
     {
-      "name": "Eastern Rock Maze - South",
-      "description": "Southern cluster of the eastern maze",
-      "position": { "x": 1650, "y": 500 },
-      "size": { "width": 220, "height": 140 },
-      "type": "cluster",
-      "properties": {
-        "isLandmark": "true",
-        "difficulty": "hard",
-        "group": "eastern_maze"
-      }
-    },
-    {
-      "name": "Eastern Rock Maze - South Companion 1",
-      "description": "Boulder near south cluster",
       "position": { "x": 1565, "y": 455 },
       "size": { "width": 90, "height": 62 },
-      "type": "boulder",
-      "properties": {
-        "group": "eastern_maze"
-      }
+      "type": "overhang"
     },
     {
-      "name": "Eastern Rock Maze - South Companion 2",
-      "description": "Boulder near south cluster",
       "position": { "x": 1860, "y": 535 },
       "size": { "width": 65, "height": 78 },
-      "type": "boulder",
-      "properties": {
-        "group": "eastern_maze"
-      }
+      "type": "boulder"
     },
     {
-      "name": "Eastern Rock Maze - South Companion 3",
-      "description": "Boulder near south cluster",
       "position": { "x": 1710, "y": 630 },
       "size": { "width": 48, "height": 58 },
-      "type": "boulder",
-      "properties": {
-        "group": "eastern_maze"
-      }
+      "type": "cluster"
     },
     {
-      "name": "Eastern Rock Maze - South Companion 4",
-      "description": "Boulder near south cluster",
-      "position": { "x": 1595, "y": 565 },
+      "position": { "x": 1595, "y": 690 },
       "size": { "width": 52, "height": 45 },
-      "type": "boulder",
-      "properties": {
-        "group": "eastern_maze"
-      }
+      "type": "spire"
     },
     {
-      "name": "Northern Spire",
-      "description": "Tall spire serving as navigation landmark",
-      "position": { "x": 600, "y": 1600 },
-      "size": { "width": 80, "height": 300 },
-      "type": "spire",
-      "properties": {
-        "isLandmark": "true",
-        "difficulty": "moderate",
-        "visibility": "high"
-      }
+      "position": { "x": 850, "y": 1650 },
+      "size": { "width": 68, "height": 255 },
+      "type": "spire"
     },
     {
-      "name": "Southern Spire",
-      "description": "Another navigation spire for orientation",
       "position": { "x": 1200, "y": 400 },
-      "size": { "width": 90, "height": 280 },
-      "type": "spire",
-      "properties": {
-        "isLandmark": "true",
-        "difficulty": "moderate",
-        "visibility": "high"
-      }
+      "size": { "width": 76, "height": 238 },
+      "type": "overhang"
     }
-  ]
+  ],
+  "lakes": [
+    {
+      "position": { "x": 980, "y": 1330 },
+      "size": { "width": 360, "height": 210 },
+      "depth": 60
+    },
+    {
+      "position": { "x": 520, "y": 900 },
+      "size": { "width": 260, "height": 160 },
+      "depth": 43
+    },
+    {
+      "position": { "x": 1550, "y": 550 },
+      "size": { "width": 180, "height": 120 },
+      "depth": 29
+    },
+    {
+      "position": { "x": 620, "y": 1700 },
+      "size": { "width": 240, "height": 130 },
+      "depth": 53
+    },
+    {
+      "position": { "x": 1350, "y": 320 },
+      "size": { "width": 210, "height": 130 },
+      "depth": 38
+    },
+    {
+      "position": { "x": 320, "y": 1030 },
+      "size": { "width": 200, "height": 140 },
+      "depth": 24
+    }
+  ],
+  "spaceShuttle": {
+    "position": { "x": 500, "y": 500 },
+    "scale": 0.6
+  }
 }

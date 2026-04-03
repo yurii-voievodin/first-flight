@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "lithium.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
