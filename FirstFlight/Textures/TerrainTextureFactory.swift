@@ -73,7 +73,7 @@ final class TerrainTextureFactory {
         let globalGamma: Float = 1.10            // > 1 darkens mid/high tones; < 1 brightens
     }
 
-    func makeRockWithDustTexture(_ p: Params) -> SKTexture {
+    func makeRockWithDustCIImage(_ p: Params) -> CIImage {
         let extent = CGRect(x: 0, y: 0, width: p.size, height: p.size)
         
         
@@ -136,9 +136,13 @@ final class TerrainTextureFactory {
             ])
 
         // Global tuning at the very end
-        let finalTuned = applyGlobalTuning(dusted, params: p)
+        return applyGlobalTuning(dusted, params: p)
+    }
 
-        // Render → SKTexture
+    func makeRockWithDustTexture(_ p: Params) -> SKTexture {
+        let extent = CGRect(x: 0, y: 0, width: p.size, height: p.size)
+        let finalTuned = makeRockWithDustCIImage(p)
+
         guard let cg = ciContext.createCGImage(finalTuned, from: extent) else {
             Logger.game.error("Failed to create terrain texture for extent \(String(describing: extent))")
             return SKTexture()
@@ -151,34 +155,76 @@ final class TerrainTextureFactory {
 }
 
 extension TerrainTextureFactory {
+    /// Generates CGImages for all tiles on a background queue, then builds the SKTileSet on the main thread.
+    static func generateTerrainTextures(tileColumns: Int, tileRows: Int, tileSize: CGFloat, completion: @escaping (SKTileSet) -> Void) {
+        DispatchQueue.global(qos: .userInitiated).async {
+            let factory = TerrainTextureFactory()
+            var cgImages: [CGImage?] = Array(repeating: nil, count: tileColumns * tileRows)
+            let extent = CGRect(x: 0, y: 0, width: Int(tileSize), height: Int(tileSize))
+
+            for r in 0..<tileRows {
+                for c in 0..<tileColumns {
+                    let seed = (c &* 73856093) ^ (r &* 19349663)
+                    let normalized = Float(seed & 0xFFFF) / 65535.0
+                    let dustAmount = 0.06 + 0.10 * normalized
+
+                    var p = TerrainTextureFactory.Params(size: Int(tileSize))
+                    p.dustAmount = dustAmount
+                    p.fieldOffset = CGPoint(x: CGFloat(c) * tileSize, y: CGFloat(r) * tileSize)
+
+                    let ciImage = factory.makeRockWithDustCIImage(p)
+                    cgImages[r * tileColumns + c] = factory.ciContext.createCGImage(ciImage, from: extent)
+                }
+            }
+
+            DispatchQueue.main.async {
+                var groups: [SKTileGroup] = []
+                groups.reserveCapacity(tileColumns * tileRows)
+
+                for i in 0..<cgImages.count {
+                    let texture: SKTexture
+                    if let cg = cgImages[i] {
+                        texture = SKTexture(cgImage: cg)
+                        texture.usesMipmaps = false
+                        texture.filteringMode = .linear
+                    } else {
+                        texture = SKTexture()
+                    }
+                    let def = SKTileDefinition(texture: texture)
+                    let rule = SKTileGroupRule(adjacency: .adjacencyAll, tileDefinitions: [def])
+                    groups.append(SKTileGroup(rules: [rule]))
+                }
+
+                completion(SKTileSet(tileGroups: groups))
+            }
+        }
+    }
+
+    /// Synchronous variant for callers that cannot use async.
     static func generateTerrainTextures(tileColumns: Int, tileRows: Int, tileSize: CGFloat) -> SKTileSet {
         let factory = TerrainTextureFactory()
-        
-        // One tile group per tile coordinate so we can pass fieldOffset (removes visible seams)
+
         var groups: [SKTileGroup] = []
         groups.reserveCapacity(tileColumns * tileRows)
-        
+
         for r in 0..<tileRows {
             for c in 0..<tileColumns {
-                // Deterministic per-tile dust variation to avoid a uniform pattern.
                 let seed = (c &* 73856093) ^ (r &* 19349663)
                 let normalized = Float(seed & 0xFFFF) / 65535.0
                 let dustAmount = 0.06 + 0.10 * normalized
-                
+
                 var p = TerrainTextureFactory.Params(size: Int(tileSize))
                 p.dustAmount = dustAmount
                 p.fieldOffset = CGPoint(x: CGFloat(c) * tileSize, y: CGFloat(r) * tileSize)
 
-                // Keep micro-grain calm by default.
                 let texture = factory.makeRockWithDustTexture(p)
-                
+
                 let def = SKTileDefinition(texture: texture)
                 let rule = SKTileGroupRule(adjacency: .adjacencyAll, tileDefinitions: [def])
-                let group = SKTileGroup(rules: [rule])
-                groups.append(group)
+                groups.append(SKTileGroup(rules: [rule]))
             }
         }
-        
+
         return SKTileSet(tileGroups: groups)
     }
 }

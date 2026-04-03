@@ -20,8 +20,8 @@ enum ItemCatalog {
         }
 
         let equipmentDefs: [ItemDef] = [
-            ItemDef(id: "backpack", kind: .equipment, displayName: "Backpack", iconName: "backpack", maxStack: nil),
-            ItemDef(id: "blaster", kind: .equipment, displayName: "Blaster", iconName: "blaster", maxStack: nil),
+            ItemDef(id: ItemID.backpack, kind: .equipment, displayName: "Backpack", iconName: ItemID.backpack, maxStack: nil),
+            ItemDef(id: ItemID.blaster, kind: .equipment, displayName: "Blaster", iconName: ItemID.blaster, maxStack: nil),
         ]
 
         return elementDefs + equipmentDefs

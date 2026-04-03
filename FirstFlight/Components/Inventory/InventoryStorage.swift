@@ -17,20 +17,6 @@ enum InventoryStorage {
         return dir.appendingPathComponent(key.filename)
     }
 
-    // MARK: - Legacy (player inventory)
-
-    static func inventoryURL() throws -> URL {
-        try inventoryURL(for: .player)
-    }
-
-    static func save(_ state: InventoryState) throws {
-        try save(state, for: .player)
-    }
-
-    static func loadOrCreate(defaultMaxSlots: Int) throws -> InventoryState {
-        try loadOrCreate(for: .player, defaultMaxSlots: defaultMaxSlots)
-    }
-
     // MARK: - Multi-inventory API
 
     static func save(_ state: InventoryState, for key: InventoryKey) throws {

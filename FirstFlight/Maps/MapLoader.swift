@@ -76,10 +76,6 @@ class MapLoader {
         return mapData.metadata.playerStartPosition.cgPoint
     }
 
-    func getMapSize(from mapData: MapData) -> CGSize {
-        return mapData.metadata.mapSize.cgSize
-    }
-
     // MARK: - Available Maps
 
     func getAvailableMaps() -> [String] {

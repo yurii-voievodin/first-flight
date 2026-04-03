@@ -219,7 +219,7 @@ final class InventoryOverlayNode: SKNode {
                     let texture = SKTexture(imageNamed: def.iconName)
                     guard texture.size().width > 0 else { continue }
                     let icon = SKSpriteNode(texture: texture)
-                    icon.size = aspectFitSize(for: texture, maxSize: 44)
+                    icon.size = texture.aspectFitSize(maxSize: 44)
                     icon.position = CGPoint(x: slotFrame.midX, y: slotFrame.midY)
                     gridNode.addChild(icon)
 
@@ -235,7 +235,7 @@ final class InventoryOverlayNode: SKNode {
                 if let def = defsById[item.defId] {
                     let texture = SKTexture(imageNamed: def.iconName)
                     let icon = SKSpriteNode(texture: texture)
-                    icon.size = aspectFitSize(for: texture, maxSize: 44)
+                    icon.size = texture.aspectFitSize(maxSize: 44)
                     icon.position = CGPoint(x: slotFrame.midX, y: slotFrame.midY)
                     gridNode.addChild(icon)
                 }
@@ -302,7 +302,7 @@ final class InventoryOverlayNode: SKNode {
         if let item = item, let def = cachedDefs[item.defId] {
             let texture = SKTexture(imageNamed: def.iconName)
             let icon = SKSpriteNode(texture: texture)
-            icon.size = aspectFitSize(for: texture, maxSize: 44)
+            icon.size = texture.aspectFitSize(maxSize: 44)
             icon.position = CGPoint(x: rect.midX, y: rect.midY)
             equipmentSlotsNode.addChild(icon)
         }
@@ -407,18 +407,6 @@ final class InventoryOverlayNode: SKNode {
         contentHeight = CGFloat(rows) * slotSize.height + CGFloat(max(0, rows - 1)) * slotSpacing
     }
 
-    /// Returns an aspect-fit size for the given texture within the max bounds.
-    private func aspectFitSize(for texture: SKTexture, maxSize: CGFloat) -> CGSize {
-        let textureSize = texture.size()
-        let aspectRatio = textureSize.width / textureSize.height
-        if aspectRatio > 1 {
-            // Landscape: fit to width
-            return CGSize(width: maxSize, height: maxSize / aspectRatio)
-        } else {
-            // Portrait or square: fit to height
-            return CGSize(width: maxSize * aspectRatio, height: maxSize)
-        }
-    }
 
     // MARK: - Tap Tooltip
 

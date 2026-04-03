@@ -60,14 +60,11 @@ final class UIManager {
     }
 
     private func updateJoystickPosition() {
+        #if os(iOS)
         guard let view = scene?.view, virtualJoystick != nil else { return }
 
-        #if os(iOS)
         let safeArea = view.safeAreaInsets
         let bottomInset = safeArea.bottom
-        #else
-        let bottomInset: CGFloat = 30
-        #endif
         let joystickRadius: CGFloat = 40
         let margin: CGFloat = 20
 
@@ -75,16 +72,18 @@ final class UIManager {
         let yPosition = -view.bounds.height / 2 + bottomInset + joystickRadius + margin
 
         virtualJoystick.position = CGPoint(x: xPosition, y: yPosition)
+        #endif
     }
 
     private func updateEnergyBarPosition() {
-        guard scene?.view != nil, energyBar != nil, virtualJoystick != nil else { return }
+        guard let view = scene?.view, energyBar != nil else { return }
 
-        let joystickRadius: CGFloat = 40
-        let margin: CGFloat = 20
+        let safeArea = view.safeAreaInsets
+        let bottomInset = safeArea.bottom
+        let margin: CGFloat = 10
 
         let xPosition: CGFloat = 0
-        let yPosition = virtualJoystick.position.y - joystickRadius - margin
+        let yPosition = -view.bounds.height / 2 + bottomInset + margin
 
         energyBar.position = CGPoint(x: xPosition, y: yPosition)
     }

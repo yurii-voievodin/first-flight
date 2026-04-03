@@ -234,13 +234,13 @@ final class Blaster: SKNode {
         if isFiring {
             beam.alpha = 0
             let fadeIn = SKAction.fadeAlpha(to: 1, duration: 0.08)
-            beam.run(fadeIn, withKey: "beamFadeIn")
+            beam.run(fadeIn, withKey: ActionKey.beamFadeIn)
         } else {
             let fadeOut = SKAction.fadeAlpha(to: 0, duration: 0.1)
             let hide = SKAction.run { [weak self] in
                 self?.beam.isHidden = true
             }
-            beam.run(SKAction.sequence([fadeOut, hide]), withKey: "beamFadeOut")
+            beam.run(SKAction.sequence([fadeOut, hide]), withKey: ActionKey.beamFadeOut)
         }
     }
 

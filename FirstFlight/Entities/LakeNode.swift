@@ -94,11 +94,12 @@ class LakeNode: SKShapeNode {
 
     private func setupPhysics() {
         guard let lakePath = path else { return }
-        physicsBody = SKPhysicsBody(polygonFrom: lakePath)
+        // Use edge-based body: works with concave paths and is appropriate
+        // for a non-dynamic sensor (no collisions, contact detection only).
+        physicsBody = SKPhysicsBody(edgeLoopFrom: lakePath)
         physicsBody?.categoryBitMask = PhysicsCategory.terrain
         physicsBody?.contactTestBitMask = PhysicsCategory.player
         physicsBody?.collisionBitMask = PhysicsCategory.none
-        physicsBody?.isDynamic = false
         physicsBody?.friction = 0.2
         physicsBody?.restitution = 0.0
     }

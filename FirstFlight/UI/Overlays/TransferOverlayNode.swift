@@ -382,7 +382,7 @@ final class TransferOverlayNode: SKNode {
         if let item = item, let def = itemDefsById[item.defId] {
             let texture = SKTexture(imageNamed: def.iconName)
             let icon = SKSpriteNode(texture: texture)
-            icon.size = aspectFitSize(for: texture, maxSize: 40)
+            icon.size = texture.aspectFitSize(maxSize: 40)
             icon.position = CGPoint(x: rect.midX, y: rect.midY)
             equipmentSlotsNode.addChild(icon)
         }
@@ -417,7 +417,7 @@ final class TransferOverlayNode: SKNode {
                 if let def = itemDefsById[defId] {
                     let texture = SKTexture(imageNamed: def.iconName)
                     let icon = SKSpriteNode(texture: texture)
-                    icon.size = aspectFitSize(for: texture, maxSize: 40)
+                    icon.size = texture.aspectFitSize(maxSize: 40)
                     icon.position = CGPoint(x: slotFrame.midX, y: slotFrame.midY)
                     gridNode.addChild(icon)
 
@@ -434,7 +434,7 @@ final class TransferOverlayNode: SKNode {
                 if let def = itemDefsById[item.defId] {
                     let texture = SKTexture(imageNamed: def.iconName)
                     let icon = SKSpriteNode(texture: texture)
-                    icon.size = aspectFitSize(for: texture, maxSize: 40)
+                    icon.size = texture.aspectFitSize(maxSize: 40)
                     icon.position = CGPoint(x: slotFrame.midX, y: slotFrame.midY)
                     gridNode.addChild(icon)
 
@@ -676,8 +676,8 @@ final class TransferOverlayNode: SKNode {
             return
         }
 
-        // Add to shuttle inventory
-        shuttleInventory.addUnique(defId: unequippedItem.defId, count: 1)
+        // Add to shuttle inventory, preserving the item's identity
+        shuttleInventory.addExistingUnique(unequippedItem)
 
         onEquip?(unequippedItem.defId)
         onTransfer?()
@@ -730,8 +730,8 @@ final class TransferOverlayNode: SKNode {
                def.kind == .equipment,
                let player = player {
                 // Verify item matches the slot type
-                let matchesSlot = (targetEquipSlot == .backpack && item.defId == "backpack") ||
-                                  (targetEquipSlot == .weapon && item.defId == "blaster")
+                let matchesSlot = (targetEquipSlot == .backpack && item.defId == ItemID.backpack) ||
+                                  (targetEquipSlot == .weapon && item.defId == ItemID.blaster)
                 if matchesSlot {
                     // Check if slot is already occupied
                     if player.equipmentManager.getEquipped(targetEquipSlot) == nil {
@@ -790,9 +790,9 @@ final class TransferOverlayNode: SKNode {
                 // Remove from source
                 if sourceInventory.removeUnique(instanceId: item.instanceId) {
                     // Equip instead of adding to inventory
-                    if item.defId == "backpack" {
+                    if item.defId == ItemID.backpack {
                         player.equipBackpack(item: item)
-                    } else if item.defId == "blaster" {
+                    } else if item.defId == ItemID.blaster {
                         player.equipBlaster(item: item)
                     }
                     onEquip?(item.defId)
@@ -982,16 +982,6 @@ final class TransferOverlayNode: SKNode {
         let remove = SKAction.removeFromParent()
 
         container.run(SKAction.sequence([group, remove]))
-    }
-
-    private func aspectFitSize(for texture: SKTexture, maxSize: CGFloat) -> CGSize {
-        let textureSize = texture.size()
-        let aspectRatio = textureSize.width / textureSize.height
-        if aspectRatio > 1 {
-            return CGSize(width: maxSize, height: maxSize / aspectRatio)
-        } else {
-            return CGSize(width: maxSize * aspectRatio, height: maxSize)
-        }
     }
 
     private func saveInventories() {

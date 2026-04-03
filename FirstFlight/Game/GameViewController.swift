@@ -11,8 +11,6 @@ import GameplayKit
 
 final class GameViewController: UIViewController {
 
-    private weak var gameScene: GameScene?
-    // Debug mode flag
     private var showDebugLabels: Bool = ProcessInfo.processInfo.environment["SHOW_DEBUG_LABELS"] == "1"
 
     override func loadView() {
@@ -28,8 +26,6 @@ final class GameViewController: UIViewController {
         
         // Set the scale mode to resize to fill (no scaling, 1:1 mapping)
         scene.scaleMode = .resizeFill
-        
-        self.gameScene = scene
         
         // Present the scene
         view.presentScene(scene)

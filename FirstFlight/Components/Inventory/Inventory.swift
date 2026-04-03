@@ -84,7 +84,7 @@ final class Inventory {
         return quantity - remaining
     }
 
-    /// Adds unstackable items.
+    /// Adds unstackable items (creates new instances).
     /// - Returns: how many instances were actually added.
     @discardableResult
     func addUnique(defId: String, count: Int) -> Int {
@@ -100,6 +100,19 @@ final class Inventory {
             }
         }
         return count - remaining
+    }
+
+    /// Adds an existing unique item instance, preserving its identity.
+    /// - Returns: true if the item was placed in an empty slot.
+    @discardableResult
+    func addExistingUnique(_ item: UniqueItemInstance) -> Bool {
+        for i in state.slots.indices {
+            if state.slots[i] == nil {
+                state.slots[i] = .unique(item: item)
+                return true
+            }
+        }
+        return false
     }
 
     // Convenience bridge for your existing rock-mining calls.
@@ -177,17 +190,6 @@ final class Inventory {
         return removed == amount
     }
 
-    /// Total number of stackable units across all stacks (does not count unique instances).
-    func totalStackedUnits() -> Int {
-        state.slots.reduce(into: 0) { acc, slot in
-            if case .stack(_, let q)? = slot { acc += q }
-        }
-    }
-
-    /// Total occupied slots (stack slots + unique slots).
-    func totalOccupiedSlots() -> Int {
-        usedSlots
-    }
 }
 
 // MARK: - Item Kind

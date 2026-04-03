@@ -62,6 +62,7 @@ final class CombatManager {
         currentTarget = nil
         hapticAccumulator = 0
         rocksBeingDamaged.removeAll()
+        extractionProgress.removeAll()
         player?.stopFiringBlaster()
     }
 

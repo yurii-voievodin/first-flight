@@ -12,33 +12,34 @@ final class TileMap {
         self.tileSize = CGFloat(grid.tileSize)
     }
 
-    func createNode() -> SKTileMapNode {
-        let tileSet = TerrainTextureFactory.generateTerrainTextures(
-            tileColumns: tileColumns,
-            tileRows: tileRows,
-            tileSize: tileSize
-        )
+    /// Creates the tile map node asynchronously (texture generation runs off main thread).
+    func createNode(completion: @escaping (SKTileMapNode) -> Void) {
+        let cols = tileColumns
+        let rows = tileRows
+        let size = tileSize
 
-        let tileMapNode = SKTileMapNode(
-            tileSet: tileSet,
-            columns: tileColumns,
-            rows: tileRows,
-            tileSize: CGSize(width: tileSize, height: tileSize)
-        )
+        TerrainTextureFactory.generateTerrainTextures(tileColumns: cols, tileRows: rows, tileSize: size) { tileSet in
+            let tileMapNode = SKTileMapNode(
+                tileSet: tileSet,
+                columns: cols,
+                rows: rows,
+                tileSize: CGSize(width: size, height: size)
+            )
 
-        tileMapNode.name = "ground"
-        tileMapNode.zPosition = -100
-        tileMapNode.anchorPoint = CGPoint(x: 0, y: 0)
-        tileMapNode.position = .zero
+            tileMapNode.name = "ground"
+            tileMapNode.zPosition = -100
+            tileMapNode.anchorPoint = CGPoint(x: 0, y: 0)
+            tileMapNode.position = .zero
 
-        let groups = tileSet.tileGroups
-        for r in 0..<tileRows {
-            for c in 0..<tileColumns {
-                let idx = (r * tileColumns) + c
-                tileMapNode.setTileGroup(groups[idx], forColumn: c, row: r)
+            let groups = tileSet.tileGroups
+            for r in 0..<rows {
+                for c in 0..<cols {
+                    let idx = (r * cols) + c
+                    tileMapNode.setTileGroup(groups[idx], forColumn: c, row: r)
+                }
             }
-        }
 
-        return tileMapNode
+            completion(tileMapNode)
+        }
     }
 }

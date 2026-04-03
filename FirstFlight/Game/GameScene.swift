@@ -64,13 +64,13 @@ final class GameScene: SKScene {
         // add starting equipment to shuttle inventory
         let isFirstLaunch = !EquipmentStorage.exists()
         if isFirstLaunch {
-            if let backpackDef = ItemCatalog.defsById["backpack"] {
+            if let backpackDef = ItemCatalog.defsById[ItemID.backpack] {
                 let backpackItem = UniqueItemInstance(instanceId: UUID(), defId: backpackDef.id)
                 if let emptySlot = shuttleState.slots.firstIndex(where: { $0 == nil }) {
                     shuttleState.slots[emptySlot] = .unique(item: backpackItem)
                 }
             }
-            if let blasterDef = ItemCatalog.defsById["blaster"] {
+            if let blasterDef = ItemCatalog.defsById[ItemID.blaster] {
                 let blasterItem = UniqueItemInstance(instanceId: UUID(), defId: blasterDef.id)
                 if let emptySlot = shuttleState.slots.firstIndex(where: { $0 == nil }) {
                     shuttleState.slots[emptySlot] = .unique(item: blasterItem)
@@ -84,34 +84,34 @@ final class GameScene: SKScene {
         // that missed the first-launch grant
         let hasBackpack = equipmentState.equippedItems[.backpack] != nil
             || playerState.slots.contains(where: { slot in
-                if case .unique(let item) = slot, item.defId == "backpack" { return true }
+                if case .unique(let item) = slot, item.defId == ItemID.backpack { return true }
                 return false
             })
             || shuttleState.slots.contains(where: { slot in
-                if case .unique(let item) = slot, item.defId == "backpack" { return true }
+                if case .unique(let item) = slot, item.defId == ItemID.backpack { return true }
                 return false
             })
 
         let hasBlaster = equipmentState.equippedItems[.weapon] != nil
             || playerState.slots.contains(where: { slot in
-                if case .unique(let item) = slot, item.defId == "blaster" { return true }
+                if case .unique(let item) = slot, item.defId == ItemID.blaster { return true }
                 return false
             })
             || shuttleState.slots.contains(where: { slot in
-                if case .unique(let item) = slot, item.defId == "blaster" { return true }
+                if case .unique(let item) = slot, item.defId == ItemID.blaster { return true }
                 return false
             })
 
         var needsShuttleSave = false
         if !hasBackpack {
-            let item = UniqueItemInstance(instanceId: UUID(), defId: "backpack")
+            let item = UniqueItemInstance(instanceId: UUID(), defId: ItemID.backpack)
             if let emptySlot = shuttleState.slots.firstIndex(where: { $0 == nil }) {
                 shuttleState.slots[emptySlot] = .unique(item: item)
                 needsShuttleSave = true
             }
         }
         if !hasBlaster {
-            let item = UniqueItemInstance(instanceId: UUID(), defId: "blaster")
+            let item = UniqueItemInstance(instanceId: UUID(), defId: ItemID.blaster)
             if let emptySlot = shuttleState.slots.firstIndex(where: { $0 == nil }) {
                 shuttleState.slots[emptySlot] = .unique(item: item)
                 needsShuttleSave = true
@@ -182,7 +182,9 @@ final class GameScene: SKScene {
             boundary.physicsBody?.collisionBitMask = PhysicsCategory.player
             addChild(boundary)
 
-            addChild(tileMap.createNode())
+            tileMap.createNode { [weak self] node in
+                self?.addChild(node)
+            }
 
             if showDebugLabels {
                 Logger.game.debug("Loaded: tileSize: \(tileMap.tileSize), columns: \(tileMap.tileColumns), rows: \(tileMap.tileRows), scene.size: \(self.size.width)x\(self.size.height)")
@@ -267,11 +269,6 @@ final class GameScene: SKScene {
     }
 
     // MARK: - Input Handling
-
-    private func pointerLocation(in node: SKNode, from point: CGPoint) -> CGPoint {
-        guard let cam = camera else { return point }
-        return cam.convert(point, from: node)
-    }
 
     private func handlePointerBegan(at scenePoint: CGPoint) {
         guard let cam = camera else { return }
@@ -423,14 +420,14 @@ final class GameScene: SKScene {
                     }
                 }
             ])
-            run(jetpackDelay, withKey: "jetpackHoldTimer")
+            run(jetpackDelay, withKey: ActionKey.jetpackHoldTimer)
         } else {
             astronaut.jump()
         }
     }
 
     private func handleJumpEnd() {
-        removeAction(forKey: "jetpackHoldTimer")
+        removeAction(forKey: ActionKey.jetpackHoldTimer)
         if astronaut.isJetpackJumping {
             astronaut.endJetpackJump()
         }

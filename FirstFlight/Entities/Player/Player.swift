@@ -58,6 +58,7 @@ final class Player: SKNode {
     private(set) var isJumping = false
     private(set) var isJetpackJumping = false
     private var jetpackJumpHeight: CGFloat = 0
+    private var preJumpY: CGFloat = 0
     private var jetpackEmitters: [SKEmitterNode] = []
     private var lastWalkingDirection: FacingDirection?
 
@@ -390,7 +391,7 @@ final class Player: SKNode {
         rotate(leftHand, to: 0, duration: duration, key: "resetHand")
 
         if manageWalkCycle {
-            if action(forKey: "move") != nil {
+            if action(forKey: ActionKey.move) != nil {
                 startWalkingAnimation()
             }
         }
@@ -480,7 +481,7 @@ final class Player: SKNode {
     }
 
     func stopMovement() {
-        removeAction(forKey: "move")
+        removeAction(forKey: ActionKey.move)
         physicsBody?.velocity = .zero
         zRotation = 0
 
@@ -493,6 +494,7 @@ final class Player: SKNode {
     func jump() {
         guard !isJumping else { return }
         isJumping = true
+        preJumpY = position.y
 
         let riseTime: TimeInterval = 0.2
         let fallTime: TimeInterval = 0.2
@@ -514,15 +516,15 @@ final class Player: SKNode {
             tuck.timingMode = .easeOut
             let tuckRight = SKAction.rotate(toAngle: -tuckAngle, duration: riseTime)
             tuckRight.timingMode = .easeOut
-            self.leftThigh.run(tuck, withKey: "jumpTuck")
-            self.rightThigh.run(tuckRight, withKey: "jumpTuck")
+            self.leftThigh.run(tuck, withKey: ActionKey.jumpTuck)
+            self.rightThigh.run(tuckRight, withKey: ActionKey.jumpTuck)
         }
         let resetLegs = SKAction.run { [weak self] in
             guard let self else { return }
             let reset = SKAction.rotate(toAngle: 0, duration: fallTime)
             reset.timingMode = .easeIn
-            self.leftThigh.run(reset, withKey: "jumpTuck")
-            self.rightThigh.run(reset, withKey: "jumpTuck")
+            self.leftThigh.run(reset, withKey: ActionKey.jumpTuck)
+            self.rightThigh.run(reset, withKey: ActionKey.jumpTuck)
         }
 
         let sequence = SKAction.sequence([
@@ -531,17 +533,16 @@ final class Player: SKNode {
             SKAction.run { [weak self] in self?.isJumping = false }
         ])
 
-        run(sequence, withKey: "jump")
+        run(sequence, withKey: ActionKey.jump)
     }
 
     func cancelJump() {
         guard isJumping, !isJetpackJumping else { return }
-        removeAction(forKey: "jump")
-        leftThigh.removeAction(forKey: "jumpTuck")
-        rightThigh.removeAction(forKey: "jumpTuck")
-        // Reset position to pre-jump state
+        removeAction(forKey: ActionKey.jump)
+        leftThigh.removeAction(forKey: ActionKey.jumpTuck)
+        rightThigh.removeAction(forKey: ActionKey.jumpTuck)
         let resetDuration: TimeInterval = 0.05
-        run(SKAction.moveTo(y: position.y - 30.0, duration: resetDuration))
+        run(SKAction.moveTo(y: preJumpY, duration: resetDuration))
         leftThigh.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
         rightThigh.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
         isJumping = false
@@ -552,9 +553,9 @@ final class Player: SKNode {
     func jetpackJump() {
         // Cancel any in-progress normal jump first
         if isJumping {
-            removeAction(forKey: "jump")
-            leftThigh.removeAction(forKey: "jumpTuck")
-            rightThigh.removeAction(forKey: "jumpTuck")
+            removeAction(forKey: ActionKey.jump)
+            leftThigh.removeAction(forKey: ActionKey.jumpTuck)
+            rightThigh.removeAction(forKey: ActionKey.jumpTuck)
             // Snap back to ground before starting jetpack
             leftThigh.run(SKAction.rotate(toAngle: 0, duration: 0.05))
             rightThigh.run(SKAction.rotate(toAngle: 0, duration: 0.05))
@@ -580,8 +581,8 @@ final class Player: SKNode {
             tuck.timingMode = .easeOut
             let tuckRight = SKAction.rotate(toAngle: -tuckAngle, duration: riseTime)
             tuckRight.timingMode = .easeOut
-            self.leftThigh.run(tuck, withKey: "jumpTuck")
-            self.rightThigh.run(tuckRight, withKey: "jumpTuck")
+            self.leftThigh.run(tuck, withKey: ActionKey.jumpTuck)
+            self.rightThigh.run(tuckRight, withKey: ActionKey.jumpTuck)
         }
 
         // Hover bob animation (repeats until ended)
@@ -605,7 +606,7 @@ final class Player: SKNode {
             SKAction.group([bob, autoLand])
         ])
 
-        run(sequence, withKey: "jetpackJump")
+        run(sequence, withKey: ActionKey.jetpackJump)
     }
 
     func endJetpackJump() {
@@ -613,12 +614,12 @@ final class Player: SKNode {
         isJetpackJumping = false
         stopJetpackEmitter()
 
-        removeAction(forKey: "jetpackJump")
+        removeAction(forKey: ActionKey.jetpackJump)
 
         let descentTime: TimeInterval = 0.4
 
-        // Descend back to ground
-        let descend = SKAction.moveTo(y: position.y - jetpackJumpHeight, duration: descentTime)
+        // Descend back to pre-jump ground level (not current oscillating position)
+        let descend = SKAction.moveTo(y: preJumpY, duration: descentTime)
         descend.timingMode = .easeIn
 
         // Reset legs
@@ -626,8 +627,8 @@ final class Player: SKNode {
             guard let self else { return }
             let reset = SKAction.rotate(toAngle: 0, duration: descentTime)
             reset.timingMode = .easeIn
-            self.leftThigh.run(reset, withKey: "jumpTuck")
-            self.rightThigh.run(reset, withKey: "jumpTuck")
+            self.leftThigh.run(reset, withKey: ActionKey.jumpTuck)
+            self.rightThigh.run(reset, withKey: ActionKey.jumpTuck)
         }
 
         let sequence = SKAction.sequence([
@@ -638,7 +639,7 @@ final class Player: SKNode {
             }
         ])
 
-        run(sequence, withKey: "jetpackLanding")
+        run(sequence, withKey: ActionKey.jetpackLanding)
     }
 
     private static let jetpackParticleTexture: SKTexture = {
@@ -714,10 +715,10 @@ final class Player: SKNode {
 
         leftArm.forEach { node in
             // Stop walk animation for left arm
-            node.removeAction(forKey: .walk)
+            node.removeAction(forKey: ActionKey.walk)
 
             // Stop reset actions that may be running
-            node.removeAction(forKey: .reset)
+            node.removeAction(forKey: ActionKey.reset)
         }
 
         poseLeftArmForAiming(angle: angle)
@@ -918,47 +919,47 @@ final class Player: SKNode {
             SKAction.repeatForever(rightFootCycle)
         ])
 
-        rightThigh.run(rightThighSequence, withKey: .walk)
-        rightCalf.run(rightCalfSequence, withKey: .walk)
-        rightAnkle.run(rightAnkleSequence, withKey: .walk)
-        rightFoot.run(rightFootSequence, withKey: .walk)
+        rightThigh.run(rightThighSequence, withKey: ActionKey.walk)
+        rightCalf.run(rightCalfSequence, withKey: ActionKey.walk)
+        rightAnkle.run(rightAnkleSequence, withKey: ActionKey.walk)
+        rightFoot.run(rightFootSequence, withKey: ActionKey.walk)
 
-        leftUpperArm.run(SKAction.repeatForever(leftUpperArmCycle), withKey: .walk)
-        leftForearm.run(SKAction.repeatForever(leftForearmCycle), withKey: .walk)
-        leftWrist.run(SKAction.repeatForever(leftWristCycle), withKey: .walk)
-        leftHand.run(SKAction.repeatForever(leftHandCycle), withKey: .walk)
+        leftUpperArm.run(SKAction.repeatForever(leftUpperArmCycle), withKey: ActionKey.walk)
+        leftForearm.run(SKAction.repeatForever(leftForearmCycle), withKey: ActionKey.walk)
+        leftWrist.run(SKAction.repeatForever(leftWristCycle), withKey: ActionKey.walk)
+        leftHand.run(SKAction.repeatForever(leftHandCycle), withKey: ActionKey.walk)
 
-        leftThigh.run(leftThighCycle, withKey: .walk)
-        leftCalf.run(leftCalfCycle, withKey: .walk)
-        leftAnkle.run(leftAnkleCycle, withKey: .walk)
-        leftFoot.run(leftFootCycle, withKey: .walk)
+        leftThigh.run(leftThighCycle, withKey: ActionKey.walk)
+        leftCalf.run(leftCalfCycle, withKey: ActionKey.walk)
+        leftAnkle.run(leftAnkleCycle, withKey: ActionKey.walk)
+        leftFoot.run(leftFootCycle, withKey: ActionKey.walk)
 
-        rightUpperArm.run(rightUpperArmCycle, withKey: .walk)
-        rightForearm.run(rightForearmCycle, withKey: .walk)
-        rightWrist.run(rightWristCycle, withKey: .walk)
-        rightHand.run(rightHandCycle, withKey: .walk)
+        rightUpperArm.run(rightUpperArmCycle, withKey: ActionKey.walk)
+        rightForearm.run(rightForearmCycle, withKey: ActionKey.walk)
+        rightWrist.run(rightWristCycle, withKey: ActionKey.walk)
+        rightHand.run(rightHandCycle, withKey: ActionKey.walk)
 
         isWalking = true
     }
 
     private func stopWalkingAnimation() {
         // Stop all limb animations
-        leftThigh.removeAction(forKey: .walk)
-        leftCalf.removeAction(forKey: .walk)
-        leftAnkle.removeAction(forKey: .walk)
-        leftFoot.removeAction(forKey: .walk)
-        rightThigh.removeAction(forKey: .walk)
-        rightCalf.removeAction(forKey: .walk)
-        rightAnkle.removeAction(forKey: .walk)
-        rightFoot.removeAction(forKey: .walk)
-        leftUpperArm.removeAction(forKey: .walk)
-        leftForearm.removeAction(forKey: .walk)
-        leftWrist.removeAction(forKey: .walk)
-        leftHand.removeAction(forKey: .walk)
-        rightUpperArm.removeAction(forKey: .walk)
-        rightForearm.removeAction(forKey: .walk)
-        rightWrist.removeAction(forKey: .walk)
-        rightHand.removeAction(forKey: .walk)
+        leftThigh.removeAction(forKey: ActionKey.walk)
+        leftCalf.removeAction(forKey: ActionKey.walk)
+        leftAnkle.removeAction(forKey: ActionKey.walk)
+        leftFoot.removeAction(forKey: ActionKey.walk)
+        rightThigh.removeAction(forKey: ActionKey.walk)
+        rightCalf.removeAction(forKey: ActionKey.walk)
+        rightAnkle.removeAction(forKey: ActionKey.walk)
+        rightFoot.removeAction(forKey: ActionKey.walk)
+        leftUpperArm.removeAction(forKey: ActionKey.walk)
+        leftForearm.removeAction(forKey: ActionKey.walk)
+        leftWrist.removeAction(forKey: ActionKey.walk)
+        leftHand.removeAction(forKey: ActionKey.walk)
+        rightUpperArm.removeAction(forKey: ActionKey.walk)
+        rightForearm.removeAction(forKey: ActionKey.walk)
+        rightWrist.removeAction(forKey: ActionKey.walk)
+        rightHand.removeAction(forKey: ActionKey.walk)
 
         // Reset all segments to neutral position
         let resetDuration: TimeInterval = 0.2
@@ -970,10 +971,10 @@ final class Player: SKNode {
         rightCalf.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
         rightAnkle.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
         rightFoot.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
-        leftUpperArm.run(SKAction.rotate(toAngle: 0, duration: resetDuration), withKey: .reset)
-        leftForearm.run(SKAction.rotate(toAngle: 0, duration: resetDuration), withKey: .reset)
-        leftWrist.run(SKAction.rotate(toAngle: 0, duration: resetDuration), withKey: .reset)
-        leftHand.run(SKAction.rotate(toAngle: 0, duration: resetDuration), withKey: .reset)
+        leftUpperArm.run(SKAction.rotate(toAngle: 0, duration: resetDuration), withKey: ActionKey.reset)
+        leftForearm.run(SKAction.rotate(toAngle: 0, duration: resetDuration), withKey: ActionKey.reset)
+        leftWrist.run(SKAction.rotate(toAngle: 0, duration: resetDuration), withKey: ActionKey.reset)
+        leftHand.run(SKAction.rotate(toAngle: 0, duration: resetDuration), withKey: ActionKey.reset)
         rightUpperArm.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
         rightForearm.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
         rightWrist.run(SKAction.rotate(toAngle: 0, duration: resetDuration))
@@ -1076,7 +1077,20 @@ final class Player: SKNode {
     }
 }
 
-extension String {
-    static var walk: String { "walk" }
-    static var reset: String { "reset" }
+enum ActionKey {
+    static let walk = "walk"
+    static let reset = "reset"
+    static let move = "move"
+    static let jump = "jump"
+    static let jumpTuck = "jumpTuck"
+    static let jetpackJump = "jetpackJump"
+    static let jetpackLanding = "jetpackLanding"
+    static let jetpackHoldTimer = "jetpackHoldTimer"
+    static let beamFadeIn = "beamFadeIn"
+    static let beamFadeOut = "beamFadeOut"
+}
+
+enum ItemID {
+    static let backpack = "backpack"
+    static let blaster = "blaster"
 }
