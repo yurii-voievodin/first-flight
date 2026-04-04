@@ -7,6 +7,9 @@ final class UIManager {
 
     private(set) var virtualJoystick: VirtualJoystick!
     private(set) var energyBar: EnergyBar!
+    #if os(iOS)
+    private(set) var jumpButton: JumpButton!
+    #endif
 
     private var inventoryOverlay: InventoryOverlayNode?
     private var transferOverlay: TransferOverlayNode?
@@ -26,6 +29,9 @@ final class UIManager {
         self.shuttleInventory = shuttleInventory
 
         setupJoystick()
+        #if os(iOS)
+        setupJumpButton()
+        #endif
         setupEnergyBar()
     }
 
@@ -39,6 +45,15 @@ final class UIManager {
         #endif
         updateJoystickPosition()
     }
+
+    #if os(iOS)
+    private func setupJumpButton() {
+        jumpButton = JumpButton(size: 50)
+        jumpButton.zPosition = 100
+        camera?.addChild(jumpButton)
+        updateJumpButtonPosition()
+    }
+    #endif
 
     private func setupEnergyBar() {
         energyBar = EnergyBar()
@@ -54,6 +69,9 @@ final class UIManager {
 
     func updateLayout(for sceneSize: CGSize) {
         updateJoystickPosition()
+        #if os(iOS)
+        updateJumpButtonPosition()
+        #endif
         updateEnergyBarPosition()
         inventoryOverlay?.layout(for: sceneSize)
         transferOverlay?.layout(for: sceneSize)
@@ -74,6 +92,24 @@ final class UIManager {
         virtualJoystick.position = CGPoint(x: xPosition, y: yPosition)
         #endif
     }
+
+    #if os(iOS)
+    private func updateJumpButtonPosition() {
+        guard let view = scene?.view, jumpButton != nil else { return }
+
+        let safeArea = view.safeAreaInsets
+        let bottomInset = safeArea.bottom
+        let joystickRadius: CGFloat = 40
+        let buttonRadius: CGFloat = 25
+        let margin: CGFloat = 20
+        let spacing: CGFloat = 30
+
+        let xPosition = -(joystickRadius + spacing + buttonRadius)
+        let yPosition = -view.bounds.height / 2 + bottomInset + joystickRadius + margin
+
+        jumpButton.position = CGPoint(x: xPosition, y: yPosition)
+    }
+    #endif
 
     private func updateEnergyBarPosition() {
         guard let view = scene?.view, energyBar != nil else { return }

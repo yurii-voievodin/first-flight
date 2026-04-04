@@ -156,6 +156,9 @@ final class GameScene: SKScene {
         #if os(macOS)
         uiManager.virtualJoystick.onJumpStart = { [weak self] in self?.handleJumpStart() }
         uiManager.virtualJoystick.onJumpEnd = { [weak self] in self?.handleJumpEnd() }
+        #elseif os(iOS)
+        uiManager.jumpButton.onJumpStart = { [weak self] in self?.handleJumpStart() }
+        uiManager.jumpButton.onJumpEnd = { [weak self] in self?.handleJumpEnd() }
         #endif
 
         // Combat
@@ -411,7 +414,6 @@ final class GameScene: SKScene {
 
     // MARK: - Jump
 
-    #if os(macOS)
     private func handleJumpStart() {
         guard !astronaut.isJumping else { return }
 
@@ -422,7 +424,7 @@ final class GameScene: SKScene {
                 SKAction.wait(forDuration: 0.15),
                 SKAction.run { [weak self] in
                     guard let self else { return }
-                    // If still jumping (space held), transition to jetpack
+                    // If still jumping (button/key held), transition to jetpack
                     if self.astronaut.isJumping && !self.astronaut.isJetpackJumping {
                         self.astronaut.jetpackJump()
                     }
@@ -440,7 +442,6 @@ final class GameScene: SKScene {
             astronaut.endJetpackJump()
         }
     }
-    #endif
 
     // MARK: - Rock Destruction
 

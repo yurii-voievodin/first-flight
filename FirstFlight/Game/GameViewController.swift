@@ -31,6 +31,7 @@ final class GameViewController: UIViewController {
         view.presentScene(scene)
         
         view.ignoresSiblingOrder = true
+        view.isMultipleTouchEnabled = true
         
         if showDebugLabels {
             view.showsFPS = true
