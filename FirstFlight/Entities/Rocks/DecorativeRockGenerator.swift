@@ -14,8 +14,8 @@ struct DecorativeRockGenerator {
         let anchoredCount = min(Int(round(CGFloat(totalCount) * anchoredFraction)), totalCount)
         let freeCount = totalCount - anchoredCount
 
-        var placedPoints: [CGPoint] = []
-        placedPoints.reserveCapacity(totalCount)
+        let minDist: CGFloat = 14
+        var grid = SpatialGrid(cellSize: minDist, sceneSize: sceneSize)
 
         var result: [SKNode] = []
         result.reserveCapacity(totalCount)
@@ -26,8 +26,8 @@ struct DecorativeRockGenerator {
                 // Round-robin through interior rocks for a more even distribution
                 let anchor = interiorRocks[i % interiorRocks.count]
 
-                if let p = findValidAnchoredPoint(near: anchor, lakes: lakes, placedPoints: placedPoints) {
-                    placedPoints.append(p)
+                if let p = findValidAnchoredPoint(near: anchor, lakes: lakes, grid: grid, minDist: minDist) {
+                    grid.insert(p)
                     result.append(makeDecorativeSmallRock(at: p, variation: i))
                 }
             }
@@ -36,8 +36,8 @@ struct DecorativeRockGenerator {
         // 2) Free scatter: place anywhere (but avoid lakes & overlaps)
         if freeCount > 0 {
             for i in 0..<freeCount {
-                if let p = findValidFreePoint(lakes: lakes, placedPoints: placedPoints) {
-                    placedPoints.append(p)
+                if let p = findValidFreePoint(lakes: lakes, grid: grid, minDist: minDist) {
+                    grid.insert(p)
                     result.append(makeDecorativeSmallRock(at: p, variation: anchoredCount + i))
                 }
             }
@@ -67,7 +67,8 @@ struct DecorativeRockGenerator {
     func findValidAnchoredPoint(
         near anchor: RockFormation,
         lakes: [LakeNode],
-        placedPoints: [CGPoint]
+        grid: SpatialGrid,
+        minDist: CGFloat
     ) -> CGPoint? {
         // Try a handful of candidates around the anchor rock
         let attempts = 24
@@ -89,7 +90,7 @@ struct DecorativeRockGenerator {
             }
 
             let p = CGPoint(x: anchor.position.x + dx, y: anchor.position.y + dy)
-            if isValidSmallRockPoint(p, lakes: lakes, placedPoints: placedPoints) {
+            if isValidSmallRockPoint(p, lakes: lakes, grid: grid, minDist: minDist) {
                 return p
             }
         }
@@ -99,7 +100,8 @@ struct DecorativeRockGenerator {
 
     func findValidFreePoint(
         lakes: [LakeNode],
-        placedPoints: [CGPoint]
+        grid: SpatialGrid,
+        minDist: CGFloat
     ) -> CGPoint? {
         let attempts = 80
 
@@ -118,7 +120,7 @@ struct DecorativeRockGenerator {
                 y: CGFloat.random(in: minY...maxY)
             )
 
-            if isValidSmallRockPoint(p, lakes: lakes, placedPoints: placedPoints) {
+            if isValidSmallRockPoint(p, lakes: lakes, grid: grid, minDist: minDist) {
                 return p
             }
         }
@@ -129,28 +131,69 @@ struct DecorativeRockGenerator {
     private func isValidSmallRockPoint(
         _ p: CGPoint,
         lakes: [LakeNode],
-        placedPoints: [CGPoint]
+        grid: SpatialGrid,
+        minDist: CGFloat
     ) -> Bool {
-        // 1) Avoid lakes
+        // 1) Must be inside scene bounds
+        if p.x < 0 || p.y < 0 || p.x > sceneSize.width || p.y > sceneSize.height {
+            return false
+        }
+
+        // 2) Avoid lakes
         for lake in lakes {
             if lake.contains(p) {
                 return false
             }
         }
 
-        // 2) Avoid crowding other small rocks
-        let minDist: CGFloat = 14
-        for q in placedPoints {
-            if hypot(p.x - q.x, p.y - q.y) < minDist {
-                return false
+        // 3) Avoid crowding other small rocks
+        return !grid.hasNeighbor(near: p, minDist: minDist)
+    }
+}
+
+// MARK: - Spatial Grid
+
+struct SpatialGrid {
+    private let cellSize: CGFloat
+    private var cells: [Int: [CGPoint]] = [:]
+    private let columns: Int
+
+    init(cellSize: CGFloat, sceneSize: CGSize) {
+        self.cellSize = cellSize
+        self.columns = max(1, Int(ceil(sceneSize.width / cellSize)) + 1)
+    }
+
+    private func cellCoord(for point: CGPoint) -> (col: Int, row: Int) {
+        (Int(floor(point.x / cellSize)), Int(floor(point.y / cellSize)))
+    }
+
+    private func key(col: Int, row: Int) -> Int {
+        row * columns + col
+    }
+
+    mutating func insert(_ point: CGPoint) {
+        let (col, row) = cellCoord(for: point)
+        let k = key(col: col, row: row)
+        cells[k, default: []].append(point)
+    }
+
+    func hasNeighbor(near point: CGPoint, minDist: CGFloat) -> Bool {
+        let (col, row) = cellCoord(for: point)
+        let minDistSq = minDist * minDist
+
+        for dr in -1...1 {
+            for dc in -1...1 {
+                let k = key(col: col + dc, row: row + dr)
+                guard let bucket = cells[k] else { continue }
+                for q in bucket {
+                    let dx = point.x - q.x
+                    let dy = point.y - q.y
+                    if dx * dx + dy * dy < minDistSq {
+                        return true
+                    }
+                }
             }
         }
-
-        // 3) Must be inside scene bounds
-        if p.x < 0 || p.y < 0 || p.x > sceneSize.width || p.y > sceneSize.height {
-            return false
-        }
-
-        return true
+        return false
     }
 }

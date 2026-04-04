@@ -158,30 +158,33 @@ extension TerrainTextureFactory {
     /// Generates CGImages for all tiles on a background queue, then builds the SKTileSet on the main thread.
     static func generateTerrainTextures(tileColumns: Int, tileRows: Int, tileSize: CGFloat, completion: @escaping (SKTileSet) -> Void) {
         DispatchQueue.global(qos: .userInitiated).async {
-            let factory = TerrainTextureFactory()
-            var cgImages: [CGImage?] = Array(repeating: nil, count: tileColumns * tileRows)
+            let tileCount = tileColumns * tileRows
+            let cgImages = UnsafeMutableBufferPointer<CGImage?>.allocate(capacity: tileCount)
+            cgImages.initialize(repeating: nil)
             let extent = CGRect(x: 0, y: 0, width: Int(tileSize), height: Int(tileSize))
 
-            for r in 0..<tileRows {
-                for c in 0..<tileColumns {
-                    let seed = (c &* 73856093) ^ (r &* 19349663)
-                    let normalized = Float(seed & 0xFFFF) / 65535.0
-                    let dustAmount = 0.06 + 0.10 * normalized
+            DispatchQueue.concurrentPerform(iterations: tileCount) { idx in
+                let factory = TerrainTextureFactory()
+                let r = idx / tileColumns
+                let c = idx % tileColumns
 
-                    var p = TerrainTextureFactory.Params(size: Int(tileSize))
-                    p.dustAmount = dustAmount
-                    p.fieldOffset = CGPoint(x: CGFloat(c) * tileSize, y: CGFloat(r) * tileSize)
+                let seed = (c &* 73856093) ^ (r &* 19349663)
+                let normalized = Float(seed & 0xFFFF) / 65535.0
+                let dustAmount = 0.06 + 0.10 * normalized
 
-                    let ciImage = factory.makeRockWithDustCIImage(p)
-                    cgImages[r * tileColumns + c] = factory.ciContext.createCGImage(ciImage, from: extent)
-                }
+                var p = TerrainTextureFactory.Params(size: Int(tileSize))
+                p.dustAmount = dustAmount
+                p.fieldOffset = CGPoint(x: CGFloat(c) * tileSize, y: CGFloat(r) * tileSize)
+
+                let ciImage = factory.makeRockWithDustCIImage(p)
+                cgImages[idx] = factory.ciContext.createCGImage(ciImage, from: extent)
             }
 
             DispatchQueue.main.async {
                 var groups: [SKTileGroup] = []
-                groups.reserveCapacity(tileColumns * tileRows)
+                groups.reserveCapacity(tileCount)
 
-                for i in 0..<cgImages.count {
+                for i in 0..<tileCount {
                     let texture: SKTexture
                     if let cg = cgImages[i] {
                         texture = SKTexture(cgImage: cg)
@@ -195,6 +198,7 @@ extension TerrainTextureFactory {
                     groups.append(SKTileGroup(rules: [rule]))
                 }
 
+                cgImages.deallocate()
                 completion(SKTileSet(tileGroups: groups))
             }
         }

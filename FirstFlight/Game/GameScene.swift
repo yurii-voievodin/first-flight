@@ -197,51 +197,86 @@ final class GameScene: SKScene {
 
             astronaut.position = MapLoader.shared.getPlayerStartPosition(from: mapData)
 
-            if let shuttle = MapNodeFactory.createSpaceShuttle(from: mapData, inventory: shuttleInventory) {
-                addChild(shuttle)
-                spaceShuttle = shuttle
-            }
-
-            let rocks = MapNodeFactory.createAllRocks(from: mapData)
-
-            boundaryRocks = rocks.boundary
-            for rock in boundaryRocks {
-                addChild(rock)
-                if showDebugLabels { rock.addDebugLabel() }
-            }
-
-            for rock in rocks.interior {
-                addChild(rock)
-                rockFormations.append(rock)
-                if showDebugLabels { rock.addDebugLabel() }
-            }
-
-            for rock in rocks.signature {
-                addChild(rock)
-                rockFormations.append(rock)
-                if showDebugLabels { rock.addDebugLabel() }
-            }
-
-            lakes = MapNodeFactory.createLakes(from: mapData)
-            for lake in lakes { addChild(lake) }
-
-            let rockGenerator = DecorativeRockGenerator(sceneSize: size)
-            smallRocks = rockGenerator.generateDecorativeSmallRocks(
-                totalCount: 150,
-                anchoredFraction: 0.8,
-                interiorRocks: rocks.interior,
-                lakes: lakes
-            )
-            for smallRock in smallRocks { addChild(smallRock) }
-
-            // Build cullable node list once for viewport culling
-            cullableNodes = rockFormations + boundaryRocks + lakes + smallRocks
-            if let shuttle = spaceShuttle { cullableNodes.append(shuttle) }
+            // Defer heavy entity creation to avoid blocking the first frame
+            loadMapEntitiesDeferred(from: mapData)
 
         } catch {
             Logger.game.error("Failed to load Map1.json: \(error.localizedDescription)")
             showMapLoadError(error)
         }
+    }
+
+    private func loadMapEntitiesDeferred(from mapData: MapData) {
+        let batchSize = 20
+
+        // Create all entities up front
+        let rocks = MapNodeFactory.createAllRocks(from: mapData)
+        let shuttle = MapNodeFactory.createSpaceShuttle(from: mapData, inventory: shuttleInventory)
+        let newLakes = MapNodeFactory.createLakes(from: mapData)
+
+        // Track interior rocks locally for small rock generation
+        let interiorRocks = rocks.interior + rocks.signature
+
+        let allRocks: [(rock: RockFormation, isInterior: Bool)] =
+            rocks.boundary.map { ($0, false) } +
+            rocks.interior.map { ($0, true) } +
+            rocks.signature.map { ($0, true) }
+
+        // Pre-generate small rocks now (fast with spatial hash), add to scene later
+        let rockGenerator = DecorativeRockGenerator(sceneSize: size)
+        let generatedSmallRocks = rockGenerator.generateDecorativeSmallRocks(
+            totalCount: 150,
+            anchoredFraction: 0.8,
+            interiorRocks: interiorRocks,
+            lakes: newLakes
+        )
+
+        // Build batched actions to spread node insertion across frames
+        var actions: [SKAction] = []
+
+        // Batch 1: shuttle + lakes
+        actions.append(SKAction.run { [weak self] in
+            guard let self else { return }
+            if let shuttle {
+                self.addChild(shuttle)
+                self.spaceShuttle = shuttle
+            }
+            self.lakes = newLakes
+            for lake in newLakes { self.addChild(lake) }
+        })
+        actions.append(SKAction.wait(forDuration: 0))
+
+        // Batch rocks in groups
+        for batchStart in stride(from: 0, to: allRocks.count, by: batchSize) {
+            let batchEnd = min(batchStart + batchSize, allRocks.count)
+            let batch = Array(allRocks[batchStart..<batchEnd])
+
+            actions.append(SKAction.run { [weak self] in
+                guard let self else { return }
+                for (rock, isInterior) in batch {
+                    self.addChild(rock)
+                    if isInterior {
+                        self.rockFormations.append(rock)
+                    } else {
+                        self.boundaryRocks.append(rock)
+                    }
+                    if self.showDebugLabels { rock.addDebugLabel() }
+                }
+            })
+            actions.append(SKAction.wait(forDuration: 0))
+        }
+
+        // Final batch: add pre-generated small rocks + build cullable list
+        actions.append(SKAction.run { [weak self] in
+            guard let self else { return }
+            self.smallRocks = generatedSmallRocks
+            for smallRock in generatedSmallRocks { self.addChild(smallRock) }
+
+            self.cullableNodes = self.rockFormations + self.boundaryRocks + self.lakes + self.smallRocks
+            if let shuttle = self.spaceShuttle { self.cullableNodes.append(shuttle) }
+        })
+
+        run(SKAction.sequence(actions))
     }
 
     private func showMapLoadError(_ error: Error) {
