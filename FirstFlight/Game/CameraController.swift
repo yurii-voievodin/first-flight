@@ -52,4 +52,28 @@ final class CameraController {
         }
         camera.run(camShake)
     }
+
+    // MARK: - Viewport Culling
+
+    func cullNodes(_ nodes: [SKNode]) {
+        guard let view = scene?.view else { return }
+
+        let margin: CGFloat = 2.5
+        let halfW = view.bounds.width * margin / 2
+        let halfH = view.bounds.height * margin / 2
+        let camPos = camera.position
+
+        let minX = camPos.x - halfW
+        let maxX = camPos.x + halfW
+        let minY = camPos.y - halfH
+        let maxY = camPos.y + halfH
+
+        for node in nodes {
+            let pos = node.position
+            let visible = pos.x >= minX && pos.x <= maxX && pos.y >= minY && pos.y <= maxY
+            if node.isHidden == visible {
+                node.isHidden = !visible
+            }
+        }
+    }
 }

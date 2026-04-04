@@ -227,6 +227,10 @@ class LakeNode: SKShapeNode {
         }
     }
 
+    func setAnimationPaused(_ paused: Bool) {
+        ripplesSprite?.isPaused = paused
+    }
+
     private static func computeSeed(from position: CGPoint) -> UInt64 {
         let xSeed = UInt64(abs(Int(position.x * 1000))) & 0xFFFFFFFF
         let ySeed = UInt64(abs(Int(position.y * 1000))) & 0xFFFFFFFF

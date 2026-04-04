@@ -18,6 +18,8 @@ final class GameScene: SKScene {
     private var rockFormations: [RockFormation] = []
     private var lakes: [LakeNode] = []
     private var boundaryRocks: [RockFormation] = []
+    private var smallRocks: [SKNode] = []
+    private var cullableNodes: [SKNode] = []
     private var spaceShuttle: SpaceShuttle?
 
     private var cameraController: CameraController!
@@ -221,13 +223,17 @@ final class GameScene: SKScene {
             for lake in lakes { addChild(lake) }
 
             let rockGenerator = DecorativeRockGenerator(sceneSize: size)
-            let smallRocks = rockGenerator.generateDecorativeSmallRocks(
+            smallRocks = rockGenerator.generateDecorativeSmallRocks(
                 totalCount: 150,
                 anchoredFraction: 0.8,
                 interiorRocks: rocks.interior,
                 lakes: lakes
             )
             for smallRock in smallRocks { addChild(smallRock) }
+
+            // Build cullable node list once for viewport culling
+            cullableNodes = rockFormations + boundaryRocks + lakes + smallRocks
+            if let shuttle = spaceShuttle { cullableNodes.append(shuttle) }
 
         } catch {
             Logger.game.error("Failed to load Map1.json: \(error.localizedDescription)")
@@ -368,6 +374,8 @@ final class GameScene: SKScene {
 
         updateCharacterMovement()
         cameraController.follow(astronaut)
+        cameraController.cullNodes(cullableNodes)
+        for lake in lakes { lake.setAnimationPaused(lake.isHidden) }
         combatManager.update(deltaTime: deltaTime)
         if astronaut.isFiring {
             cameraController.applyJitter()

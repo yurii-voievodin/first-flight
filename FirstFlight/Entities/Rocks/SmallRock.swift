@@ -123,34 +123,5 @@ class SmallRock: SKShapeNode {
         lineWidth = 1.0
         zPosition = -11 // Below player (player is at -10)
 
-        addSoftShadowAndHighlight()
-    }
-
-    private func addSoftShadowAndHighlight() {
-        guard let path = self.path else { return }
-
-        let bounds = path.boundingBox
-        let offset = CGSize(width: bounds.width * 0.04, height: bounds.height * 0.04)
-
-        // Shadow: simple offset shape (no blur — imperceptible at 8-14px)
-        let shadowShape = SKShapeNode(path: path)
-        shadowShape.fillColor = .black
-        shadowShape.strokeColor = .clear
-        shadowShape.lineWidth = 0
-        shadowShape.alpha = 0.25
-        shadowShape.blendMode = .multiply
-        shadowShape.position = CGPoint(x: offset.width, y: -offset.height)
-        addChild(shadowShape)
-
-        // Highlight: slightly scaled-down shape
-        let highlightShape = SKShapeNode(path: path)
-        highlightShape.fillColor = .white
-        highlightShape.strokeColor = .clear
-        highlightShape.lineWidth = 0
-        highlightShape.alpha = 0.12
-        highlightShape.blendMode = .add
-        highlightShape.setScale(0.92)
-        highlightShape.position = CGPoint(x: -offset.width * 0.6, y: offset.height * 0.6)
-        addChild(highlightShape)
     }
 }
