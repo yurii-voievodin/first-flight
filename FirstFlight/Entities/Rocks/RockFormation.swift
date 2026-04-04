@@ -388,32 +388,23 @@ class RockFormation: SKShapeNode {
 
     private func createHydrogenDepositPath(size: CGSize) -> CGPath {
         let path = CGMutablePath()
-        let w = size.width
-        let h = size.height
+        let centerX = size.width / 2
+        let centerY = size.height / 2
 
-        // Irregular angular rock formation with hard edges
-        let pts: [CGPoint] = [
-            // Bottom
-            CGPoint(x: w * 0.25, y: h * 0.05),
-            CGPoint(x: w * 0.70, y: h * 0.08),
-            // Right side
-            CGPoint(x: w * 0.82, y: h * 0.35),
-            CGPoint(x: w * 0.75, y: h * 0.70),
-            // Top
-            CGPoint(x: w * 0.55, y: h * 0.90),
-            CGPoint(x: w * 0.30, y: h * 0.78),
-            // Left side
-            CGPoint(x: w * 0.15, y: h * 0.50),
-            CGPoint(x: w * 0.18, y: h * 0.22)
-        ]
-
-        guard let first = pts.first else { return path }
-        path.move(to: first)
-
-        for i in 1..<pts.count {
-            path.addLine(to: pts[i])
-        }
-
+        // Organic rounded shape similar to boulder
+        path.move(to: CGPoint(x: centerX * 0.35, y: size.height * 0.05))
+        path.addCurve(to: CGPoint(x: size.width * 0.85, y: centerY * 0.45),
+                      control1: CGPoint(x: size.width * 0.65, y: -centerY * 0.1),
+                      control2: CGPoint(x: size.width * 0.95, y: centerY * 0.15))
+        path.addCurve(to: CGPoint(x: size.width * 0.78, y: size.height * 0.85),
+                      control1: CGPoint(x: size.width * 0.92, y: centerY * 0.75),
+                      control2: CGPoint(x: size.width * 0.88, y: size.height * 0.68))
+        path.addCurve(to: CGPoint(x: centerX * 0.25, y: size.height * 0.75),
+                      control1: CGPoint(x: centerX * 0.65, y: size.height * 1.0),
+                      control2: CGPoint(x: centerX * 0.35, y: size.height * 0.88))
+        path.addCurve(to: CGPoint(x: centerX * 0.35, y: size.height * 0.05),
+                      control1: CGPoint(x: -centerX * 0.05, y: centerY * 0.55),
+                      control2: CGPoint(x: centerX * 0.15, y: centerY * 0.15))
         path.closeSubpath()
         return path
     }
