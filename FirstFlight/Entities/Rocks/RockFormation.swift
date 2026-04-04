@@ -564,51 +564,24 @@ class RockFormation: SKShapeNode {
     
     private func addShadowAndHighlight(seed: UInt64) {
         guard let path = self.path else { return }
-        
-        // прибрати старі, якщо метод викликають повторно
+
+        // Remove old depth nodes if method is called again
         childNode(withName: "rock-shadow")?.removeFromParent()
         childNode(withName: "rock-highlight")?.removeFromParent()
-        
-        addSoftShadowAndHighlight(path: path)
+
+        addDepthOutline(path: path)
     }
-    
-    private func addSoftShadowAndHighlight(path: CGPath) {
-        let bounds = path.boundingBox
-        let offset = CGSize(width: bounds.width * 0.04, height: bounds.height * 0.04)
-        
-        // М'яка падаюча тінь з blur
-        let shadowShape = SKShapeNode(path: path)
-        shadowShape.fillColor = .black
-        shadowShape.strokeColor = .clear
-        shadowShape.lineWidth = 0
-        shadowShape.alpha = 0.45
-        shadowShape.blendMode = .multiply
-        
-        let shadowEffect = SKEffectNode()
-        shadowEffect.name = "rock-shadow"
-        shadowEffect.shouldRasterize = true
-        shadowEffect.filter = CIFilter(name: "CIGaussianBlur", parameters: [kCIInputRadiusKey: 5])
-        shadowEffect.position = CGPoint(x: offset.width, y: -offset.height)
-        shadowEffect.addChild(shadowShape)
-        
-        // Легкий блік, трохи менший за силует і з blur
-        let highlightShape = SKShapeNode(path: path)
-        highlightShape.fillColor = .white
-        highlightShape.strokeColor = .clear
-        highlightShape.lineWidth = 0
-        highlightShape.alpha = 0.18
-        highlightShape.blendMode = .add
-        highlightShape.setScale(0.92)
-        
-        let highlightEffect = SKEffectNode()
-        highlightEffect.name = "rock-highlight"
-        highlightEffect.shouldRasterize = true
-        highlightEffect.filter = CIFilter(name: "CIGaussianBlur", parameters: [kCIInputRadiusKey: 4])
-        highlightEffect.position = CGPoint(x: -offset.width * 0.6, y: offset.height * 0.6)
-        highlightEffect.addChild(highlightShape)
-        
-        addChild(shadowEffect)
-        addChild(highlightEffect)
+
+    private func addDepthOutline(path: CGPath) {
+        // Dark outline behind texture gives depth and volume
+        let outline = SKShapeNode(path: path)
+        outline.name = "rock-shadow"
+        outline.fillColor = .clear
+        outline.strokeColor = SKColor(white: 0.0, alpha: 0.5)
+        outline.lineWidth = 3.0
+        outline.glowWidth = 2.0
+        outline.zPosition = -1
+        addChild(outline)
     }
     
     // MARK: - Destruction Effects
